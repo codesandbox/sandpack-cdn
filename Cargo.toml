@@ -1,0 +1,11 @@
+[package]
+name = "sandpack-cdn"
+version = "0.0.0"
+edition = "2018"
+publish = false
+
+[dependencies]
+actix-web = "3"
+semver = "1.0.4"
+thiserror = "1.0.30"
+env_logger = "0.9.0"
