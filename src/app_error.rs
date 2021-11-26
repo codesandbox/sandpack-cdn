@@ -4,4 +4,6 @@ use thiserror::Error;
 pub enum ServerError {
     #[error("invalid semver")]
     InvalidSemver(#[from] semver::Error),
+    #[error("some request error occured...")]
+    FailedRequest(#[from] reqwest::Error),
 }

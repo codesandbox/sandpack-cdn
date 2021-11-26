@@ -1,25 +1,16 @@
 use actix_web::middleware::Logger;
 use actix_web::{get, http::StatusCode, web, App, HttpResponse, HttpServer, Responder};
 use env_logger::Env;
-use semver::Version;
 
 mod app_error;
-use app_error::ServerError;
-
-async fn fetch_package(
-    package_name: String,
-    package_version: String,
-) -> Result<String, ServerError> {
-    let parsed_version = Version::parse(package_version.as_str())?;
-
-    return Ok(format!("Package {}@{}", package_name, parsed_version.major));
-}
+mod npm;
+mod process_package;
+use process_package::process_package;
 
 #[get("/package/{package_name}/{package_version}")]
-async fn package(
-    web::Path((package_name, package_version)): web::Path<(String, String)>,
-) -> impl Responder {
-    match fetch_package(package_name, package_version).await {
+async fn package(path: web::Path<(String, String)>) -> impl Responder {
+    let (package_name, package_version) = path.into_inner();
+    match process_package(package_name, package_version).await {
         Ok(response) => HttpResponse::Ok().body(response),
         Err(error) => {
             HttpResponse::build(StatusCode::INTERNAL_SERVER_ERROR).body(format!("{:?}", error))
@@ -28,7 +19,8 @@ async fn package(
 }
 
 #[get("/versions/{manifest}")]
-async fn versions(web::Path(manifest): web::Path<String>) -> impl Responder {
+async fn versions(path: web::Path<String>) -> impl Responder {
+    let manifest = path.into_inner();
     HttpResponse::Ok().body(format!("Versions of {}", manifest))
 }
 
