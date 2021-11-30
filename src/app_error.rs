@@ -6,4 +6,12 @@ pub enum ServerError {
     InvalidSemver(#[from] semver::Error),
     #[error("some request error occured...")]
     FailedRequest(#[from] reqwest::Error),
+    #[error("some request error occured...")]
+    RequestErrorStatus(u16),
+    #[error("an io error occured...")]
+    IoError(#[from] std::io::Error),
+    #[error("Could not parse url")]
+    UrlParseError(#[from] url::ParseError),
+    #[error("Package version not found")]
+    PackageVersionNotFound,
 }

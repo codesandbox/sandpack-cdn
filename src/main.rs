@@ -1,20 +1,27 @@
 use actix_web::middleware::Logger;
 use actix_web::{get, http::StatusCode, web, App, HttpResponse, HttpServer, Responder};
 use env_logger::Env;
+use std::env;
+use std::fs;
 
 mod app_error;
 mod npm;
 mod process_package;
 use process_package::process_package;
 
+#[derive(Clone, Debug)]
+struct AppData {
+    data_dir: String,
+}
+
 #[get("/package/{package_name}/{package_version}")]
-async fn package(path: web::Path<(String, String)>) -> impl Responder {
+async fn package(path: web::Path<(String, String)>, data: web::Data<AppData>) -> impl Responder {
     let (package_name, package_version) = path.into_inner();
-    match process_package(package_name, package_version).await {
+    let data_dir = data.data_dir.clone();
+    match process_package(package_name, package_version, data_dir).await {
         Ok(response) => HttpResponse::Ok().body(response),
-        Err(error) => {
-            HttpResponse::build(StatusCode::INTERNAL_SERVER_ERROR).body(format!("{:?}", error))
-        }
+        Err(error) => HttpResponse::build(StatusCode::INTERNAL_SERVER_ERROR)
+            .body(format!("{}\n\n{:?}", error, error)),
     }
 }
 
@@ -32,8 +39,18 @@ async fn main() -> std::io::Result<()> {
 
     println!("Starting server on {}", server_address);
 
-    HttpServer::new(|| {
+    let data_dir_path = env::current_dir()?.join("temp_files");
+    let data_dir = data_dir_path.as_os_str().to_str().unwrap();
+    let data = AppData {
+        data_dir: String::from(data_dir),
+    };
+
+    // create data directory
+    fs::create_dir_all(String::from(data_dir))?;
+
+    HttpServer::new(move || {
         App::new()
+            .app_data(web::Data::new(data.clone()))
             .wrap(Logger::new("\"%r\" %s %Dms"))
             .service(package)
             .service(versions)
