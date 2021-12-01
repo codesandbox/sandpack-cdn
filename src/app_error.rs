@@ -16,4 +16,6 @@ pub enum ServerError {
     JSONParseError(#[from] serde_json::Error),
     #[error("Package version not found")]
     PackageVersionNotFound,
+    #[error("Infallible error")]
+    Infallible(#[from] std::convert::Infallible),
 }

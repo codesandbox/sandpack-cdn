@@ -1,0 +1,17 @@
+{
+  "name": "react",
+  "version": "17.0.2",
+  "jsnext:main": "index.next.js",
+  "main": "index.cjs",
+  "module": "index.mjs",
+  "browser": "index.browser.js",
+  "exports": {
+    "something": "src/something.js",
+    "something-else": ["test"],
+    "dev-tools": {
+      "default": {
+        "browser": "index.browser.js"
+      }
+    }
+  }
+}
