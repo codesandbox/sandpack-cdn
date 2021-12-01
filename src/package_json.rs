@@ -44,8 +44,8 @@ fn read_fixture(fixture_name: &str) -> Result<String, ServerError> {
 }
 
 #[test]
-fn pkg_json_extensive() {
-    let content = read_fixture("fixtures/pkg-json/extensive-example.json").unwrap();
+fn pkg_json_parse_test() {
+    let content = read_fixture("fixtures/pkg-json/parse-test.json").unwrap();
     let parsed = parse_pkg_json(content.clone()).unwrap();
 
     assert_eq!(parsed.name, "react");
