@@ -1,17 +1,19 @@
 use crate::app_error::ServerError;
+use crate::file_utils;
 use crate::npm;
+use crate::package_json;
 
 use semver::Version;
 use serde::{self, Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 #[derive(Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum MinimalFile {
     // This file got used so we transform it or return it
-    UsedFile {
+    File {
         // content
         c: String,
         // dependencies
@@ -20,7 +22,7 @@ pub enum MinimalFile {
         t: bool,
     },
     // We didn't compile or detected this file being used, so we return the size in bytes instead
-    RawFile(u64),
+    Ignored(u64),
 }
 
 #[derive(Serialize, Deserialize)]
@@ -91,11 +93,23 @@ pub async fn process_package(
     let mut module_files: HashMap<String, MinimalFile> = HashMap::new();
     let mut used_modules: Vec<String> = Vec::new();
 
-    // TODO: Process package.json and add the contents to module_files
+    let pkg_json_content = file_utils::read_text_file(Path::new(&pkg_output_path).join("package.json"))?;
+    let parsed_pkg_json = package_json::parse_pkg_json(pkg_json_content.clone())?;
+    let entries = package_json::collect_pkg_entries(parsed_pkg_json);
+
+    // add package.json content to the files
     file_paths.remove("package.json");
+    module_files.insert(
+        String::from("package.json"),
+        MinimalFile::File {
+            c: pkg_json_content.clone(),
+            d: entries,
+            t: false,
+        },
+    );
 
     for (key, value) in &file_paths {
-        module_files.insert(String::from(key), MinimalFile::RawFile(*value));
+        module_files.insert(String::from(key), MinimalFile::Ignored(*value));
     }
 
     let module_spec = MinimalCachedModule {

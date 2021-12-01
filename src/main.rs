@@ -9,6 +9,7 @@ mod npm;
 mod package_json;
 mod process_package;
 mod test_utils;
+mod file_utils;
 
 use process_package::process_package;
 

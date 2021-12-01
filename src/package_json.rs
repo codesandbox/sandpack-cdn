@@ -4,7 +4,7 @@ use serde::{self, Deserialize, Serialize};
 use serde_json;
 use std::collections::HashMap;
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone)]
 #[serde(untagged)]
 pub enum PackageJSONExport {
     Ignored(Option<bool>),
@@ -12,17 +12,15 @@ pub enum PackageJSONExport {
     Map(HashMap<String, PackageJSONExport>),
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone)]
 pub struct PackageJSON {
     name: String,
     version: String,
-    // main fields order: 'module', 'browser', 'main', 'jsnext:main'
     main: Option<String>,
     module: Option<String>,
     #[serde(rename = "jsnext:main")]
     js_next_main: Option<String>,
     browser: Option<PackageJSONExport>,
-    // exports key order: 'browser', 'development', 'default', 'require', 'import'
     exports: Option<HashMap<String, PackageJSONExport>>,
     dependencies: Option<HashMap<String, String>>,
 }
@@ -32,8 +30,77 @@ pub fn parse_pkg_json(content: String) -> Result<PackageJSON, ServerError> {
     Ok(pkg_json)
 }
 
+// exports key order: 'browser', 'development', 'default', 'require', 'import'
+pub fn get_export_entry(exports: &PackageJSONExport) -> Option<String> {
+    match exports {
+        PackageJSONExport::Value(s) => Some(s.clone()),
+        PackageJSONExport::Map(nested_exports_value) => {
+            for key in ["browser", "development", "default", "require", "import"] {
+                let found_value = nested_exports_value.get(key);
+                match found_value {
+                    Some(v) => {
+                        return get_export_entry(v);
+                    }
+                    _ => {}
+                }
+            }
+
+            None
+        }
+        // Fallback to none
+        _ => None,
+    }
+}
+
+// main fields order: 'exports#.', 'module', 'browser', 'main', 'jsnext:main'
+fn get_main_entry(pkg_json: PackageJSON) -> Option<String> {
+    if let Some(exports) = pkg_json.exports {
+        let root_module = exports.get(".");
+        if let Some(root_export) = root_module {
+            if let Some(root_export_str) = get_export_entry(root_export) {
+                return Some(root_export_str);
+            }
+        }
+    }
+
+    if let Some(module_export) = pkg_json.module {
+        return Some(module_export);
+    }
+
+    if let Some(browser_export) = pkg_json.browser {
+        match browser_export {
+            PackageJSONExport::Value(val) => {
+                return Some(val);
+            }
+            _ => {}
+        }
+    }
+
+    if let Some(main_export) = pkg_json.main {
+        return Some(main_export);
+    }
+
+    if let Some(js_next_main_export) = pkg_json.js_next_main {
+        return Some(js_next_main_export);
+    }
+
+    return None;
+}
+
 pub fn collect_pkg_entries(pkg_json: PackageJSON) -> Vec<String> {
-    let entries: Vec<String> = Vec::new();
+    let mut entries: Vec<String> = Vec::new();
+
+    if let Some(main_entry) = get_main_entry(pkg_json.clone()) {
+        entries.push(main_entry);
+    }
+
+    if let Some(exports_map) = pkg_json.exports {
+        for (_, value) in exports_map {
+            if let Some(export_val) = get_export_entry(&value) {
+                entries.push(export_val);
+            }
+        }
+    }
 
     return entries;
 }
