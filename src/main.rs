@@ -6,8 +6,9 @@ use std::fs;
 
 mod app_error;
 mod npm;
-mod process_package;
 mod package_json;
+mod process_package;
+mod test_utils;
 
 use process_package::process_package;
 
