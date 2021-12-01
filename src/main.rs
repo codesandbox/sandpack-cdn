@@ -7,6 +7,8 @@ use std::fs;
 mod app_error;
 mod npm;
 mod process_package;
+mod package_json;
+
 use process_package::process_package;
 
 #[derive(Clone, Debug)]

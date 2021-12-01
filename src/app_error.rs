@@ -12,6 +12,8 @@ pub enum ServerError {
     IoError(#[from] std::io::Error),
     #[error("Could not parse url")]
     UrlParseError(#[from] url::ParseError),
+    #[error("Could not parse json string")]
+    JSONParseError(#[from] serde_json::Error),
     #[error("Package version not found")]
     PackageVersionNotFound,
 }

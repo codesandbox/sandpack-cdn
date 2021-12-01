@@ -1,5 +1,6 @@
 use crate::app_error::ServerError;
 use crate::npm;
+
 use semver::Version;
 use serde::{self, Deserialize, Serialize};
 use std::collections::HashMap;
@@ -36,7 +37,7 @@ pub struct MinimalCachedModule {
     m: Vec<String>,
 }
 
-fn generate_package_tree(
+fn collect_file_paths(
     dir_path: PathBuf,
     root_dir: PathBuf,
     files_map: &mut HashMap<String, u64>,
@@ -47,7 +48,7 @@ fn generate_package_tree(
 
         let metadata = fs::metadata(&entry_path)?;
         if metadata.is_dir() {
-            generate_package_tree(entry_path, root_dir.clone(), files_map)?;
+            collect_file_paths(entry_path, root_dir.clone(), files_map)?;
         } else if metadata.is_file() {
             files_map.insert(
                 String::from(
@@ -80,16 +81,20 @@ pub async fn process_package(
     )
     .await?;
 
-    let mut files: HashMap<String, u64> = HashMap::new();
-    generate_package_tree(pkg_output_path.clone(), pkg_output_path.clone(), &mut files)?;
+    let mut file_paths: HashMap<String, u64> = HashMap::new();
+    collect_file_paths(
+        pkg_output_path.clone(),
+        pkg_output_path.clone(),
+        &mut file_paths,
+    )?;
 
     let mut module_files: HashMap<String, MinimalFile> = HashMap::new();
     let mut used_modules: Vec<String> = Vec::new();
 
     // TODO: Process package.json and add the contents to module_files
-    files.remove("package.json");
+    file_paths.remove("package.json");
 
-    for (key, value) in &files {
+    for (key, value) in &file_paths {
         module_files.insert(String::from(key), MinimalFile::RawFile(*value));
     }
 
