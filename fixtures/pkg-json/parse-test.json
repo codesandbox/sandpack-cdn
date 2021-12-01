@@ -7,7 +7,6 @@
   "browser": "index.browser.js",
   "exports": {
     "something": "src/something.js",
-    "something-else": ["test"],
     "dev-tools": {
       "default": {
         "browser": "index.browser.js"

@@ -10,7 +10,6 @@ pub enum PackageJSONExport {
     Ignored(Option<bool>),
     Value(String),
     Map(HashMap<String, PackageJSONExport>),
-    Unknown,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -33,7 +32,11 @@ pub fn parse_pkg_json(content: String) -> Result<PackageJSON, ServerError> {
     Ok(pkg_json)
 }
 
-// TODO: Write function to collect files to include
+pub fn collect_pkg_entries(pkg_json: PackageJSON) -> Vec<String> {
+    let entries: Vec<String> = Vec::new();
+
+    return entries;
+}
 
 #[cfg(test)]
 mod test {
