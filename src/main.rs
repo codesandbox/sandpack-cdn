@@ -19,7 +19,7 @@ async fn package(path: web::Path<(String, String)>, data: web::Data<AppData>) ->
     let (package_name, package_version) = path.into_inner();
     let data_dir = data.data_dir.clone();
     match process_package(package_name, package_version, data_dir).await {
-        Ok(response) => HttpResponse::Ok().body(response),
+        Ok(response) => HttpResponse::Ok().json(response),
         Err(error) => HttpResponse::build(StatusCode::INTERNAL_SERVER_ERROR)
             .body(format!("{}\n\n{:?}", error, error)),
     }

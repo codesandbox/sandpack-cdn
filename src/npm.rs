@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use std::fmt;
 use std::io::Cursor;
 use std::path::Path;
+use std::path::PathBuf;
 use tar::Archive;
 use url::Url;
 
@@ -59,7 +60,7 @@ pub async fn download_package_content(
     package_name: String,
     version: String,
     data_dir: String,
-) -> Result<(), ServerError> {
+) -> Result<PathBuf, ServerError> {
     let manifest: PackageManifest = download_package_manifest(package_name.clone()).await?;
     if let Some(package_data) = manifest.versions.get(version.as_str()) {
         // process the tarball url
@@ -91,14 +92,14 @@ pub async fn download_package_content(
         if tarball_type == TarballType::TarGzip {
             let tar = GzDecoder::new(content);
             let mut archive = Archive::new(tar);
-            archive.unpack(dir_path)?;
+            archive.unpack(dir_path.clone())?;
         } else {
             let mut archive = Archive::new(content);
-            archive.unpack(dir_path)?;
+            archive.unpack(dir_path.clone())?;
         }
+
+        return Ok(dir_path.clone().join("package"));
     } else {
         return Err(ServerError::PackageVersionNotFound);
     }
-
-    Ok(())
 }
