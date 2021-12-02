@@ -1,5 +1,4 @@
 use crate::app_error::ServerError;
-use crate::file_utils;
 use crate::npm;
 use crate::package_json;
 
@@ -93,12 +92,11 @@ pub async fn process_package(
     let mut module_files: HashMap<String, MinimalFile> = HashMap::new();
     let mut used_modules: Vec<String> = Vec::new();
 
-    let pkg_json_content = file_utils::read_text_file(Path::new(&pkg_output_path).join("package.json"))?;
+    let pkg_json_content = fs::read_to_string(Path::new(&pkg_output_path).join("package.json"))?;
     let parsed_pkg_json = package_json::parse_pkg_json(pkg_json_content.clone())?;
     let entries = package_json::collect_pkg_entries(parsed_pkg_json);
 
     // add package.json content to the files
-    file_paths.remove("package.json");
     module_files.insert(
         String::from("package.json"),
         MinimalFile::File {
@@ -108,8 +106,13 @@ pub async fn process_package(
         },
     );
 
+    // transform entries
+
+    // add remaining files as ignored files
     for (key, value) in &file_paths {
-        module_files.insert(String::from(key), MinimalFile::Ignored(*value));
+        if !module_files.contains_key(key) {
+            module_files.insert(String::from(key), MinimalFile::Ignored(*value));
+        }
     }
 
     let module_spec = MinimalCachedModule {

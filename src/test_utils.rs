@@ -1,10 +1,10 @@
 use crate::app_error::ServerError;
-use crate::file_utils;
 
+use std::fs;
 use std::env;
 
 pub fn read_fixture(fixture_name: &str) -> Result<String, ServerError> {
     let fixture_path = env::current_dir()?.join(fixture_name);
-    let fixture_content: String = file_utils::read_text_file(fixture_path)?;
+    let fixture_content: String = fs::read_to_string(fixture_path)?;
     Ok(fixture_content)
 }
