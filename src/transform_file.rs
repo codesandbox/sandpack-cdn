@@ -57,6 +57,37 @@ fn parse(
     }
 }
 
+fn get_versions() -> Versions {
+    // based on `npx browserslist ">1%, not ie 11, not op_mini all"`
+    let mut versions = Versions::default();
+    versions.chrome = Some(Version {
+        major: 93,
+        minor: 0,
+        patch: 0,
+    });
+    versions.edge = Some(Version {
+        major: 94,
+        minor: 0,
+        patch: 0,
+    });
+    versions.firefox = Some(Version {
+        major: 93,
+        minor: 0,
+        patch: 0,
+    });
+    versions.ios = Some(Version {
+        major: 14,
+        minor: 0,
+        patch: 0,
+    });
+    versions.safari = Some(Version {
+        major: 14,
+        minor: 1,
+        patch: 0,
+    });
+    return versions;
+}
+
 pub fn transform_file(code: &str) -> Result<TransformedFile, ServerError> {
     let source_map = Lrc::new(SourceMap::default());
     let (mut module, comments) = parse(code, &source_map)?;
@@ -84,8 +115,8 @@ pub fn transform_file(code: &str) -> Result<TransformedFile, ServerError> {
                     dynamic_import: true,
                     ..Default::default()
                 };
-                let mut versions = Versions::default();
-                println!("{:?}", versions);
+
+                let versions = get_versions();
                 preset_env_config.targets = Some(Targets::Versions(versions));
                 preset_env_config.shipped_proposals = true;
                 preset_env_config.mode = Some(Entry);
