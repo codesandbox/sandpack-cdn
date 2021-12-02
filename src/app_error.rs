@@ -18,4 +18,6 @@ pub enum ServerError {
     PackageVersionNotFound,
     #[error("Infallible error")]
     Infallible(#[from] std::convert::Infallible),
+    #[error("Could not parse module")]
+    SWCParseError { message: String },
 }

@@ -1,12 +1,15 @@
 use crate::app_error::ServerError;
 use crate::npm;
 use crate::package_json;
+use crate::resolver;
+use crate::transform_file;
 
 use semver::Version;
 use serde::{self, Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
+use transform_file::transform_file;
 
 #[derive(Serialize, Deserialize)]
 #[serde(untagged)]
@@ -68,6 +71,56 @@ fn collect_file_paths(
     Ok(())
 }
 
+async fn transform_files(
+    specifiers: Vec<String>,
+    curr_file: &str,
+    result_map: &mut HashMap<String, MinimalFile>,
+    files_map: &HashMap<String, u64>,
+    pkg_root: PathBuf,
+) -> Result<(), ServerError> {
+    let curr_dir = resolver::file_path_to_dirname(curr_file);
+    let curr_extension = resolver::extract_file_extension(curr_file);
+    for specifier in specifiers {
+        let abs_specifier =
+            resolver::make_mod_specifier_absolute(curr_dir.as_str(), specifier.as_str());
+        let found_files =
+            resolver::collect_files(abs_specifier.as_str(), files_map, curr_extension);
+        for found_file in found_files {
+            if !result_map.contains_key(found_file.as_str()) {
+                let file_path = pkg_root.join(found_file.as_str());
+                if let Ok(content) = fs::read_to_string(file_path) {
+                    match transform_file(content.as_str()) {
+                        Ok(transformed_file) => {
+                            result_map.insert(
+                                found_file.clone(),
+                                MinimalFile::File {
+                                    c: transformed_file.content,
+                                    d: transformed_file.dependencies,
+                                    t: false,
+                                },
+                            );
+                        }
+                        Err(err) => {
+                            println!("{:?}", err);
+
+                            result_map.insert(
+                                found_file.clone(),
+                                MinimalFile::File {
+                                    c: content.clone(),
+                                    d: vec![],
+                                    t: false,
+                                },
+                            );
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return Ok(());
+}
+
 pub async fn process_package(
     package_name: String,
     package_version: String,
@@ -94,19 +147,26 @@ pub async fn process_package(
 
     let pkg_json_content = fs::read_to_string(Path::new(&pkg_output_path).join("package.json"))?;
     let parsed_pkg_json = package_json::parse_pkg_json(pkg_json_content.clone())?;
-    let entries = package_json::collect_pkg_entries(parsed_pkg_json);
 
     // add package.json content to the files
     module_files.insert(
         String::from("package.json"),
         MinimalFile::File {
             c: pkg_json_content.clone(),
-            d: entries,
+            d: vec![],
             t: false,
         },
     );
 
     // transform entries
+    transform_files(
+        package_json::collect_pkg_entries(parsed_pkg_json),
+        ".",
+        &mut module_files,
+        &file_paths,
+        pkg_output_path,
+    )
+    .await?;
 
     // add remaining files as ignored files
     for (key, value) in &file_paths {

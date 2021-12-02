@@ -1,0 +1,182 @@
+use crate::app_error::ServerError;
+
+use swc_common::comments::SingleThreadedComments;
+use swc_common::{chain, sync::Lrc, FileName, Globals, Mark, SourceMap};
+use swc_ecma_preset_env::{preset_env, Mode::Entry, Targets, Version, Versions};
+use swc_ecmascript::ast::Module;
+use swc_ecmascript::codegen::text_writer::JsWriter;
+use swc_ecmascript::parser::lexer::Lexer;
+use swc_ecmascript::parser::{EsConfig, Parser, StringInput, Syntax};
+use swc_ecmascript::transforms::modules::common_js::common_js;
+use swc_ecmascript::transforms::modules::common_js::Config as CommonJSConfig;
+use swc_ecmascript::transforms::resolver::resolver_with_mark;
+use swc_ecmascript::transforms::{
+    compat::reserved_words::reserved_words, fixer, helpers, hygiene,
+    optimization::simplify::dead_branch_remover, optimization::simplify::expr_simplifier,
+    proposals::decorators,
+};
+use swc_ecmascript::visit::FoldWith;
+
+pub struct TransformedFile {
+    pub content: String,
+    pub dependencies: Vec<String>,
+}
+
+fn parse(
+    code: &str,
+    source_map: &Lrc<SourceMap>,
+) -> Result<(Module, SingleThreadedComments), ServerError> {
+    // Attempt to convert the path to be relative to the project root.
+    // If outside the project root, use an absolute path so that if the project root moves the path still works.
+    let source_file = source_map.new_source_file(FileName::Anon, code.into());
+
+    let comments = SingleThreadedComments::default();
+    let syntax = Syntax::Es(EsConfig {
+        jsx: false,
+        dynamic_import: true,
+        export_default_from: true,
+        export_namespace_from: true,
+        import_meta: true,
+        decorators: true,
+        ..Default::default()
+    });
+
+    let lexer = Lexer::new(
+        syntax,
+        Default::default(),
+        StringInput::from(&*source_file),
+        Some(&comments),
+    );
+
+    let mut parser = Parser::new_from(lexer);
+    match parser.parse_module() {
+        Err(err) => Err(ServerError::SWCParseError {
+            message: format!("{:?}", err),
+        }),
+        Ok(module) => Ok((module, comments)),
+    }
+}
+
+pub fn transform_file(code: &str) -> Result<TransformedFile, ServerError> {
+    let source_map = Lrc::new(SourceMap::default());
+    let (mut module, comments) = parse(code, &source_map)?;
+
+    swc_common::GLOBALS.set(&Globals::new(), || {
+        helpers::HELPERS.set(
+            &helpers::Helpers::new(/* external helpers from @swc/helpers */ true),
+            || {
+                let global_mark = Mark::fresh(Mark::root());
+                module = {
+                    let mut passes = chain!(
+                        // Decorators can use type information, so must run before the TypeScript pass.
+                        decorators::decorators(decorators::Config {
+                            legacy: true,
+                            // Always disabled for now, SWC's implementation doesn't match TSC.
+                            emit_metadata: false
+                        }),
+                        resolver_with_mark(global_mark),
+                    );
+
+                    module.fold_with(&mut passes)
+                };
+
+                let mut preset_env_config = swc_ecma_preset_env::Config {
+                    dynamic_import: true,
+                    ..Default::default()
+                };
+                let mut versions = Versions::default();
+                println!("{:?}", versions);
+                preset_env_config.targets = Some(Targets::Versions(versions));
+                preset_env_config.shipped_proposals = true;
+                preset_env_config.mode = Some(Entry);
+                preset_env_config.bugfixes = true;
+
+                // dead code elimination
+                let module = {
+                    let mut passes = chain!(
+                        // Inline process.env and process.browser
+                        // Optional::new(
+                        //   EnvReplacer {
+                        //     replace_env: config.replace_env,
+                        //     env: &config.env,
+                        //     is_browser: config.is_browser,
+                        //     decls: &decls,
+                        //     used_env: &mut result.used_env,
+                        //     source_map: &source_map,
+                        //     diagnostics: &mut diagnostics
+                        //   },
+                        //   config.source_type != SourceType::Script
+                        // ),
+                        // Simplify expressions and remove dead branches so that we
+                        // don't include dependencies inside conditionals that are always false.
+                        expr_simplifier(Default::default()),
+                        dead_branch_remover(),
+                    );
+
+                    module.fold_with(&mut passes)
+                };
+
+                // Run preset_env
+                let module = {
+                    let mut passes = chain!(
+                        // Transpile new syntax to older syntax if needed
+                        preset_env(global_mark, Some(&comments), preset_env_config),
+                        // Inject SWC helpers if needed.
+                        helpers::inject_helpers(),
+                    );
+
+                    module.fold_with(&mut passes)
+                };
+
+                // TODO: Collect dependencies
+                // let module = module.fold_with(
+                //   // Collect dependencies
+                //   &mut dependency_collector(
+                //     &source_map,
+                //     &mut result.dependencies,
+                //     &decls,
+                //     ignore_mark,
+                //     &config,
+                //     &mut diagnostics,
+                //   ),
+                // );
+
+                // convert down to commonjs
+                let module = {
+                    let commonjs_config = CommonJSConfig::default();
+
+                    let mut passes = chain!(
+                        resolver_with_mark(global_mark),
+                        common_js(global_mark, commonjs_config, None)
+                    );
+
+                    module.fold_with(&mut passes)
+                };
+
+                let program = {
+                    let mut passes = chain!(reserved_words(), hygiene(), fixer(Some(&comments)),);
+                    module.fold_with(&mut passes)
+                };
+
+                // Print code...
+                let mut buf = vec![];
+                let writer = Box::new(JsWriter::new(source_map.clone(), "\n", &mut buf, None));
+                let emitter_config = swc_ecmascript::codegen::Config { minify: false };
+                let mut emitter = swc_ecmascript::codegen::Emitter {
+                    cfg: emitter_config,
+                    comments: Some(&comments),
+                    cm: source_map,
+                    wr: writer,
+                };
+                emitter.emit_module(&program)?;
+
+                let output = String::from(std::str::from_utf8(&buf).unwrap_or(""));
+
+                return Ok(TransformedFile {
+                    content: output,
+                    dependencies: vec![],
+                });
+            },
+        )
+    })
+}

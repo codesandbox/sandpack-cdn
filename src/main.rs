@@ -10,6 +10,7 @@ mod package_json;
 mod process_package;
 mod test_utils;
 mod resolver;
+mod transform_file;
 
 use process_package::process_package;
 
