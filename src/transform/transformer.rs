@@ -1,7 +1,8 @@
 use crate::app_error::ServerError;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use crate::transform::decl_collector::collect_decls;
+use crate::transform::dependency_collector::dependency_collector;
 use crate::transform::env_replacer::EnvReplacer;
 use swc_atoms::{js_word, JsWord};
 use swc_common::comments::SingleThreadedComments;
@@ -23,7 +24,7 @@ use swc_ecmascript::visit::FoldWith;
 
 pub struct TransformedFile {
     pub content: String,
-    pub dependencies: Vec<String>,
+    pub dependencies: HashSet<String>,
 }
 
 fn parse(
@@ -131,7 +132,7 @@ pub fn transform_file(code: &str) -> Result<TransformedFile, ServerError> {
 
                 let mut decls = collect_decls(&module);
 
-                // dead code elimination
+                // dead code elimination and env inlining
                 let module = {
                     let mut passes = chain!(
                         // Inline process.env and process.browser
@@ -161,19 +162,6 @@ pub fn transform_file(code: &str) -> Result<TransformedFile, ServerError> {
                     module.fold_with(&mut passes)
                 };
 
-                // TODO: Collect dependencies
-                // let module = module.fold_with(
-                //   // Collect dependencies
-                //   &mut dependency_collector(
-                //     &source_map,
-                //     &mut result.dependencies,
-                //     &decls,
-                //     ignore_mark,
-                //     &config,
-                //     &mut diagnostics,
-                //   ),
-                // );
-
                 // convert down to commonjs
                 let module = {
                     let commonjs_config = CommonJSConfig::default();
@@ -185,6 +173,11 @@ pub fn transform_file(code: &str) -> Result<TransformedFile, ServerError> {
 
                     module.fold_with(&mut passes)
                 };
+
+                // Collect dependencies
+                decls = collect_decls(&module);
+                let mut dependencies: HashSet<String> = HashSet::new();
+                let module = module.fold_with(&mut dependency_collector(&mut dependencies, &decls));
 
                 let program = {
                     let mut passes = chain!(reserved_words(), hygiene(), fixer(Some(&comments)),);
@@ -207,7 +200,7 @@ pub fn transform_file(code: &str) -> Result<TransformedFile, ServerError> {
 
                 return Ok(TransformedFile {
                     content: output,
-                    dependencies: vec![],
+                    dependencies: dependencies,
                 });
             },
         )

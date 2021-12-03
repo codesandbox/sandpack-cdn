@@ -6,7 +6,7 @@ use crate::transform;
 
 use semver::Version;
 use serde::{self, Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
@@ -72,13 +72,37 @@ fn collect_file_paths(
     Ok(())
 }
 
-async fn transform_files(
+fn deps_to_files_and_modules(deps: &Vec<String>) -> (HashSet<String>, HashSet<String>) {
+    let mut used_modules: HashSet<String> = HashSet::new();
+    let mut file_specifiers: HashSet<String> = HashSet::new();
+
+    for dep in deps {
+        if !dep.starts_with(".") {
+            let parts: Vec<&str> = dep.split("/").collect();
+            if parts.len() > 0 {
+                let mut module_specifier = String::from(parts[0]);
+                if module_specifier.starts_with("@") {
+                    module_specifier.push_str("/");
+                    module_specifier.push_str(parts[1]);
+                }
+                used_modules.insert(module_specifier);
+            }
+        } else {
+            file_specifiers.insert(dep.clone());
+        }
+    }
+
+    return (file_specifiers, used_modules);
+}
+
+fn transform_files(
     specifiers: Vec<String>,
     curr_file: &str,
     result_map: &mut HashMap<String, MinimalFile>,
     files_map: &HashMap<String, u64>,
     pkg_root: PathBuf,
-) -> Result<(), ServerError> {
+    used_modules: &mut HashSet<String>,
+) {
     let curr_dir = resolver::file_path_to_dirname(curr_file);
     let curr_extension = resolver::extract_file_extension(curr_file);
     for specifier in specifiers {
@@ -88,15 +112,32 @@ async fn transform_files(
             resolver::collect_files(abs_specifier.as_str(), files_map, curr_extension);
         for found_file in found_files {
             if !result_map.contains_key(found_file.as_str()) {
-                let file_path = pkg_root.join(found_file.as_str());
+                let file_path = pkg_root.clone().join(found_file.as_str());
                 if let Ok(content) = fs::read_to_string(file_path) {
                     match transform_file(content.as_str()) {
                         Ok(transformed_file) => {
+                            let deps: Vec<String> =
+                                transformed_file.dependencies.into_iter().collect();
+                            let (file_deps, module_deps) = deps_to_files_and_modules(&deps);
+
+                            for module_dep in module_deps {
+                                used_modules.insert(module_dep);
+                            }
+
+                            transform_files(
+                                file_deps.into_iter().collect(),
+                                found_file.as_str(),
+                                result_map,
+                                files_map,
+                                pkg_root.clone(),
+                                used_modules,
+                            );
+
                             result_map.insert(
                                 found_file.clone(),
                                 MinimalFile::File {
                                     c: transformed_file.content,
-                                    d: transformed_file.dependencies,
+                                    d: deps.clone(),
                                     t: false,
                                 },
                             );
@@ -118,8 +159,6 @@ async fn transform_files(
             }
         }
     }
-
-    return Ok(());
 }
 
 pub async fn process_package(
@@ -148,7 +187,7 @@ pub async fn process_package(
     let file_collection_duration_ms = file_collection_start_time.elapsed().as_millis();
 
     let mut module_files: HashMap<String, MinimalFile> = HashMap::new();
-    let mut used_modules: Vec<String> = Vec::new();
+    let mut used_modules: HashSet<String> = HashSet::new();
 
     let pkg_json_content = fs::read_to_string(Path::new(&pkg_output_path).join("package.json"))?;
     let parsed_pkg_json = package_json::parse_pkg_json(pkg_json_content.clone())?;
@@ -171,8 +210,8 @@ pub async fn process_package(
         &mut module_files,
         &file_paths,
         pkg_output_path,
-    )
-    .await?;
+        &mut used_modules,
+    );
     let transformation_duration_ms = file_collection_start_time.elapsed().as_millis();
 
     // add remaining files as ignored files
@@ -182,6 +221,7 @@ pub async fn process_package(
         }
     }
 
+    let used_modules: Vec<String> = used_modules.into_iter().collect::<Vec<String>>();
     let module_spec = MinimalCachedModule {
         f: module_files,
         m: used_modules,
