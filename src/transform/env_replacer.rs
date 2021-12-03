@@ -3,18 +3,15 @@ use std::vec;
 
 use crate::transform::utils::match_member_expr;
 use ast::*;
-use swc_atoms::{JsWord, js_word};
+use swc_atoms::{js_word, JsWord};
 use swc_common::{SyntaxContext, DUMMY_SP};
 use swc_ecmascript::ast;
 use swc_ecmascript::visit::{Fold, FoldWith};
 
 pub struct EnvReplacer<'a> {
-    pub replace_env: bool,
     pub is_browser: bool,
     pub env: &'a HashMap<swc_atoms::JsWord, swc_atoms::JsWord>,
     pub decls: &'a HashSet<(JsWord, SyntaxContext)>,
-    pub used_env: &'a mut HashSet<JsWord>,
-    pub source_map: &'a swc_common::SourceMap,
 }
 
 impl<'a> Fold for EnvReplacer<'a> {
@@ -49,10 +46,6 @@ impl<'a> Fold for EnvReplacer<'a> {
                 }));
             }
 
-            if !self.replace_env {
-                return node.fold_children_with(self);
-            }
-
             if let MemberExpr {
                 obj: ExprOrSuper::Expr(ref expr),
                 ref prop,
@@ -79,10 +72,6 @@ impl<'a> Fold for EnvReplacer<'a> {
         }
 
         if let Expr::Assign(assign) = &node {
-            if !self.replace_env {
-                return node.fold_children_with(self);
-            }
-
             let expr = match &assign.left {
                 PatOrExpr::Pat(pat) => {
                     if let Pat::Expr(expr) = &**pat {
@@ -142,37 +131,31 @@ impl<'a> Fold for EnvReplacer<'a> {
             }
         }
 
-        if self.replace_env {
-            match &node {
-        // e.g. delete process.env.SOMETHING
-        Expr::Unary(UnaryExpr { op: UnaryOp::Delete, arg, span, .. }) |
-        // e.g. process.env.UPDATE++
-        Expr::Update(UpdateExpr { arg, span, .. }) => {
-          if let Expr::Member(MemberExpr { obj: ExprOrSuper::Expr(ref obj), .. }) = &**arg {
-            if let Expr::Member(member) = &**obj {
-              if match_member_expr(member, vec!["process", "env"], self.decls) {
-                // mutating process.env is not allowed
-                return match &node {
-                  Expr::Unary(_) => Expr::Lit(Lit::Bool(Bool { span: *span, value: true })),
-                  Expr::Update(_) => *arg.clone().fold_with(self),
-                  _ => unreachable!()
+        match &node {
+            // e.g. delete process.env.SOMETHING
+            Expr::Unary(UnaryExpr { op: UnaryOp::Delete, arg, span, .. }) |
+            // e.g. process.env.UPDATE++
+            Expr::Update(UpdateExpr { arg, span, .. }) => {
+                if let Expr::Member(MemberExpr { obj: ExprOrSuper::Expr(ref obj), .. }) = &**arg {
+                    if let Expr::Member(member) = &**obj {
+                        if match_member_expr(member, vec!["process", "env"], self.decls) {
+                            // mutating process.env is not allowed
+                            return match &node {
+                                Expr::Unary(_) => Expr::Lit(Lit::Bool(Bool { span: *span, value: true })),
+                                Expr::Update(_) => *arg.clone().fold_with(self),
+                                _ => unreachable!()
+                            }
+                        }
+                    }
                 }
-              }
-            }
-          }
-        },
-        _ => {}
-      }
+            },
+            _ => {}
         }
 
         node.fold_children_with(self)
     }
 
     fn fold_var_decl(&mut self, node: VarDecl) -> VarDecl {
-        if !self.replace_env {
-            return node.fold_children_with(self);
-        }
-
         let mut decls = vec![];
         for decl in &node.decls {
             if let Some(init) = &decl.init {
@@ -199,7 +182,7 @@ impl<'a> Fold for EnvReplacer<'a> {
 impl<'a> EnvReplacer<'a> {
     fn replace(&mut self, sym: &JsWord, fallback_undefined: bool) -> Option<Expr> {
         if let Some(val) = self.env.get(sym) {
-            self.used_env.insert(sym.clone());
+            // self.used_env.insert(sym.clone());
             return Some(Expr::Lit(Lit::Str(Str {
                 span: DUMMY_SP,
                 value: val.into(),
@@ -217,7 +200,7 @@ impl<'a> EnvReplacer<'a> {
                 | "toString"
                 | "valueOf" => {}
                 _ => {
-                    self.used_env.insert(sym.clone());
+                    // self.used_env.insert(sym.clone());
                     return Some(Expr::Ident(Ident::new(js_word!("undefined"), DUMMY_SP)));
                 }
             };

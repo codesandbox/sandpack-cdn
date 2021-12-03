@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use swc_atoms::{JsWord, js_word};
+use swc_atoms::{js_word, JsWord};
 use swc_common::{Mark, Span, SyntaxContext, DUMMY_SP};
 use swc_ecmascript::ast;
 

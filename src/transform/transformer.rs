@@ -1,5 +1,9 @@
 use crate::app_error::ServerError;
+use std::collections::HashMap;
 
+use crate::transform::decl_collector::collect_decls;
+use crate::transform::env_replacer::EnvReplacer;
+use swc_atoms::{js_word, JsWord};
 use swc_common::comments::SingleThreadedComments;
 use swc_common::{chain, sync::Lrc, FileName, Globals, Mark, SourceMap};
 use swc_ecma_preset_env::{preset_env, Mode::Entry, Targets, Version, Versions};
@@ -122,22 +126,20 @@ pub fn transform_file(code: &str) -> Result<TransformedFile, ServerError> {
                 preset_env_config.mode = Some(Entry);
                 preset_env_config.bugfixes = true;
 
+                let mut env: HashMap<JsWord, JsWord> = HashMap::new();
+                env.insert(js_word!("NODE_ENV"), JsWord::from("development"));
+
+                let mut decls = collect_decls(&module);
+
                 // dead code elimination
                 let module = {
                     let mut passes = chain!(
                         // Inline process.env and process.browser
-                        // Optional::new(
-                        //   EnvReplacer {
-                        //     replace_env: config.replace_env,
-                        //     env: &config.env,
-                        //     is_browser: config.is_browser,
-                        //     decls: &decls,
-                        //     used_env: &mut result.used_env,
-                        //     source_map: &source_map,
-                        //     diagnostics: &mut diagnostics
-                        //   },
-                        //   config.source_type != SourceType::Script
-                        // ),
+                        EnvReplacer {
+                            env: &env,
+                            is_browser: true,
+                            decls: &decls,
+                        },
                         // Simplify expressions and remove dead branches so that we
                         // don't include dependencies inside conditionals that are always false.
                         expr_simplifier(Default::default()),
