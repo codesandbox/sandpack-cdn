@@ -174,7 +174,7 @@ pub fn transform_file(code: &str) -> Result<TransformedFile, ServerError> {
                     module.fold_with(&mut passes)
                 };
 
-                // Collect dependencies
+                // Collect dependencies - ALWAYS RUN THIS LAST
                 decls = collect_decls(&module);
                 let mut dependencies: HashSet<String> = HashSet::new();
                 let module = module.fold_with(&mut dependency_collector(&mut dependencies, &decls));
