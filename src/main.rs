@@ -1,5 +1,8 @@
-use actix_web::middleware::Logger;
-use actix_web::{get, http::StatusCode, web, App, HttpResponse, HttpServer, Responder};
+use actix_web::middleware::{Compress, Logger};
+use actix_web::{
+    get, http::header::ContentEncoding, http::StatusCode, web, App, HttpResponse, HttpServer,
+    Responder,
+};
 use env_logger::Env;
 use std::env;
 use std::fs;
@@ -57,6 +60,8 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .app_data(web::Data::new(data.clone()))
             .wrap(Logger::new("\"%r\" %s %Dms"))
+            // TODO: Remove this and let cloudflare handle encoding?
+            .wrap(Compress::new(ContentEncoding::Auto))
             .service(package_req_handler)
             .service(versions_req_handler)
     })
