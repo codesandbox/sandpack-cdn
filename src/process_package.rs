@@ -9,6 +9,7 @@ use serde::{self, Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::time::Instant;
 use transform_file::transform_file;
 
 #[derive(Serialize, Deserialize)]
@@ -128,19 +129,23 @@ pub async fn process_package(
 ) -> Result<MinimalCachedModule, ServerError> {
     let parsed_version = Version::parse(package_version.as_str())?;
 
+    let download_start_time = Instant::now();
     let pkg_output_path = npm::download_package_content(
         package_name.clone(),
         parsed_version.to_string(),
         data_dir.to_string(),
     )
     .await?;
+    let download_duration_ms = download_start_time.elapsed().as_millis();
 
+    let file_collection_start_time = Instant::now();
     let mut file_paths: HashMap<String, u64> = HashMap::new();
     collect_file_paths(
         pkg_output_path.clone(),
         pkg_output_path.clone(),
         &mut file_paths,
     )?;
+    let file_collection_duration_ms = file_collection_start_time.elapsed().as_millis();
 
     let mut module_files: HashMap<String, MinimalFile> = HashMap::new();
     let mut used_modules: Vec<String> = Vec::new();
@@ -159,6 +164,7 @@ pub async fn process_package(
     );
 
     // transform entries
+    let file_collection_start_time = Instant::now();
     transform_files(
         package_json::collect_pkg_entries(parsed_pkg_json),
         ".",
@@ -167,6 +173,7 @@ pub async fn process_package(
         pkg_output_path,
     )
     .await?;
+    let transformation_duration_ms = file_collection_start_time.elapsed().as_millis();
 
     // add remaining files as ignored files
     for (key, value) in &file_paths {
@@ -179,6 +186,15 @@ pub async fn process_package(
         f: module_files,
         m: used_modules,
     };
+
+    println!(
+        "\nMetrics for {}@{}\nDownload: {}ms\nFile Collection: {}ms\nTransformation: {}ms\n",
+        package_name,
+        package_version,
+        download_duration_ms,
+        file_collection_duration_ms,
+        transformation_duration_ms
+    );
 
     return Ok(module_spec);
 }
