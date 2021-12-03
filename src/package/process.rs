@@ -114,7 +114,7 @@ fn transform_files(
             if !result_map.contains_key(found_file.as_str()) {
                 let file_path = pkg_root.clone().join(found_file.as_str());
                 if let Ok(content) = fs::read_to_string(file_path) {
-                    match transform_file(content.as_str()) {
+                    match transform_file(found_file.as_str(), content.as_str()) {
                         Ok(transformed_file) => {
                             let deps: Vec<String> =
                                 transformed_file.dependencies.into_iter().collect();

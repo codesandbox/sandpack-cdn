@@ -93,7 +93,15 @@ fn get_versions() -> Versions {
     return versions;
 }
 
-pub fn transform_file(code: &str) -> Result<TransformedFile, ServerError> {
+pub fn transform_file(filename: &str, code: &str) -> Result<TransformedFile, ServerError> {
+    // Error early if filename does not end in js: js, cjs, mjs, ...
+    let ext = &filename[filename.len() - 2..];
+    if ext.ne("js") {
+        return Err(ServerError::SWCParseError {
+            message: format!("File {} is not JavaScript", filename),
+        });
+    }
+
     let source_map = Lrc::new(SourceMap::default());
     let (mut module, comments) = parse(code, &source_map)?;
 
