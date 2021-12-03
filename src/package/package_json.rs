@@ -107,8 +107,8 @@ pub fn collect_pkg_entries(pkg_json: PackageJSON) -> Vec<String> {
 
 #[cfg(test)]
 mod test {
-    use crate::package_json::{parse_pkg_json, PackageJSONExport};
-    use crate::test_utils;
+    use crate::package::package_json::{parse_pkg_json, PackageJSONExport};
+    use crate::utils::test_utils;
 
     #[test]
     fn pkg_json_parse_test() {

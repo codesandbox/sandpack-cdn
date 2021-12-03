@@ -1,8 +1,8 @@
 use crate::app_error::ServerError;
-use crate::npm;
-use crate::package_json;
-use crate::resolver;
-use crate::transform_file;
+use crate::package::npm_downloader;
+use crate::package::package_json;
+use crate::package::resolver;
+use crate::transform;
 
 use semver::Version;
 use serde::{self, Deserialize, Serialize};
@@ -10,7 +10,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
-use transform_file::transform_file;
+use transform::transformer::transform_file;
 
 #[derive(Serialize, Deserialize)]
 #[serde(untagged)]
@@ -130,7 +130,7 @@ pub async fn process_package(
     let parsed_version = Version::parse(package_version.as_str())?;
 
     let download_start_time = Instant::now();
-    let pkg_output_path = npm::download_package_content(
+    let pkg_output_path = npm_downloader::download_package_content(
         package_name.clone(),
         parsed_version.to_string(),
         data_dir.to_string(),

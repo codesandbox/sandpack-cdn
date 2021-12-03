@@ -5,14 +5,11 @@ use std::env;
 use std::fs;
 
 mod app_error;
-mod npm;
-mod package_json;
-mod process_package;
-mod test_utils;
-mod resolver;
-mod transform_file;
+mod package;
+mod transform;
+mod utils;
 
-use process_package::process_package;
+use package::process::process_package;
 
 #[derive(Clone, Debug)]
 struct AppData {
@@ -20,7 +17,10 @@ struct AppData {
 }
 
 #[get("/package/{package_name}/{package_version}")]
-async fn package(path: web::Path<(String, String)>, data: web::Data<AppData>) -> impl Responder {
+async fn package_req_handler(
+    path: web::Path<(String, String)>,
+    data: web::Data<AppData>,
+) -> impl Responder {
     let (package_name, package_version) = path.into_inner();
     let data_dir = data.data_dir.clone();
     match process_package(package_name, package_version, data_dir).await {
@@ -31,7 +31,7 @@ async fn package(path: web::Path<(String, String)>, data: web::Data<AppData>) ->
 }
 
 #[get("/versions/{manifest}")]
-async fn versions(path: web::Path<String>) -> impl Responder {
+async fn versions_req_handler(path: web::Path<String>) -> impl Responder {
     let manifest = path.into_inner();
     HttpResponse::Ok().body(format!("Versions of {}", manifest))
 }
@@ -57,8 +57,8 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .app_data(web::Data::new(data.clone()))
             .wrap(Logger::new("\"%r\" %s %Dms"))
-            .service(package)
-            .service(versions)
+            .service(package_req_handler)
+            .service(versions_req_handler)
     })
     .bind(server_address)?
     .run()

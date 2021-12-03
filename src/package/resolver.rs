@@ -100,7 +100,7 @@ pub fn collect_files(
 
 #[cfg(test)]
 mod test {
-    use crate::resolver::{
+    use crate::package::resolver::{
         collect_files, extract_file_extension, file_path_to_dirname, make_mod_specifier_absolute,
     };
     use std::collections::HashMap;

@@ -192,7 +192,7 @@ pub fn transform_file(code: &str) -> Result<TransformedFile, ServerError> {
                 // Print code...
                 let mut buf = vec![];
                 let writer = Box::new(JsWriter::new(source_map.clone(), "\n", &mut buf, None));
-                let emitter_config = swc_ecmascript::codegen::Config { minify: false };
+                let emitter_config = swc_ecmascript::codegen::Config { minify: true };
                 let mut emitter = swc_ecmascript::codegen::Emitter {
                     cfg: emitter_config,
                     comments: Some(&comments),
