@@ -205,7 +205,7 @@ pub async fn process_package(
     // transform entries
     let file_collection_start_time = Instant::now();
     transform_files(
-        package_json::collect_pkg_entries(parsed_pkg_json),
+        package_json::collect_pkg_entries(parsed_pkg_json)?,
         ".",
         &mut module_files,
         &file_paths,
@@ -221,7 +221,10 @@ pub async fn process_package(
         }
     }
 
-    let used_modules: Vec<String> = used_modules.into_iter().collect::<Vec<String>>();
+    let used_modules: Vec<String> = used_modules
+        .into_iter()
+        .filter(|v| !v.eq(&package_name))
+        .collect::<Vec<String>>();
     let module_spec = MinimalCachedModule {
         f: module_files,
         m: used_modules,

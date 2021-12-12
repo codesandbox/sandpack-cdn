@@ -1652,6 +1652,7 @@ dependencies = [
  "env_logger",
  "flate2",
  "glob",
+ "lazy_static",
  "redis",
  "reqwest",
  "semver 1.0.4",
