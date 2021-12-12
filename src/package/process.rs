@@ -1,4 +1,5 @@
 use crate::app_error::ServerError;
+use crate::cache::redis::RedisCache;
 use crate::package::npm_downloader;
 use crate::package::package_json;
 use crate::package::resolver;
@@ -9,6 +10,7 @@ use serde::{self, Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::MutexGuard;
 use std::time::Instant;
 use transform::transformer::transform_file;
 
@@ -240,4 +242,32 @@ pub async fn process_package(
     );
 
     return Ok(module_spec);
+}
+
+pub async fn process_package_cached(
+    package_name: String,
+    package_version: String,
+    data_dir: String,
+    redis_cache: &mut MutexGuard<'_, RedisCache>,
+) -> Result<MinimalCachedModule, ServerError> {
+    let mut cache_key = package_name.clone();
+    cache_key.push('@');
+    cache_key.push_str(package_version.as_str());
+
+    if let Ok(cached_value) = redis_cache.get_value(cache_key.as_str()).await {
+        let deserialized: serde_json::Result<MinimalCachedModule> =
+            serde_json::from_str(cached_value.as_str());
+        if let Ok(actual_module) = deserialized {
+            return Ok(actual_module);
+        }
+    }
+
+    let processed_module = process_package(package_name, package_version, data_dir).await?;
+
+    let serialized = serde_json::to_string(&processed_module)?;
+    redis_cache
+        .store_value(cache_key.as_str(), serialized.as_str(), Some(86400))
+        .await?;
+
+    Ok(processed_module)
 }

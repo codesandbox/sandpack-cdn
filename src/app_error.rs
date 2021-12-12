@@ -18,6 +18,14 @@ pub enum ServerError {
     PackageVersionNotFound,
     #[error("Infallible error")]
     Infallible(#[from] std::convert::Infallible),
+    #[error("Redis error")]
+    Redis(#[from] redis::RedisError),
     #[error("Could not parse module")]
     SWCParseError { message: String },
+}
+
+impl From<ServerError> for std::io::Error {
+    fn from(err: ServerError) -> Self {
+        std::io::Error::new(std::io::ErrorKind::Other, format!("{:?}", err))
+    }
 }

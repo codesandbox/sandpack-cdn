@@ -6,15 +6,18 @@ use actix_web::{
 use env_logger::Env;
 use std::env;
 use std::fs;
+use std::sync::Mutex;
 
 mod app_error;
+mod cache;
 mod package;
 mod transform;
 mod utils;
 
-use package::process::process_package;
+use cache::redis::RedisCache;
+use package::process::process_package_cached;
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 struct AppData {
     data_dir: String,
 }
@@ -23,10 +26,19 @@ struct AppData {
 async fn package_req_handler(
     path: web::Path<(String, String)>,
     data: web::Data<AppData>,
+    redis_mutex: web::Data<Mutex<RedisCache>>,
 ) -> impl Responder {
     let (package_name, package_version) = path.into_inner();
+
     let data_dir = data.data_dir.clone();
-    match process_package(package_name, package_version, data_dir).await {
+    match process_package_cached(
+        package_name,
+        package_version,
+        data_dir,
+        &mut redis_mutex.lock().unwrap(),
+    )
+    .await
+    {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(error) => HttpResponse::build(StatusCode::INTERNAL_SERVER_ERROR)
             .body(format!("{}\n\n{:?}", error, error)),
@@ -40,8 +52,13 @@ async fn versions_req_handler(path: web::Path<String>) -> impl Responder {
 }
 
 #[actix_web::main]
-async fn main() -> std::io::Result<()> {
+async fn main() -> Result<(), std::io::Error> {
     env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
+
+    let redis_cache = RedisCache::new(
+        "rediss://:c4d5cb5cb1dd4ad49bc9af0f565e9d53@eu1-tidy-bison-33953.upstash.io:33953",
+    )
+    .await?;
 
     let server_address = "127.0.0.1:8080";
 
@@ -59,6 +76,7 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(data.clone()))
+            .app_data(web::Data::new(Mutex::new(redis_cache.clone())))
             .wrap(Logger::new("\"%r\" %s %Dms"))
             // TODO: Remove this and let cloudflare handle encoding?
             .wrap(Compress::new(ContentEncoding::Auto))
