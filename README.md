@@ -11,3 +11,7 @@ Some good packages to test the CDN:
 - No exports: `react@17.0.2`
 - Conditional root exports: `framer@1.3.6`
 - Relative and wildcard exports: `framer@2.0.0-beta.13`
+
+## Running the project
+
+Run the following command: `RUST_MIN_STACK=16777216 cargo run`
