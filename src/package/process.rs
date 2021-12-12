@@ -250,7 +250,8 @@ pub async fn process_package_cached(
     data_dir: String,
     redis_cache: &mut MutexGuard<'_, RedisCache>,
 ) -> Result<MinimalCachedModule, ServerError> {
-    let mut cache_key = package_name.clone();
+    let mut cache_key = String::from("v1::");
+    cache_key.push_str(package_name.as_str());
     cache_key.push('@');
     cache_key.push_str(package_version.as_str());
 
