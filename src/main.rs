@@ -1,7 +1,9 @@
 use actix_web::middleware::{Compress, Logger};
 use actix_web::{
-    get, http::header::ContentEncoding, http::StatusCode, web, App, HttpResponse, HttpServer,
-    Responder,
+    get,
+    http::header::{CacheControl, CacheDirective, ContentEncoding},
+    http::StatusCode,
+    web, App, HttpResponse, HttpServer, Responder,
 };
 use env_logger::Env;
 use std::env;
@@ -31,17 +33,33 @@ async fn package_req_handler(
     let (package_name, package_version) = path.into_inner();
 
     let data_dir = data.data_dir.clone();
-    match process_package_cached(
+    let package_content = process_package_cached(
         package_name,
         package_version,
         data_dir,
         &mut cache_arc.lock().unwrap(),
     )
-    .await
-    {
-        Ok(response) => HttpResponse::Ok().json(response),
-        Err(error) => HttpResponse::build(StatusCode::INTERNAL_SERVER_ERROR)
-            .body(format!("{}\n\n{:?}", error, error)),
+    .await;
+
+    match package_content {
+        Ok(response) => {
+            let mut builder = HttpResponse::Ok();
+            let cache_ttl: u32 = 86400 * 365;
+            builder.insert_header(CacheControl(vec![
+                CacheDirective::Public,
+                CacheDirective::MaxAge(cache_ttl),
+            ]));
+            builder.json(response)
+        }
+        Err(error) => {
+            let mut builder = HttpResponse::build(StatusCode::INTERNAL_SERVER_ERROR);
+            let cache_ttl: u32 = 86400;
+            builder.insert_header(CacheControl(vec![
+                CacheDirective::Public,
+                CacheDirective::MaxAge(cache_ttl),
+            ]));
+            builder.body(format!("{}\n\n{:?}", error, error))
+        }
     }
 }
 
