@@ -1,5 +1,4 @@
 use flate2::read::GzDecoder;
-use std::collections::HashMap;
 use std::fmt;
 use std::io::Cursor;
 use std::path::Path;
@@ -8,7 +7,9 @@ use tar::Archive;
 use url::Url;
 
 use crate::app_error::ServerError;
-use serde::{self, Deserialize, Serialize};
+use crate::package::npm_package_manifest::{
+    download_cached_package_manifest, CachedPackageManifest,
+};
 
 #[derive(PartialEq, Eq)]
 pub enum TarballType {
@@ -25,47 +26,16 @@ impl std::fmt::Display for TarballType {
     }
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct PackageDist {
-    tarball: String,
-}
-
-#[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct MinimalPackageData {
-    dist: PackageDist,
-}
-
-#[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct PackageManifest {
-    name: String,
-    #[serde(rename = "dist-tags")]
-    dist_tags: HashMap<String, String>,
-    versions: HashMap<String, MinimalPackageData>,
-}
-
-// TODO: Cache the manifest on redis
-pub async fn download_package_manifest(
-    package_name: String,
-) -> Result<PackageManifest, ServerError> {
-    let manifest: PackageManifest =
-        reqwest::get(format!("https://registry.npmjs.org/{}", package_name))
-            .await?
-            .json()
-            .await?;
-
-    Ok(manifest)
-}
-
 pub async fn download_package_content(
     package_name: String,
     version: String,
     data_dir: String,
 ) -> Result<PathBuf, ServerError> {
-    let manifest: PackageManifest = download_package_manifest(package_name.clone()).await?;
-    if let Some(package_data) = manifest.versions.get(version.as_str()) {
+    let manifest: CachedPackageManifest =
+        download_cached_package_manifest(package_name.clone()).await?;
+    if let Some(tarball_url) = manifest.versions.get(version.as_str()) {
         // process the tarball url
-        let tarball_url_str: String = package_data.dist.tarball.clone();
-        let parsed_tarball_url: Url = Url::parse(tarball_url_str.as_str())?;
+        let parsed_tarball_url: Url = Url::parse(tarball_url.as_str())?;
         let tarball_url_path = String::from(parsed_tarball_url.path());
         let tarball_type: TarballType = if tarball_url_path.as_str().ends_with(".tar") {
             TarballType::Tar
@@ -74,7 +44,7 @@ pub async fn download_package_content(
         };
 
         // download the tarball
-        let response = reqwest::get(tarball_url_str.as_str()).await?;
+        let response = reqwest::get(tarball_url.as_str()).await?;
         let response_status = response.status();
         if !response_status.is_success() {
             return Err(ServerError::RequestErrorStatus(response_status.as_u16()));
