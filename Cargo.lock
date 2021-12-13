@@ -407,6 +407,7 @@ dependencies = [
  "libc",
  "num-integer",
  "num-traits",
+ "serde",
  "time 0.1.43",
  "wasm-bindgen",
  "winapi",
@@ -1676,6 +1677,7 @@ name = "sandpack-cdn"
 version = "0.0.0"
 dependencies = [
  "actix-web",
+ "chrono",
  "env_logger",
  "flate2",
  "glob",

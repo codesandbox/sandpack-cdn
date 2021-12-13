@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use std::collections::HashMap;
 
 use crate::app_error::ServerError;
@@ -26,11 +27,12 @@ pub struct CachedPackageManifest {
     pub name: String,
     pub dist_tags: HashMap<String, String>,
     pub versions: HashMap<String, String>,
-    pub etag: String,
+    pub etag: Option<String>,
+    pub fetched_at: DateTime<Utc>,
 }
 
 impl CachedPackageManifest {
-    pub fn from_manifest(manifest: PackageManifest, etag: String) -> CachedPackageManifest {
+    pub fn from_manifest(manifest: PackageManifest, etag: Option<String>) -> CachedPackageManifest {
         let mut versions: HashMap<String, String> = HashMap::new();
         for (key, val) in manifest.versions.iter() {
             versions.insert(key.clone(), val.dist.tarball.clone());
@@ -40,20 +42,21 @@ impl CachedPackageManifest {
             dist_tags: manifest.dist_tags,
             versions,
             etag,
+            fetched_at: Utc::now(),
         }
     }
 }
 
 async fn download_package_manifest(
     package_name: String,
-) -> Result<(String, PackageManifest), ServerError> {
+) -> Result<(Option<String>, PackageManifest), ServerError> {
     let manifest: PackageManifest =
         reqwest::get(format!("https://registry.npmjs.org/{}", package_name))
             .await?
             .json()
             .await?;
 
-    Ok((String::new(), manifest))
+    Ok((None, manifest))
 }
 
 // TODO: Cache the manifest on redis
