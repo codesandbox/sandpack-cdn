@@ -1,5 +1,5 @@
 use crate::app_error::ServerError;
-use crate::cache::redis::RedisCache;
+use crate::cache::layered::LayeredCache;
 use crate::package::npm_downloader;
 use crate::package::package_json;
 use crate::package::resolver;
@@ -248,14 +248,14 @@ pub async fn process_package_cached(
     package_name: String,
     package_version: String,
     data_dir: String,
-    redis_cache: &mut MutexGuard<'_, RedisCache>,
+    cache: &mut MutexGuard<'_, LayeredCache>,
 ) -> Result<MinimalCachedModule, ServerError> {
     let mut cache_key = String::from("v1::");
     cache_key.push_str(package_name.as_str());
     cache_key.push('@');
     cache_key.push_str(package_version.as_str());
 
-    if let Ok(cached_value) = redis_cache.get_value(cache_key.as_str()).await {
+    if let Some(cached_value) = cache.get_value(cache_key.as_str()).await {
         let deserialized: serde_json::Result<MinimalCachedModule> =
             serde_json::from_str(cached_value.as_str());
         if let Ok(actual_module) = deserialized {
@@ -266,7 +266,7 @@ pub async fn process_package_cached(
     let processed_module = process_package(package_name, package_version, data_dir).await?;
 
     let serialized = serde_json::to_string(&processed_module)?;
-    redis_cache
+    cache
         .store_value(cache_key.as_str(), serialized.as_str(), Some(86400))
         .await?;
 

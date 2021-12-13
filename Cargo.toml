@@ -23,4 +23,4 @@ swc_ecma_preset_env = "0.67.5"
 swc_common = { version = "0.14.7", features = ["tty-emitter", "sourcemap"] }
 swc_atoms = "0.2.9"
 lazy_static = "1.4.0"
-cached = "0.26.2"
+lru = "0.7.0"

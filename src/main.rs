@@ -6,7 +6,7 @@ use actix_web::{
 use env_logger::Env;
 use std::env;
 use std::fs;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 mod app_error;
 mod cache;
@@ -14,7 +14,7 @@ mod package;
 mod transform;
 mod utils;
 
-use cache::redis::RedisCache;
+use cache::layered::LayeredCache;
 use package::process::process_package_cached;
 
 #[derive(Clone)]
@@ -26,7 +26,7 @@ struct AppData {
 async fn package_req_handler(
     path: web::Path<(String, String)>,
     data: web::Data<AppData>,
-    redis_mutex: web::Data<Mutex<RedisCache>>,
+    cache_arc: web::Data<Arc<Mutex<LayeredCache>>>,
 ) -> impl Responder {
     let (package_name, package_version) = path.into_inner();
 
@@ -35,7 +35,7 @@ async fn package_req_handler(
         package_name,
         package_version,
         data_dir,
-        &mut redis_mutex.lock().unwrap(),
+        &mut cache_arc.lock().unwrap(),
     )
     .await
     {
@@ -55,10 +55,13 @@ async fn versions_req_handler(path: web::Path<String>) -> impl Responder {
 async fn main() -> Result<(), std::io::Error> {
     env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
 
-    let redis_cache = RedisCache::new(
-        "rediss://:c4d5cb5cb1dd4ad49bc9af0f565e9d53@eu1-tidy-bison-33953.upstash.io:33953",
-    )
-    .await?;
+    let layered_cache = Arc::new(Mutex::new(
+        LayeredCache::new(
+            "rediss://:c4d5cb5cb1dd4ad49bc9af0f565e9d53@eu1-tidy-bison-33953.upstash.io:33953",
+            1000,
+        )
+        .await?,
+    ));
 
     let server_address = "127.0.0.1:8080";
 
@@ -76,7 +79,7 @@ async fn main() -> Result<(), std::io::Error> {
     HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(data.clone()))
-            .app_data(web::Data::new(Mutex::new(redis_cache.clone())))
+            .app_data(web::Data::new(layered_cache.clone()))
             .wrap(Logger::new("\"%r\" %s %Dms"))
             // TODO: Remove this and let cloudflare handle encoding?
             .wrap(Compress::new(ContentEncoding::Auto))
