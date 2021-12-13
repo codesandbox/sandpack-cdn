@@ -22,6 +22,8 @@ pub enum ServerError {
     Redis(#[from] redis::RedisError),
     #[error("Could not parse module")]
     SWCParseError { message: String },
+    #[error("Could not download npm package manifest")]
+    NpmPackageManifestNotFound,
 }
 
 impl From<ServerError> for std::io::Error {

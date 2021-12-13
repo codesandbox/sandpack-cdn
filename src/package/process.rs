@@ -167,6 +167,7 @@ pub async fn process_package(
     package_name: String,
     package_version: String,
     data_dir: String,
+    cache: &mut MutexGuard<'_, LayeredCache>,
 ) -> Result<MinimalCachedModule, ServerError> {
     let parsed_version = Version::parse(package_version.as_str())?;
 
@@ -175,6 +176,7 @@ pub async fn process_package(
         package_name.clone(),
         parsed_version.to_string(),
         data_dir.to_string(),
+        cache,
     )
     .await?;
     let download_duration_ms = download_start_time.elapsed().as_millis();
@@ -250,7 +252,7 @@ pub async fn process_package_cached(
     data_dir: String,
     cache: &mut MutexGuard<'_, LayeredCache>,
 ) -> Result<MinimalCachedModule, ServerError> {
-    let mut cache_key = String::from("v1::");
+    let mut cache_key = String::from("v1::transform::");
     cache_key.push_str(package_name.as_str());
     cache_key.push('@');
     cache_key.push_str(package_version.as_str());
@@ -263,7 +265,7 @@ pub async fn process_package_cached(
         }
     }
 
-    let processed_module = process_package(package_name, package_version, data_dir).await?;
+    let processed_module = process_package(package_name, package_version, data_dir, cache).await?;
 
     let serialized = serde_json::to_string(&processed_module)?;
     cache

@@ -3,12 +3,14 @@ use std::fmt;
 use std::io::Cursor;
 use std::path::Path;
 use std::path::PathBuf;
+use std::sync::MutexGuard;
 use tar::Archive;
 use url::Url;
 
 use crate::app_error::ServerError;
+use crate::cache::layered::LayeredCache;
 use crate::package::npm_package_manifest::{
-    download_cached_package_manifest, CachedPackageManifest,
+    download_package_manifest_cached, CachedPackageManifest,
 };
 
 #[derive(PartialEq, Eq)]
@@ -30,9 +32,10 @@ pub async fn download_package_content(
     package_name: String,
     version: String,
     data_dir: String,
+    cache: &mut MutexGuard<'_, LayeredCache>,
 ) -> Result<PathBuf, ServerError> {
     let manifest: CachedPackageManifest =
-        download_cached_package_manifest(package_name.clone()).await?;
+        download_package_manifest_cached(package_name.clone(), cache).await?;
     if let Some(tarball_url) = manifest.versions.get(version.as_str()) {
         // process the tarball url
         let parsed_tarball_url: Url = Url::parse(tarball_url.as_str())?;

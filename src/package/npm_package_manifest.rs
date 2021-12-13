@@ -1,7 +1,8 @@
 use chrono::{DateTime, Utc};
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::MutexGuard};
 
-use crate::app_error::ServerError;
+use crate::{app_error::ServerError, cache::layered::LayeredCache};
+use reqwest::StatusCode;
 use serde::{self, Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -49,21 +50,70 @@ impl CachedPackageManifest {
 
 async fn download_package_manifest(
     package_name: String,
-) -> Result<(Option<String>, PackageManifest), ServerError> {
-    let manifest: PackageManifest =
-        reqwest::get(format!("https://registry.npmjs.org/{}", package_name))
-            .await?
-            .json()
-            .await?;
+    cached_etag: Option<String>,
+) -> Result<Option<(Option<String>, PackageManifest)>, ServerError> {
+    let client = reqwest::Client::new();
+    let mut request = client.get(format!("https://registry.npmjs.org/{}", package_name));
+    if let Some(cached_etag_val) = cached_etag {
+        request = request.header("If-None-Match", cached_etag_val.as_str());
+    }
+    let response = request.send().await?;
 
-    Ok((None, manifest))
+    if StatusCode::NOT_MODIFIED.eq(&response.status()) {
+        return Ok(None);
+    }
+
+    let mut etag: Option<String> = None;
+    if let Some(etag_header_value) = response.headers().get("etag") {
+        if let Ok(etag_header_str) = etag_header_value.to_str() {
+            etag = Some(String::from(etag_header_str))
+        }
+    }
+
+    let manifest: PackageManifest = response.json().await?;
+
+    Ok(Some((etag, manifest)))
 }
 
-// TODO: Cache the manifest on redis
-pub async fn download_cached_package_manifest(
+pub async fn download_package_manifest_cached(
     package_name: String,
+    cache: &mut MutexGuard<'_, LayeredCache>,
 ) -> Result<CachedPackageManifest, ServerError> {
-    let (etag, manifest) = download_package_manifest(package_name).await?;
-    let cached_manifest = CachedPackageManifest::from_manifest(manifest, etag);
-    Ok(cached_manifest)
+    let mut cache_key = String::from("v1::manifest::");
+    cache_key.push_str(package_name.as_str());
+
+    let mut originally_cached_manifest: Option<CachedPackageManifest> = None;
+    if let Some(cached_value) = cache.get_value(cache_key.as_str()).await {
+        let deserialized: serde_json::Result<CachedPackageManifest> =
+            serde_json::from_str(cached_value.as_str());
+        if let Ok(found_manifest) = deserialized {
+            let time_diff = Utc::now() - found_manifest.fetched_at;
+            if time_diff.num_minutes() < 15 {
+                return Ok(found_manifest);
+            }
+            originally_cached_manifest = Some(found_manifest);
+        }
+    }
+
+    if let Some((etag, manifest)) = download_package_manifest(
+        package_name,
+        originally_cached_manifest
+            .clone()
+            .map(|v| v.etag)
+            .unwrap_or(None),
+    )
+    .await?
+    {
+        let cached_manifest = CachedPackageManifest::from_manifest(manifest, etag);
+        let serialized = serde_json::to_string(&cached_manifest)?;
+        cache
+            .store_value(cache_key.as_str(), serialized.as_str(), Some(86400))
+            .await?;
+        return Ok(cached_manifest);
+    }
+
+    match originally_cached_manifest {
+        Some(m) => Ok(m.clone()),
+        None => Err(ServerError::NpmPackageManifestNotFound),
+    }
 }
