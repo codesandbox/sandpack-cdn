@@ -269,7 +269,7 @@ pub async fn process_package_cached(
 ) -> Result<MinimalCachedModule, ServerError> {
     let (package_name, package_version) = parse_package_specifier(package_specifier)?;
 
-    let mut cache_key = String::from(format!("v1::transform::{}", package_specifier));
+    let cache_key = String::from(format!("v1::transform::{}", package_specifier));
 
     if let Some(cached_value) = cache.get_value(cache_key.as_str()).await {
         let deserialized: serde_json::Result<MinimalCachedModule> =

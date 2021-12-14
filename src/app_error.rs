@@ -26,6 +26,10 @@ pub enum ServerError {
     NpmPackageManifestNotFound,
     #[error("Invalid package specifier")]
     InvalidPackageSpecifier,
+    #[error("Invalid Base64 string")]
+    InvalidBase64(#[from] base64::DecodeError),
+    #[error("Invalid byte buffer")]
+    InvalidString(#[from] std::str::Utf8Error),
 }
 
 impl From<ServerError> for std::io::Error {

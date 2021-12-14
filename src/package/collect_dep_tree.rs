@@ -4,6 +4,8 @@ use std::{collections::HashMap, sync::MutexGuard};
 
 use crate::{app_error::ServerError, cache::layered::LayeredCache};
 
+use super::npm_package_manifest::download_package_manifest_cached;
+
 pub struct DependencyRequest {
     name: String,
     version_req: VersionReq,
@@ -33,7 +35,7 @@ pub struct Dependency {
 pub struct DependencyTree {
     #[serde(rename = "m")]
     modules: HashMap<String, String>,
-    #[serde(rename = "m")]
+    #[serde(rename = "d")]
     dependencies: HashMap<String, String>,
 }
 
@@ -46,7 +48,9 @@ impl DependencyTree {
     }
 }
 
-pub fn process_dep_map(dep_map: HashMap<String, String>) -> Result<Vec<DependencyRequest>, ServerError> {
+pub fn process_dep_map(
+    dep_map: HashMap<String, String>,
+) -> Result<Vec<DependencyRequest>, ServerError> {
     let mut deps: Vec<DependencyRequest> = Vec::new();
     for (key, val) in dep_map.iter() {
         let dep = DependencyRequest::new(key.as_str(), val.as_str())?;
@@ -55,11 +59,24 @@ pub fn process_dep_map(dep_map: HashMap<String, String>) -> Result<Vec<Dependenc
     Ok(deps)
 }
 
+async fn resolve_dep(
+    tree: &mut DependencyTree,
+    req: DependencyRequest,
+    depth: u32,
+    cache: &mut MutexGuard<'_, LayeredCache>,
+) -> Result<(), ServerError> {
+    let manifest = download_package_manifest_cached(req.name.as_str(), cache).await?;
+    Ok(())
+}
+
 pub async fn collect_dep_tree(
     deps: Vec<DependencyRequest>,
     data_dir: &str,
     cache: &mut MutexGuard<'_, LayeredCache>,
 ) -> Result<DependencyTree, ServerError> {
     let mut tree = DependencyTree::new();
+    for dep_req in deps {
+        resolve_dep(&mut tree, dep_req, 0, cache).await?;
+    }
     Ok(tree)
 }

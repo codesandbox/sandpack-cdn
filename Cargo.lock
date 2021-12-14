@@ -1677,6 +1677,7 @@ name = "sandpack-cdn"
 version = "0.0.0"
 dependencies = [
  "actix-web",
+ "base64 0.13.0",
  "chrono",
  "env_logger",
  "flate2",

@@ -6,6 +6,7 @@ use actix_web::{
     web, App, HttpResponse, HttpServer, Responder,
 };
 use app_error::ServerError;
+use base64::decode as decode_base64;
 use env_logger::Env;
 use package::collect_dep_tree::{collect_dep_tree, process_dep_map, DependencyTree};
 use serde::{self, Deserialize, Serialize};
@@ -21,7 +22,7 @@ mod transform;
 mod utils;
 
 use cache::layered::LayeredCache;
-use package::process::process_package_cached;
+use package::process::{process_package_cached, MinimalCachedModule};
 
 #[derive(Clone)]
 struct AppData {
@@ -31,13 +32,28 @@ struct AppData {
 #[derive(Clone, Serialize, Deserialize)]
 struct ErrorResponse {
     message: String,
-    stack: String,
+    details: String,
 }
 
 impl ErrorResponse {
-    pub fn new(message: String, stack: String) -> Self {
-        ErrorResponse { message, stack }
+    pub fn new(message: String, details: String) -> Self {
+        ErrorResponse { message, details }
     }
+}
+
+fn decode_req_part(part: &str) -> Result<String, ServerError> {
+    let decoded = decode_base64(part)?;
+    let str_value = std::str::from_utf8(&decoded)?;
+    Ok(String::from(str_value))
+}
+
+async fn do_package_req(
+    path: &str,
+    data_dir: &str,
+    cache: &mut MutexGuard<'_, LayeredCache>,
+) -> Result<MinimalCachedModule, ServerError> {
+    let decoded_specifier = decode_req_part(path)?;
+    process_package_cached(decoded_specifier.as_str(), data_dir, cache).await
 }
 
 #[get("/package/{package_specifier}")]
@@ -46,8 +62,8 @@ async fn package_req_handler(
     data: web::Data<AppData>,
     cache_arc: web::Data<Arc<Mutex<LayeredCache>>>,
 ) -> impl Responder {
-    let package_content = process_package_cached(
-        path.into_inner().as_str(),
+    let package_content = do_package_req(
+        path.as_str(),
         data.data_dir.as_str(),
         &mut cache_arc.lock().unwrap(),
     )
@@ -83,7 +99,8 @@ async fn process_dep_tree(
     data_dir: &str,
     cache: &mut MutexGuard<'_, LayeredCache>,
 ) -> Result<DependencyTree, ServerError> {
-    let dep_map: HashMap<String, String> = serde_json::from_str(raw_deps_str)?;
+    let decoded_deps_str = decode_req_part(raw_deps_str)?;
+    let dep_map: HashMap<String, String> = serde_json::from_str(decoded_deps_str.as_str())?;
     let dep_requests = process_dep_map(dep_map)?;
     return collect_dep_tree(dep_requests, data_dir, cache).await;
 }

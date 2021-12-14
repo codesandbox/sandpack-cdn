@@ -25,3 +25,4 @@ swc_atoms = "0.2.9"
 lazy_static = "1.4.0"
 lru = "0.7.0"
 chrono = { version = "0.4.19", features = ["serde"] }
+base64 = "0.13.0"
