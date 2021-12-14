@@ -34,11 +34,11 @@ impl LayeredCache {
 
     pub async fn get_value(&mut self, key: &str) -> Option<String> {
         if let Some(found_in_memory) = self.memory.get_value(key) {
-            println!("{} found in the cache", key);
+            println!("{} found in the memory cache", key);
             return Some(found_in_memory);
         }
         if let Ok(value) = self.redis.get_value(key).await {
-            println!("{} found in the cache", key);
+            println!("{} found in the redis cache", key);
             self.memory.store_value(key, value.as_str());
             return Some(value);
         }

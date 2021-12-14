@@ -26,6 +26,7 @@ pub struct PackageManifest {
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct CachedPackageManifest {
     pub name: String,
+    #[serde(rename = "tags")]
     pub dist_tags: HashMap<String, String>,
     pub versions: HashMap<String, String>,
     pub etag: Option<String>,
