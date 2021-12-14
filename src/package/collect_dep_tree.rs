@@ -142,17 +142,21 @@ pub async fn collect_dep_tree(
     data_dir: &str,
     cache: Arc<Arc<Mutex<LayeredCache>>>,
 ) -> Result<DependencyList, ServerError> {
-    let mut tree: DependencyList = Vec::new();
+    let mut dependencies: DependencyList = Vec::new();
     let mut dep_queue: VecDeque<DependencyRequest> = VecDeque::from(deps);
     while dep_queue.len() > 0 {
         let item = dep_queue.pop_front();
         match item {
             Some(dep_req) => {
+                // TODO: Only skip if version range also matches, also find a better way to de-duplicate, probably when they get added...
+                if let Some(_) = dependencies.iter().position(|d| d.name.eq(&dep_req.name)) {
+                    continue;
+                }
+
                 if let Some((resolved_version, transient_deps)) =
                     resolve_dep(dep_req.clone(), data_dir, cache.clone()).await?
                 {
-                    // TODO: De-duplicate
-                    tree.push(Dependency::new(
+                    dependencies.push(Dependency::new(
                         dep_req.name,
                         resolved_version.clone(),
                         dep_req.depth,
@@ -168,5 +172,5 @@ pub async fn collect_dep_tree(
             }
         }
     }
-    Ok(tree)
+    Ok(dependencies)
 }

@@ -32,6 +32,8 @@ pub enum MinimalFile {
     },
     // We didn't compile or detected this file being used, so we return the size in bytes instead
     Ignored(u64),
+    // Something went wrong with this file
+    Failed(bool),
 }
 
 #[derive(Serialize, Deserialize)]
@@ -131,8 +133,8 @@ fn transform_files(
         for found_file in found_files {
             if !result_map.contains_key(found_file.as_str()) {
                 let file_path = pkg_root.clone().join(found_file.as_str());
-                if let Ok(content) = fs::read_to_string(file_path) {
-                    match transform_file(found_file.as_str(), content.as_str()) {
+                match fs::read_to_string(file_path) {
+                    Ok(content) => match transform_file(found_file.as_str(), content.as_str()) {
                         Ok(transformed_file) => {
                             let deps: Vec<String> =
                                 transformed_file.dependencies.into_iter().collect();
@@ -142,6 +144,16 @@ fn transform_files(
                                 used_modules.insert(module_dep);
                             }
 
+                            result_map.insert(
+                                found_file.clone(),
+                                MinimalFile::File {
+                                    content: transformed_file.content,
+                                    dependencies: deps.clone(),
+                                    is_transpiled: true,
+                                },
+                            );
+
+                            // Always keep this last, to prevent infinite loops
                             transform_files(
                                 file_deps.into_iter().collect(),
                                 found_file.as_str(),
@@ -149,15 +161,6 @@ fn transform_files(
                                 files_map,
                                 pkg_root.clone(),
                                 used_modules,
-                            );
-
-                            result_map.insert(
-                                found_file.clone(),
-                                MinimalFile::File {
-                                    content: transformed_file.content,
-                                    dependencies: deps.clone(),
-                                    is_transpiled: false,
-                                },
                             );
                         }
                         Err(err) => {
@@ -172,6 +175,11 @@ fn transform_files(
                                 },
                             );
                         }
+                    },
+                    // TODO: Return an error in this case?
+                    Err(err) => {
+                        println!("Error reading file: {:?}", err);
+                        result_map.insert(found_file.clone(), MinimalFile::Failed(false));
                     }
                 }
             }
@@ -185,7 +193,10 @@ pub async fn process_package(
     data_dir: &str,
     cache: &mut MutexGuard<'_, LayeredCache>,
 ) -> Result<(MinimalCachedModule, ModuleDependenciesMap), ServerError> {
-    println!("Started processing package: {}@{}", package_name, package_version);
+    println!(
+        "Started processing package: {}@{}",
+        package_name, package_version
+    );
 
     let download_start_time = Instant::now();
     let pkg_output_path =
@@ -366,8 +377,7 @@ pub async fn module_dependencies_cached(
     data_dir: &str,
     cache: &mut MutexGuard<'_, LayeredCache>,
 ) -> Result<ModuleDependenciesMap, ServerError> {
-    let transform_cache_key =
-        get_dependencies_cache_key(package_name, package_version);
+    let transform_cache_key = get_dependencies_cache_key(package_name, package_version);
     if let Some(cached_value) = cache.get_value(transform_cache_key.as_str()).await {
         let deserialized: serde_json::Result<ModuleDependenciesMap> =
             serde_json::from_str(cached_value.as_str());
@@ -376,12 +386,7 @@ pub async fn module_dependencies_cached(
         }
     }
 
-    let (_, deps) = transform_module_and_cache(
-        package_name,
-        package_version,
-        data_dir,
-        cache,
-    )
-    .await?;
+    let (_, deps) =
+        transform_module_and_cache(package_name, package_version, data_dir, cache).await?;
     Ok(deps)
 }
