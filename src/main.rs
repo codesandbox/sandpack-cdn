@@ -8,7 +8,7 @@ use actix_web::{
 use app_error::ServerError;
 use base64::decode as decode_base64;
 use env_logger::Env;
-use package::collect_dep_tree::{collect_dep_tree, process_dep_map, DependencyMap};
+use package::collect_dep_tree::{collect_dep_tree, process_dep_map, DependencyList};
 use serde::{self, Deserialize, Serialize};
 use std::collections::HashMap;
 use std::env;
@@ -98,7 +98,7 @@ async fn process_dep_tree(
     raw_deps_str: &str,
     data_dir: &str,
     cache: Arc<Arc<Mutex<LayeredCache>>>,
-) -> Result<DependencyMap, ServerError> {
+) -> Result<DependencyList, ServerError> {
     let decoded_deps_str = decode_req_part(raw_deps_str)?;
     let dep_map: HashMap<String, String> = serde_json::from_str(decoded_deps_str.as_str())?;
     let dep_requests = process_dep_map(dep_map, 0)?;

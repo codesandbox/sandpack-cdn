@@ -94,6 +94,8 @@ fn get_versions() -> Versions {
 }
 
 pub fn transform_file(filename: &str, code: &str) -> Result<TransformedFile, ServerError> {
+    println!("Transforming file: {}", filename);
+
     // Error early if filename does not end in js: js, cjs, mjs, ...
     let ext = &filename[filename.len() - 2..];
     if ext.ne("js") {

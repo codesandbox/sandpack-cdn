@@ -61,6 +61,8 @@ impl DependencyRequest {
 
 #[derive(Serialize, Deserialize)]
 pub struct Dependency {
+    #[serde(rename = "n")]
+    name: String,
     #[serde(rename = "v")]
     version: String,
     #[serde(rename = "d")]
@@ -68,12 +70,16 @@ pub struct Dependency {
 }
 
 impl Dependency {
-    pub fn new(version: String, depth: u32) -> Self {
-        Dependency { version, depth }
+    pub fn new(name: String, version: String, depth: u32) -> Self {
+        Dependency {
+            name,
+            version,
+            depth,
+        }
     }
 }
 
-pub type DependencyMap = HashMap<String, Dependency>;
+pub type DependencyList = Vec<Dependency>;
 
 pub fn process_dep_map(
     dep_map: HashMap<String, String>,
@@ -135,8 +141,8 @@ pub async fn collect_dep_tree(
     deps: Vec<DependencyRequest>,
     data_dir: &str,
     cache: Arc<Arc<Mutex<LayeredCache>>>,
-) -> Result<DependencyMap, ServerError> {
-    let mut tree: DependencyMap = HashMap::new();
+) -> Result<DependencyList, ServerError> {
+    let mut tree: DependencyList = Vec::new();
     let mut dep_queue: VecDeque<DependencyRequest> = VecDeque::from(deps);
     while dep_queue.len() > 0 {
         let item = dep_queue.pop_front();
@@ -145,10 +151,12 @@ pub async fn collect_dep_tree(
                 if let Some((resolved_version, transient_deps)) =
                     resolve_dep(dep_req.clone(), data_dir, cache.clone()).await?
                 {
-                    tree.insert(
+                    // TODO: De-duplicate
+                    tree.push(Dependency::new(
                         dep_req.name,
-                        Dependency::new(resolved_version.clone(), dep_req.depth),
-                    );
+                        resolved_version.clone(),
+                        dep_req.depth,
+                    ));
 
                     for transient_dep in transient_deps {
                         dep_queue.push_back(transient_dep);
