@@ -29,14 +29,14 @@ impl std::fmt::Display for TarballType {
 }
 
 pub async fn download_package_content(
-    package_name: String,
-    version: String,
-    data_dir: String,
+    package_name: &str,
+    version: &str,
+    data_dir: &str,
     cache: &mut MutexGuard<'_, LayeredCache>,
 ) -> Result<PathBuf, ServerError> {
     let manifest: CachedPackageManifest =
         download_package_manifest_cached(package_name.clone(), cache).await?;
-    if let Some(tarball_url) = manifest.versions.get(version.as_str()) {
+    if let Some(tarball_url) = manifest.versions.get(version) {
         // process the tarball url
         let parsed_tarball_url: Url = Url::parse(tarball_url.as_str())?;
         let tarball_url_path = String::from(parsed_tarball_url.path());
@@ -54,10 +54,10 @@ pub async fn download_package_content(
         }
 
         // save the tarball
-        let dir_path = Path::new(data_dir.as_str()).join(format!(
+        let dir_path = Path::new(data_dir).join(format!(
             "{}-{}",
-            package_name.as_str(),
-            version.as_str()
+            package_name,
+            version
         ));
         let content = Cursor::new(response.bytes().await?);
 

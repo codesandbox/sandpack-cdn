@@ -169,21 +169,15 @@ fn transform_files(
 }
 
 pub async fn process_package(
-    package_name: String,
-    package_version: String,
-    data_dir: String,
+    package_name: &str,
+    package_version: &str,
+    data_dir: &str,
     cache: &mut MutexGuard<'_, LayeredCache>,
 ) -> Result<MinimalCachedModule, ServerError> {
-    let parsed_version = Version::parse(package_version.as_str())?;
-
     let download_start_time = Instant::now();
-    let pkg_output_path = npm_downloader::download_package_content(
-        package_name.clone(),
-        parsed_version.to_string(),
-        data_dir.to_string(),
-        cache,
-    )
-    .await?;
+    let pkg_output_path =
+        npm_downloader::download_package_content(package_name, package_version, data_dir, cache)
+            .await?;
     let download_duration_ms = download_start_time.elapsed().as_millis();
 
     let file_collection_start_time = Instant::now();
@@ -251,16 +245,31 @@ pub async fn process_package(
     return Ok(module_spec);
 }
 
+fn parse_package_specifier(package_specifier: &str) -> Result<(String, String), ServerError> {
+    let mut parts: Vec<&str> = package_specifier.split("@").collect();
+    let package_version_opt = parts.pop();
+    if let Some(package_version) = package_version_opt {
+        if parts.len() > 2 {
+            return Err(ServerError::InvalidPackageSpecifier);
+        }
+
+        let package_name = parts.join("@");
+        let parsed_version = Version::parse(package_version)?;
+
+        return Ok((package_name, parsed_version.to_string()));
+    } else {
+        return Err(ServerError::InvalidPackageSpecifier);
+    }
+}
+
 pub async fn process_package_cached(
-    package_name: String,
-    package_version: String,
-    data_dir: String,
+    package_specifier: &str,
+    data_dir: &str,
     cache: &mut MutexGuard<'_, LayeredCache>,
 ) -> Result<MinimalCachedModule, ServerError> {
-    let mut cache_key = String::from("v1::transform::");
-    cache_key.push_str(package_name.as_str());
-    cache_key.push('@');
-    cache_key.push_str(package_version.as_str());
+    let (package_name, package_version) = parse_package_specifier(package_specifier)?;
+
+    let mut cache_key = String::from(format!("v1::transform::{}", package_specifier));
 
     if let Some(cached_value) = cache.get_value(cache_key.as_str()).await {
         let deserialized: serde_json::Result<MinimalCachedModule> =
@@ -270,7 +279,13 @@ pub async fn process_package_cached(
         }
     }
 
-    let processed_module = process_package(package_name, package_version, data_dir, cache).await?;
+    let processed_module = process_package(
+        package_name.as_str(),
+        package_version.as_str(),
+        data_dir,
+        cache,
+    )
+    .await?;
 
     let serialized = serde_json::to_string(&processed_module)?;
     cache

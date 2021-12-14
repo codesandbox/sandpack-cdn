@@ -5,11 +5,14 @@ use actix_web::{
     http::StatusCode,
     web, App, HttpResponse, HttpServer, Responder,
 };
+use app_error::ServerError;
 use env_logger::Env;
-use package::collect_dep_tree::collect_dep_tree;
+use package::collect_dep_tree::{collect_dep_tree, process_dep_map, DependencyTree};
+use serde::{self, Deserialize, Serialize};
+use std::collections::HashMap;
 use std::env;
 use std::fs;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, MutexGuard};
 
 mod app_error;
 mod cache;
@@ -25,19 +28,27 @@ struct AppData {
     data_dir: String,
 }
 
-#[get("/package/{package_name}/{package_version}")]
+#[derive(Clone, Serialize, Deserialize)]
+struct ErrorResponse {
+    message: String,
+    stack: String,
+}
+
+impl ErrorResponse {
+    pub fn new(message: String, stack: String) -> Self {
+        ErrorResponse { message, stack }
+    }
+}
+
+#[get("/package/{package_specifier}")]
 async fn package_req_handler(
-    path: web::Path<(String, String)>,
+    path: web::Path<String>,
     data: web::Data<AppData>,
     cache_arc: web::Data<Arc<Mutex<LayeredCache>>>,
 ) -> impl Responder {
-    let (package_name, package_version) = path.into_inner();
-
-    let data_dir = data.data_dir.clone();
     let package_content = process_package_cached(
-        package_name,
-        package_version,
-        data_dir,
+        path.into_inner().as_str(),
+        data.data_dir.as_str(),
         &mut cache_arc.lock().unwrap(),
     )
     .await;
@@ -59,20 +70,37 @@ async fn package_req_handler(
                 CacheDirective::Public,
                 CacheDirective::MaxAge(cache_ttl),
             ]));
-            builder.body(format!("{}\n\n{:?}", error, error))
+            builder.json(ErrorResponse::new(
+                format!("{}", error),
+                format!("{:?}", error),
+            ))
         }
     }
 }
 
-#[get("/versions/{manifest}")]
+async fn process_dep_tree(
+    raw_deps_str: &str,
+    data_dir: &str,
+    cache: &mut MutexGuard<'_, LayeredCache>,
+) -> Result<DependencyTree, ServerError> {
+    let dep_map: HashMap<String, String> = serde_json::from_str(raw_deps_str)?;
+    let dep_requests = process_dep_map(dep_map)?;
+    return collect_dep_tree(dep_requests, data_dir, cache).await;
+}
+
+#[get("/dep_tree/{dependencies}")]
 async fn versions_req_handler(
     path: web::Path<String>,
     data: web::Data<AppData>,
     cache_arc: web::Data<Arc<Mutex<LayeredCache>>>,
 ) -> impl Responder {
-    let manifest = path.into_inner();
-    let data_dir = data.data_dir.clone();
-    let tree = collect_dep_tree(Vec::new(), data_dir, &mut cache_arc.lock().unwrap()).await;
+    let tree = process_dep_tree(
+        path.into_inner().as_str(),
+        data.data_dir.as_str(),
+        &mut cache_arc.lock().unwrap(),
+    )
+    .await;
+
     // 15 minutes cache ttl
     let cache_ttl: u32 = 15 * 60;
     match tree {
@@ -90,7 +118,10 @@ async fn versions_req_handler(
                 CacheDirective::Public,
                 CacheDirective::MaxAge(cache_ttl),
             ]));
-            builder.body(format!("{}\n\n{:?}", error, error))
+            builder.json(ErrorResponse::new(
+                format!("{}", error),
+                format!("{:?}", error),
+            ))
         }
     }
 }

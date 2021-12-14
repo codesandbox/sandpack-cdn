@@ -49,7 +49,7 @@ impl CachedPackageManifest {
 }
 
 async fn download_package_manifest(
-    package_name: String,
+    package_name: &str,
     cached_etag: Option<String>,
 ) -> Result<Option<(Option<String>, PackageManifest)>, ServerError> {
     let client = reqwest::Client::new();
@@ -76,11 +76,11 @@ async fn download_package_manifest(
 }
 
 pub async fn download_package_manifest_cached(
-    package_name: String,
+    package_name: &str,
     cache: &mut MutexGuard<'_, LayeredCache>,
 ) -> Result<CachedPackageManifest, ServerError> {
     let mut cache_key = String::from("v1::manifest::");
-    cache_key.push_str(package_name.as_str());
+    cache_key.push_str(package_name);
 
     let mut originally_cached_manifest: Option<CachedPackageManifest> = None;
     if let Some(cached_value) = cache.get_value(cache_key.as_str()).await {

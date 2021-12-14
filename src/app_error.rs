@@ -24,6 +24,8 @@ pub enum ServerError {
     SWCParseError { message: String },
     #[error("Could not download npm package manifest")]
     NpmPackageManifestNotFound,
+    #[error("Invalid package specifier")]
+    InvalidPackageSpecifier,
 }
 
 impl From<ServerError> for std::io::Error {
