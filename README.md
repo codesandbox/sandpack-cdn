@@ -11,6 +11,7 @@ Some good packages to test the CDN:
 - No exports: `react@17.0.2`
 - Conditional root exports: `framer@1.3.6`
 - Relative and wildcard exports: `framer@2.0.0-beta.13`
+- Array exports: `@babel/runtime@7.16.5`
 
 ## Running the project
 
