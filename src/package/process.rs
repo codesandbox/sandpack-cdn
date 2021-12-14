@@ -53,9 +53,9 @@ pub struct MinimalCachedModule {
 #[derive(Serialize, Deserialize)]
 pub struct ModuleDependency {
     #[serde(rename = "v")]
-    version: String,
+    pub version: String,
     #[serde(rename = "i")]
-    is_used: bool,
+    pub is_used: bool,
 }
 
 pub type ModuleDependenciesMap = HashMap<String, ModuleDependency>;
@@ -185,6 +185,8 @@ pub async fn process_package(
     data_dir: &str,
     cache: &mut MutexGuard<'_, LayeredCache>,
 ) -> Result<(MinimalCachedModule, ModuleDependenciesMap), ServerError> {
+    println!("Started processing package: {}@{}", package_name, package_version);
+
     let download_start_time = Instant::now();
     let pkg_output_path =
         npm_downloader::download_package_content(package_name, package_version, data_dir, cache)
@@ -358,15 +360,14 @@ pub async fn transform_module_cached(
     Ok(transformation_result)
 }
 
-pub async fn fetch_dependencies_cached(
-    package_specifier: &str,
+pub async fn module_dependencies_cached(
+    package_name: &str,
+    package_version: &str,
     data_dir: &str,
     cache: &mut MutexGuard<'_, LayeredCache>,
 ) -> Result<ModuleDependenciesMap, ServerError> {
-    let (package_name, package_version) = parse_package_specifier(package_specifier)?;
-
     let transform_cache_key =
-        get_dependencies_cache_key(package_name.as_str(), package_version.as_str());
+        get_dependencies_cache_key(package_name, package_version);
     if let Some(cached_value) = cache.get_value(transform_cache_key.as_str()).await {
         let deserialized: serde_json::Result<ModuleDependenciesMap> =
             serde_json::from_str(cached_value.as_str());
@@ -376,8 +377,8 @@ pub async fn fetch_dependencies_cached(
     }
 
     let (_, deps) = transform_module_and_cache(
-        package_name.as_str(),
-        package_version.as_str(),
+        package_name,
+        package_version,
         data_dir,
         cache,
     )

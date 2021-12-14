@@ -91,19 +91,21 @@ pub async fn download_package_manifest_cached(
             if time_diff.num_minutes() < 15 {
                 return Ok(found_manifest);
             }
+
             originally_cached_manifest = Some(found_manifest);
         }
     }
 
-    if let Some((etag, manifest)) = download_package_manifest(
+    let download_manifest_result = download_package_manifest(
         package_name,
         originally_cached_manifest
             .clone()
             .map(|v| v.etag)
             .unwrap_or(None),
     )
-    .await?
-    {
+    .await?;
+
+    if let Some((etag, manifest)) = download_manifest_result {
         let cached_manifest = CachedPackageManifest::from_manifest(manifest, etag);
         let serialized = serde_json::to_string(&cached_manifest)?;
         cache

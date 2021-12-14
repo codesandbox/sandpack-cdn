@@ -8,7 +8,7 @@ use actix_web::{
 use app_error::ServerError;
 use base64::decode as decode_base64;
 use env_logger::Env;
-use package::collect_dep_tree::{collect_dep_tree, process_dep_map, DependencyTree};
+use package::collect_dep_tree::{collect_dep_tree, process_dep_map, DependencyMap};
 use serde::{self, Deserialize, Serialize};
 use std::collections::HashMap;
 use std::env;
@@ -97,11 +97,11 @@ async fn package_req_handler(
 async fn process_dep_tree(
     raw_deps_str: &str,
     data_dir: &str,
-    cache: &mut MutexGuard<'_, LayeredCache>,
-) -> Result<DependencyTree, ServerError> {
+    cache: Arc<Arc<Mutex<LayeredCache>>>,
+) -> Result<DependencyMap, ServerError> {
     let decoded_deps_str = decode_req_part(raw_deps_str)?;
     let dep_map: HashMap<String, String> = serde_json::from_str(decoded_deps_str.as_str())?;
-    let dep_requests = process_dep_map(dep_map)?;
+    let dep_requests = process_dep_map(dep_map, 0)?;
     return collect_dep_tree(dep_requests, data_dir, cache).await;
 }
 
@@ -111,10 +111,11 @@ async fn versions_req_handler(
     data: web::Data<AppData>,
     cache_arc: web::Data<Arc<Mutex<LayeredCache>>>,
 ) -> impl Responder {
+    let cache = cache_arc.into_inner();
     let tree = process_dep_tree(
         path.into_inner().as_str(),
         data.data_dir.as_str(),
-        &mut cache_arc.lock().unwrap(),
+        cache,
     )
     .await;
 
