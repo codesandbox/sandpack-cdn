@@ -243,7 +243,7 @@ pub async fn process_package(
                 key.clone(),
                 ModuleDependency {
                     version: value.clone(),
-                    is_used: used_modules.contains(value),
+                    is_used: used_modules.contains(key),
                 },
             );
         }
