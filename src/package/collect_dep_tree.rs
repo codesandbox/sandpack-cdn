@@ -53,8 +53,19 @@ pub fn process_dep_map(
 ) -> Result<Vec<DependencyRequest>, ServerError> {
     let mut deps: Vec<DependencyRequest> = Vec::new();
     for (key, val) in dep_map.iter() {
-        let dep = DependencyRequest::new(key.as_str(), val.as_str())?;
-        deps.push(dep);
+        match DependencyRequest::new(key.as_str(), val.as_str()) {
+            Ok(dep) => {
+                deps.push(dep);
+            }
+            Err(err) => {
+                println!(
+                    "Failed to parse dep range {} for {}. {:?}",
+                    val.as_str(),
+                    key.as_str(),
+                    err
+                )
+            }
+        }
     }
     Ok(deps)
 }
