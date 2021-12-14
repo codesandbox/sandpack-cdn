@@ -20,11 +20,14 @@ pub enum MinimalFile {
     // This file got used so we transform it or return it
     File {
         // content
-        c: String,
+        #[serde(rename = "c")]
+        content: String,
         // dependencies
-        d: Vec<String>,
+        #[serde(rename = "d")]
+        dependencies: Vec<String>,
         // is transpiled?
-        t: bool,
+        #[serde(rename = "t")]
+        is_transpiled: bool,
     },
     // We didn't compile or detected this file being used, so we return the size in bytes instead
     Ignored(u64),
@@ -37,11 +40,13 @@ pub struct MinimalCachedModule {
     // version, it's part of the request so leaving it out for now...
     // v: String,
     // files
-    f: HashMap<String, MinimalFile>,
+    #[serde(rename = "f")]
+    files: HashMap<String, MinimalFile>,
     // used modules, this is different from dependencies as this only includes a
     // list of node_modules that are used in the code, used for the resolve endpoint
     // to eagerly fetch these modules
-    m: Vec<String>,
+    #[serde(rename = "m")]
+    modules: Vec<String>,
 }
 
 fn collect_file_paths(
@@ -138,9 +143,9 @@ fn transform_files(
                             result_map.insert(
                                 found_file.clone(),
                                 MinimalFile::File {
-                                    c: transformed_file.content,
-                                    d: deps.clone(),
-                                    t: false,
+                                    content: transformed_file.content,
+                                    dependencies: deps.clone(),
+                                    is_transpiled: false,
                                 },
                             );
                         }
@@ -150,9 +155,9 @@ fn transform_files(
                             result_map.insert(
                                 found_file.clone(),
                                 MinimalFile::File {
-                                    c: content.clone(),
-                                    d: vec![],
-                                    t: false,
+                                    content: content.clone(),
+                                    dependencies: vec![],
+                                    is_transpiled: false,
                                 },
                             );
                         }
@@ -200,9 +205,9 @@ pub async fn process_package(
     module_files.insert(
         String::from("package.json"),
         MinimalFile::File {
-            c: pkg_json_content.clone(),
-            d: vec![],
-            t: false,
+            content: pkg_json_content.clone(),
+            dependencies: vec![],
+            is_transpiled: false,
         },
     );
 
@@ -230,8 +235,8 @@ pub async fn process_package(
         .filter(|v| !v.eq(&package_name))
         .collect::<Vec<String>>();
     let module_spec = MinimalCachedModule {
-        f: module_files,
-        m: used_modules,
+        files: module_files,
+        modules: used_modules,
     };
 
     println!(

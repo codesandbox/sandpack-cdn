@@ -6,6 +6,7 @@ use actix_web::{
     web, App, HttpResponse, HttpServer, Responder,
 };
 use env_logger::Env;
+use package::collect_dep_tree::collect_dep_tree;
 use std::env;
 use std::fs;
 use std::sync::{Arc, Mutex};
@@ -64,9 +65,34 @@ async fn package_req_handler(
 }
 
 #[get("/versions/{manifest}")]
-async fn versions_req_handler(path: web::Path<String>) -> impl Responder {
+async fn versions_req_handler(
+    path: web::Path<String>,
+    data: web::Data<AppData>,
+    cache_arc: web::Data<Arc<Mutex<LayeredCache>>>,
+) -> impl Responder {
     let manifest = path.into_inner();
-    HttpResponse::Ok().body(format!("Versions of {}", manifest))
+    let data_dir = data.data_dir.clone();
+    let tree = collect_dep_tree(Vec::new(), data_dir, &mut cache_arc.lock().unwrap()).await;
+    // 15 minutes cache ttl
+    let cache_ttl: u32 = 15 * 60;
+    match tree {
+        Ok(response) => {
+            let mut builder = HttpResponse::Ok();
+            builder.insert_header(CacheControl(vec![
+                CacheDirective::Public,
+                CacheDirective::MaxAge(cache_ttl),
+            ]));
+            builder.json(response)
+        }
+        Err(error) => {
+            let mut builder = HttpResponse::build(StatusCode::INTERNAL_SERVER_ERROR);
+            builder.insert_header(CacheControl(vec![
+                CacheDirective::Public,
+                CacheDirective::MaxAge(cache_ttl),
+            ]));
+            builder.body(format!("{}\n\n{:?}", error, error))
+        }
+    }
 }
 
 #[actix_web::main]
