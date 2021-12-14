@@ -80,8 +80,7 @@ pub async fn download_package_manifest_cached(
     package_name: &str,
     cache: &mut MutexGuard<'_, LayeredCache>,
 ) -> Result<CachedPackageManifest, ServerError> {
-    let mut cache_key = String::from("v1::manifest::");
-    cache_key.push_str(package_name);
+    let cache_key = String::from(format!("v1::manifest::{}", package_name));
 
     let mut originally_cached_manifest: Option<CachedPackageManifest> = None;
     if let Some(cached_value) = cache.get_value(cache_key.as_str()).await {
@@ -108,7 +107,7 @@ pub async fn download_package_manifest_cached(
         let cached_manifest = CachedPackageManifest::from_manifest(manifest, etag);
         let serialized = serde_json::to_string(&cached_manifest)?;
         cache
-            .store_value(cache_key.as_str(), serialized.as_str(), Some(86400))
+            .store_value(cache_key.as_str(), serialized.as_str())
             .await?;
         return Ok(cached_manifest);
     }

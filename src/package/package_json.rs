@@ -16,15 +16,15 @@ pub enum PackageJSONExport {
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone)]
 pub struct PackageJSON {
-    name: String,
-    version: String,
-    main: Option<String>,
-    module: Option<String>,
+    pub name: String,
+    pub version: String,
+    pub main: Option<String>,
+    pub module: Option<String>,
     #[serde(rename = "jsnext:main")]
-    js_next_main: Option<String>,
-    browser: Option<PackageJSONExport>,
-    exports: Option<PackageJSONExport>,
-    dependencies: Option<HashMap<String, String>>,
+    pub js_next_main: Option<String>,
+    pub browser: Option<PackageJSONExport>,
+    pub exports: Option<PackageJSONExport>,
+    pub dependencies: Option<HashMap<String, String>>,
 }
 
 pub fn parse_pkg_json(content: String) -> Result<PackageJSON, ServerError> {

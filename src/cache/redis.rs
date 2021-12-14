@@ -18,7 +18,6 @@ impl RedisCache {
         &mut self,
         key: &str,
         data: &str,
-        ttl_option: Option<u64>,
     ) -> Result<(), redis::RedisError> {
         let mut write_cmd = redis::Cmd::new();
         let set_res: String = write_cmd
@@ -27,17 +26,6 @@ impl RedisCache {
             .arg(data)
             .query_async(&mut self.conn)
             .await?;
-
-        if let Some(ttl) = ttl_option {
-            let mut expire_cmd = redis::Cmd::new();
-            let expire_res: i64 = expire_cmd
-                .arg("EXPIRE")
-                .arg(key)
-                .arg(ttl)
-                .query_async(&mut self.conn)
-                .await?;
-        }
-
         Ok(())
     }
 

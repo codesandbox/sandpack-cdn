@@ -8,16 +8,16 @@ use super::npm_package_manifest::download_package_manifest_cached;
 
 pub struct DependencyRequest {
     name: String,
-    version_req: VersionReq,
+    version_range: VersionReq,
 }
 
 impl DependencyRequest {
-    pub fn new(name: &str, version_range: &str) -> Result<Self, ServerError> {
-        let parsed_range = VersionReq::parse(version_range)?;
-
+    pub fn new(name: &str, version_range_str: &str) -> Result<Self, ServerError> {
+        // TODO: Handle aliases, "react": "npm:preact@^7.0.0"
+        let version_range = VersionReq::parse(version_range_str)?;
         Ok(DependencyRequest {
             name: String::from(name),
-            version_req: parsed_range,
+            version_range,
         })
     }
 }

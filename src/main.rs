@@ -22,7 +22,7 @@ mod transform;
 mod utils;
 
 use cache::layered::LayeredCache;
-use package::process::{process_package_cached, MinimalCachedModule};
+use package::process::{transform_module_cached, MinimalCachedModule};
 
 #[derive(Clone)]
 struct AppData {
@@ -53,7 +53,7 @@ async fn do_package_req(
     cache: &mut MutexGuard<'_, LayeredCache>,
 ) -> Result<MinimalCachedModule, ServerError> {
     let decoded_specifier = decode_req_part(path)?;
-    process_package_cached(decoded_specifier.as_str(), data_dir, cache).await
+    transform_module_cached(decoded_specifier.as_str(), data_dir, cache).await
 }
 
 #[get("/package/{package_specifier}")]

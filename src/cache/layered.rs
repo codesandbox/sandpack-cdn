@@ -21,11 +21,10 @@ impl LayeredCache {
         &mut self,
         key: &str,
         data: &str,
-        ttl_option: Option<u64>,
     ) -> Result<(), ServerError> {
         println!("Writing {} to the cache", key);
         self.memory.store_value(key, data);
-        match self.redis.store_value(key, data, ttl_option).await {
+        match self.redis.store_value(key, data).await {
             Err(err) => println!("Storing value to cache failed: {:?}", err),
             _ => {}
         }

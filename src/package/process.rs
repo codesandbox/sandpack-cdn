@@ -2,6 +2,7 @@ use crate::app_error::ServerError;
 use crate::cache::layered::LayeredCache;
 use crate::package::npm_downloader;
 use crate::package::package_json;
+use crate::package::package_json::PackageJSON;
 use crate::package::resolver;
 use crate::transform;
 
@@ -48,6 +49,16 @@ pub struct MinimalCachedModule {
     #[serde(rename = "m")]
     modules: Vec<String>,
 }
+
+#[derive(Serialize, Deserialize)]
+pub struct ModuleDependency {
+    #[serde(rename = "v")]
+    version: String,
+    #[serde(rename = "i")]
+    is_used: bool,
+}
+
+pub type ModuleDependenciesMap = HashMap<String, ModuleDependency>;
 
 fn collect_file_paths(
     dir_path: PathBuf,
@@ -173,7 +184,7 @@ pub async fn process_package(
     package_version: &str,
     data_dir: &str,
     cache: &mut MutexGuard<'_, LayeredCache>,
-) -> Result<MinimalCachedModule, ServerError> {
+) -> Result<(MinimalCachedModule, ModuleDependenciesMap), ServerError> {
     let download_start_time = Instant::now();
     let pkg_output_path =
         npm_downloader::download_package_content(package_name, package_version, data_dir, cache)
@@ -193,7 +204,7 @@ pub async fn process_package(
     let mut used_modules: HashSet<String> = HashSet::new();
 
     let pkg_json_content = fs::read_to_string(Path::new(&pkg_output_path).join("package.json"))?;
-    let parsed_pkg_json = package_json::parse_pkg_json(pkg_json_content.clone())?;
+    let parsed_pkg_json: PackageJSON = package_json::parse_pkg_json(pkg_json_content.clone())?;
 
     // add package.json content to the files
     module_files.insert(
@@ -208,7 +219,7 @@ pub async fn process_package(
     // transform entries
     let file_collection_start_time = Instant::now();
     transform_files(
-        package_json::collect_pkg_entries(parsed_pkg_json)?,
+        package_json::collect_pkg_entries(parsed_pkg_json.clone())?,
         ".",
         &mut module_files,
         &file_paths,
@@ -221,6 +232,20 @@ pub async fn process_package(
     for (key, value) in &file_paths {
         if !module_files.contains_key(key) {
             module_files.insert(String::from(key), MinimalFile::Ignored(*value));
+        }
+    }
+
+    // collect dependencies
+    let mut dependencies: ModuleDependenciesMap = HashMap::new();
+    if let Some(deps) = parsed_pkg_json.dependencies {
+        for (key, value) in deps.iter() {
+            dependencies.insert(
+                key.clone(),
+                ModuleDependency {
+                    version: value.clone(),
+                    is_used: used_modules.contains(value),
+                },
+            );
         }
     }
 
@@ -242,7 +267,7 @@ pub async fn process_package(
         transformation_duration_ms
     );
 
-    return Ok(module_spec);
+    return Ok((module_spec, dependencies));
 }
 
 fn parse_package_specifier(package_specifier: &str) -> Result<(String, String), ServerError> {
@@ -262,16 +287,60 @@ fn parse_package_specifier(package_specifier: &str) -> Result<(String, String), 
     }
 }
 
-pub async fn process_package_cached(
+fn get_transform_cache_key(package_name: &str, package_version: &str) -> String {
+    return String::from(format!(
+        "v1::transform::{}@{}",
+        package_name, package_version
+    ));
+}
+
+fn get_dependencies_cache_key(package_name: &str, package_version: &str) -> String {
+    return String::from(format!(
+        "v1::dependencies::{}@{}",
+        package_name, package_version
+    ));
+}
+
+pub async fn transform_module_and_cache(
+    package_name: &str,
+    package_version: &str,
+    data_dir: &str,
+    cache: &mut MutexGuard<'_, LayeredCache>,
+) -> Result<(MinimalCachedModule, ModuleDependenciesMap), ServerError> {
+    let (transformed_module, module_dependencies) =
+        process_package(package_name, package_version, data_dir, cache).await?;
+
+    let transform_cache_key = get_transform_cache_key(package_name, package_version);
+    let transformed_module_serialized = serde_json::to_string(&transformed_module)?;
+    cache
+        .store_value(
+            transform_cache_key.as_str(),
+            transformed_module_serialized.as_str(),
+        )
+        .await?;
+
+    let dependencies_cache_key = get_dependencies_cache_key(package_name, package_version);
+    let module_dependencies_serialized = serde_json::to_string(&module_dependencies)?;
+    cache
+        .store_value(
+            dependencies_cache_key.as_str(),
+            module_dependencies_serialized.as_str(),
+        )
+        .await?;
+
+    Ok((transformed_module, module_dependencies))
+}
+
+pub async fn transform_module_cached(
     package_specifier: &str,
     data_dir: &str,
     cache: &mut MutexGuard<'_, LayeredCache>,
 ) -> Result<MinimalCachedModule, ServerError> {
     let (package_name, package_version) = parse_package_specifier(package_specifier)?;
 
-    let cache_key = String::from(format!("v1::transform::{}", package_specifier));
-
-    if let Some(cached_value) = cache.get_value(cache_key.as_str()).await {
+    let transform_cache_key =
+        get_transform_cache_key(package_name.as_str(), package_version.as_str());
+    if let Some(cached_value) = cache.get_value(transform_cache_key.as_str()).await {
         let deserialized: serde_json::Result<MinimalCachedModule> =
             serde_json::from_str(cached_value.as_str());
         if let Ok(actual_module) = deserialized {
@@ -279,18 +348,39 @@ pub async fn process_package_cached(
         }
     }
 
-    let processed_module = process_package(
+    let (transformation_result, _) = transform_module_and_cache(
         package_name.as_str(),
         package_version.as_str(),
         data_dir,
         cache,
     )
     .await?;
+    Ok(transformation_result)
+}
 
-    let serialized = serde_json::to_string(&processed_module)?;
-    cache
-        .store_value(cache_key.as_str(), serialized.as_str(), Some(86400))
-        .await?;
+pub async fn fetch_dependencies_cached(
+    package_specifier: &str,
+    data_dir: &str,
+    cache: &mut MutexGuard<'_, LayeredCache>,
+) -> Result<ModuleDependenciesMap, ServerError> {
+    let (package_name, package_version) = parse_package_specifier(package_specifier)?;
 
-    Ok(processed_module)
+    let transform_cache_key =
+        get_dependencies_cache_key(package_name.as_str(), package_version.as_str());
+    if let Some(cached_value) = cache.get_value(transform_cache_key.as_str()).await {
+        let deserialized: serde_json::Result<ModuleDependenciesMap> =
+            serde_json::from_str(cached_value.as_str());
+        if let Ok(deps) = deserialized {
+            return Ok(deps);
+        }
+    }
+
+    let (_, deps) = transform_module_and_cache(
+        package_name.as_str(),
+        package_version.as_str(),
+        data_dir,
+        cache,
+    )
+    .await?;
+    Ok(deps)
 }
