@@ -26,7 +26,7 @@ impl LayeredCache {
         println!("Writing {} to the cache", key);
         self.memory.store_value(key, data);
         match self.redis.store_value(key, data, ttl_option).await {
-            Err(err) => println("Storing value to cache failed: {:?}"),
+            Err(err) => println!("Storing value to cache failed: {:?}", err),
             _ => {}
         }
         Ok(())
