@@ -1,4 +1,4 @@
-use semver::{Version, VersionReq};
+use node_semver::{Range, Version};
 use serde::{self, Deserialize, Serialize};
 use std::{
     collections::{HashMap, VecDeque},
@@ -14,7 +14,7 @@ use super::{
 
 #[derive(Clone, Debug)]
 pub enum VersionRange {
-    Range(VersionReq),
+    Range(Range),
     Alias(String),
 }
 
@@ -28,7 +28,7 @@ pub struct DependencyRequest {
 impl DependencyRequest {
     pub fn new(name: &str, version_range_str: &str, depth: u32) -> Result<Self, ServerError> {
         // TODO: Handle aliases, "react": "npm:preact@^7.0.0"
-        let version_range = match VersionReq::parse(version_range_str) {
+        let version_range = match Range::parse(version_range_str) {
             Ok(req) => VersionRange::Range(req),
             Err(_) => VersionRange::Alias(String::from(version_range_str)),
         };
@@ -43,14 +43,15 @@ impl DependencyRequest {
     pub fn resolve_version(&self, manifest: &CachedPackageManifest) -> Option<String> {
         match self.version_range.clone() {
             VersionRange::Alias(alias_str) => manifest.dist_tags.get(&alias_str).map(|v| v.clone()),
-            VersionRange::Range(req) => {
+            VersionRange::Range(range) => {
                 let mut versions: Vec<&String> = manifest.versions.keys().collect();
                 versions.sort_by(|a, b| b.cmp(a));
                 for version in versions {
                     let parsed_version = Version::parse(version.as_str());
                     if let Ok(v) = parsed_version {
-                        req.matches(&v);
-                        return Some(v.to_string());
+                        if v.satisfies(&range) {
+                            return Some(v.to_string());
+                        }
                     }
                 }
                 None

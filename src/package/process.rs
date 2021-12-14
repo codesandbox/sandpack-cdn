@@ -6,7 +6,7 @@ use crate::package::package_json::PackageJSON;
 use crate::package::resolver;
 use crate::transform;
 
-use semver::Version;
+use node_semver::Version;
 use serde::{self, Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::fs;

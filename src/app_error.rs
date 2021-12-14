@@ -3,7 +3,7 @@ use thiserror::Error;
 #[derive(Error, Debug)]
 pub enum ServerError {
     #[error("invalid semver")]
-    InvalidSemver(#[from] semver::Error),
+    InvalidSemver(#[from] node_semver::SemverError),
     #[error("some request error occured...")]
     FailedRequest(#[from] reqwest::Error),
     #[error("some request error occured...")]

@@ -1,7 +1,7 @@
 use crate::app_error::ServerError;
 use crate::package::additional_exports::get_additional_exports;
 
-use semver::Version;
+use node_semver::Version;
 use serde::{self, Deserialize, Serialize};
 use serde_json;
 use std::collections::HashMap;
