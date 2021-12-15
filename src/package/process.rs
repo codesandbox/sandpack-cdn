@@ -15,7 +15,7 @@ use std::sync::MutexGuard;
 use std::time::Instant;
 use transform::transformer::transform_file;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum MinimalFile {
     // This file got used so we transform it or return it
@@ -36,7 +36,7 @@ pub enum MinimalFile {
     Failed(bool),
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MinimalCachedModule {
     // name, it's part of the request so leaving it out for now...
     // n: String,
@@ -52,7 +52,7 @@ pub struct MinimalCachedModule {
     modules: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ModuleDependency {
     #[serde(rename = "v")]
     pub version: String,
@@ -187,23 +187,38 @@ fn transform_files(
     }
 }
 
-pub async fn process_package(
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TransformationMetrics {
+    pub download_duration_ms: u128,
+    pub file_collection_duration_ms: u128,
+    pub transformation_duration_ms: u128,
+}
+
+impl TransformationMetrics {
+    pub fn new() -> Self {
+        TransformationMetrics {
+            download_duration_ms: 0,
+            file_collection_duration_ms: 0,
+            transformation_duration_ms: 0,
+        }
+    }
+
+    pub fn to_string(&self) -> String {
+        format!(
+            "Download: {}ms\nFile Collection: {}ms\nTransformation: {}ms\n",
+            self.download_duration_ms,
+            self.file_collection_duration_ms,
+            self.transformation_duration_ms
+        )
+    }
+}
+
+async fn transform_package(
+    pkg_output_path: PathBuf,
     package_name: &str,
     package_version: &str,
-    data_dir: &str,
-    cache: &mut MutexGuard<'_, LayeredCache>,
+    metrics: &mut TransformationMetrics,
 ) -> Result<(MinimalCachedModule, ModuleDependenciesMap), ServerError> {
-    println!(
-        "Started processing package: {}@{}",
-        package_name, package_version
-    );
-
-    let download_start_time = Instant::now();
-    let pkg_output_path =
-        npm_downloader::download_package_content(package_name, package_version, data_dir, cache)
-            .await?;
-    let download_duration_ms = download_start_time.elapsed().as_millis();
-
     let file_collection_start_time = Instant::now();
     let mut file_paths: HashMap<String, u64> = HashMap::new();
     collect_file_paths(
@@ -211,7 +226,7 @@ pub async fn process_package(
         pkg_output_path.clone(),
         &mut file_paths,
     )?;
-    let file_collection_duration_ms = file_collection_start_time.elapsed().as_millis();
+    metrics.file_collection_duration_ms = file_collection_start_time.elapsed().as_millis();
 
     let mut module_files: HashMap<String, MinimalFile> = HashMap::new();
     let mut used_modules: HashSet<String> = HashSet::new();
@@ -239,7 +254,7 @@ pub async fn process_package(
         pkg_output_path,
         &mut used_modules,
     );
-    let transformation_duration_ms = file_collection_start_time.elapsed().as_millis();
+    metrics.transformation_duration_ms = file_collection_start_time.elapsed().as_millis();
 
     // add remaining files as ignored files
     for (key, value) in &file_paths {
@@ -272,15 +287,46 @@ pub async fn process_package(
     };
 
     println!(
-        "\nMetrics for {}@{}\nDownload: {}ms\nFile Collection: {}ms\nTransformation: {}ms\n",
+        "\nMetrics for {}@{}\n{}",
         package_name,
         package_version,
-        download_duration_ms,
-        file_collection_duration_ms,
-        transformation_duration_ms
+        metrics.to_string(),
     );
 
     return Ok((module_spec, dependencies));
+}
+
+pub async fn process_package(
+    package_name: &str,
+    package_version: &str,
+    data_dir: &str,
+    cache: &mut MutexGuard<'_, LayeredCache>,
+) -> Result<(MinimalCachedModule, ModuleDependenciesMap), ServerError> {
+    println!(
+        "Started processing package: {}@{}",
+        package_name, package_version
+    );
+
+    let mut metrics = TransformationMetrics::new();
+
+    let download_start_time = Instant::now();
+    let pkg_output_path: PathBuf =
+        npm_downloader::download_package_content(package_name, package_version, data_dir, cache)
+            .await?;
+    metrics.download_duration_ms = download_start_time.elapsed().as_millis();
+
+    let transform_result = transform_package(
+        pkg_output_path.clone(),
+        package_name,
+        package_version,
+        &mut metrics,
+    )
+    .await;
+
+    // Cleanup package directory
+    fs::remove_dir_all(pkg_output_path)?;
+
+    transform_result
 }
 
 fn parse_package_specifier(package_specifier: &str) -> Result<(String, String), ServerError> {
