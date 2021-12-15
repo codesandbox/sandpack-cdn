@@ -16,3 +16,11 @@ Some good packages to test the CDN:
 ## Running the project
 
 Run the following command: `RUST_MIN_STACK=16777216 cargo run`
+
+## Deploy the app
+
+### Staging
+
+```shell
+flyctl deploy --config ./fly.staging.toml
+```

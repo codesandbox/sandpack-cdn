@@ -1,17 +1,12 @@
-FROM liuchong/rustup:stable AS builder
+FROM rust:latest AS builder
 
-# Make a fake Rust app to keep a cached layer of compiled crates
-RUN USER=root cargo new app
-WORKDIR /usr/src/app
-COPY Cargo.toml Cargo.lock ./
-# Needs at least a main.rs file with a main function
-RUN mkdir src && echo "fn main(){}" > src/main.rs
-# Will build all dependent crates in release mode
-RUN cargo build --release
+# We need the nightly for some packages...
+CMD rustup default nightly
 
-# Copy the rest
+# Copy the source
 COPY . .
-# Build (install) the actual binaries
+
+# Build (install) the binaries
 RUN cargo install --path .
 
 # Runtime image
