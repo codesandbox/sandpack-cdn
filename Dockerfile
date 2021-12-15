@@ -3,8 +3,13 @@ FROM rust:latest AS builder
 # We need the nightly for some packages...
 CMD rustup default nightly
 
+WORKDIR /app
+
 # Copy the source
 COPY . .
+
+# Useful for testing the docker file without installing all dependencies...
+# RUN cargo init --bin --name sandpack-cdn
 
 # Build (install) the binaries
 RUN cargo install --path .
@@ -19,6 +24,7 @@ USER app
 WORKDIR /app
 
 # Get compiled binaries from builder's cargo install directory
-COPY --from=builder /root/.cargo/bin/ /app/
+COPY --from=builder /app/target/release/ /app/
 
 # No CMD or ENTRYPOINT, see fly.toml with `cmd` override.
+CMD /app/sandpack-cdn
