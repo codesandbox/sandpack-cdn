@@ -12,7 +12,7 @@ COPY . .
 # RUN cargo init --bin --name sandpack-cdn
 
 # Build (install) the binaries
-RUN cargo install --path .
+RUN cargo build --release
 
 # Runtime image
 FROM debian:stretch
@@ -25,6 +25,8 @@ WORKDIR /app
 
 # Get compiled binaries from builder's cargo install directory
 COPY --from=builder /app/target/release/ /app/
+
+RUN ls -la
 
 # No CMD or ENTRYPOINT, see fly.toml with `cmd` override.
 CMD /app/sandpack-cdn
