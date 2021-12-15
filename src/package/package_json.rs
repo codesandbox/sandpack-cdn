@@ -12,6 +12,7 @@ pub enum PackageJSONExport {
     Ignored(Option<bool>),
     Value(String),
     Map(HashMap<String, PackageJSONExport>),
+    Vec(Vec<PackageJSONExport>),
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone)]
@@ -50,6 +51,15 @@ pub fn get_export_entry(exports: &PackageJSONExport) -> Option<String> {
 
             None
         }
+        PackageJSONExport::Vec(vector_exports) => {
+            for export in vector_exports {
+                if let Some(found_export) = get_export_entry(export) {
+                    return Some(found_export);
+                }
+            }
+
+            None
+        }
         // Fallback to none
         _ => None,
     }
@@ -62,11 +72,8 @@ fn get_main_entry(pkg_json: &PackageJSON) -> Option<String> {
     }
 
     if let Some(browser_export) = pkg_json.browser.clone() {
-        match browser_export {
-            PackageJSONExport::Value(val) => {
-                return Some(val);
-            }
-            _ => {}
+        if let PackageJSONExport::Value(val) = browser_export {
+            return Some(val);
         }
     }
 
@@ -88,7 +95,7 @@ pub fn collect_pkg_entries(pkg_json: PackageJSON) -> Result<Vec<String>, ServerE
     let mut has_main_export = false;
 
     if let Some(exports_field) = pkg_json.exports.clone() {
-        match exports_field {
+        match &exports_field {
             PackageJSONExport::Map(exports_map) => {
                 for (key, value) in exports_map.iter() {
                     // If an export does not start with a dot it is a conditional group, handle it differently.
@@ -114,7 +121,13 @@ pub fn collect_pkg_entries(pkg_json: PackageJSON) -> Result<Vec<String>, ServerE
             }
             PackageJSONExport::Value(export_val) => {
                 has_main_export = true;
-                entries.push(export_val);
+                entries.push(export_val.clone());
+            }
+            PackageJSONExport::Vec(_) => {
+                has_main_export = true;
+                if let Some(found_export) = get_export_entry(&exports_field) {
+                    entries.push(found_export);
+                }
             }
             _ => {}
         }
