@@ -112,12 +112,7 @@ async fn versions_req_handler(
     cache_arc: web::Data<Arc<Mutex<LayeredCache>>>,
 ) -> impl Responder {
     let cache = cache_arc.into_inner();
-    let tree = process_dep_tree(
-        path.into_inner().as_str(),
-        data.data_dir.as_str(),
-        cache,
-    )
-    .await;
+    let tree = process_dep_tree(path.into_inner().as_str(), data.data_dir.as_str(), cache).await;
 
     // 15 minutes cache ttl
     let cache_ttl: u32 = 15 * 60;
@@ -156,10 +151,6 @@ async fn main() -> Result<(), std::io::Error> {
         .await?,
     ));
 
-    let server_address = "127.0.0.1:8080";
-
-    println!("Starting server on {}", server_address);
-
     let data_dir_path = env::current_dir()?.join("temp_files");
     let data_dir = data_dir_path.as_os_str().to_str().unwrap();
     let data = AppData {
@@ -169,6 +160,13 @@ async fn main() -> Result<(), std::io::Error> {
     // create data directory
     fs::create_dir_all(String::from(data_dir))?;
 
+    let port = match env::var("CASE_INSENSITIVE") {
+        Ok(var) => var,
+        Err(_) => String::from("8080"),
+    };
+
+    let server_address = format!("0.0.0.0:{}", port);
+    println!("Starting server on {}", server_address);
     HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(data.clone()))
