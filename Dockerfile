@@ -15,7 +15,7 @@ COPY . .
 RUN cargo build --release
 
 # Runtime image
-FROM debian:stretch
+FROM rust:latest
 
 # Run as "app" user
 RUN useradd -ms /bin/bash app
