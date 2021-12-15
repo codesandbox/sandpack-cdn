@@ -30,6 +30,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "actix-cors"
+version = "0.6.0-beta.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ccc0e24e5768623f3f8439783a7fc8ad294fb6549859c31a2900b31b84df89f5"
+dependencies = [
+ "actix-service",
+ "actix-utils",
+ "actix-web",
+ "derive_more",
+ "futures-util",
+ "log",
+ "once_cell",
+ "smallvec",
+]
+
+[[package]]
 name = "actix-http"
 version = "3.0.0-beta.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1802,6 +1818,7 @@ dependencies = [
 name = "sandpack-cdn"
 version = "0.0.0"
 dependencies = [
+ "actix-cors",
  "actix-web",
  "async-recursion",
  "base64 0.13.0",

@@ -1,3 +1,4 @@
+use actix_cors::Cors;
 use actix_web::middleware::{Compress, Logger};
 use actix_web::{
     get,
@@ -168,9 +169,15 @@ async fn main() -> Result<(), std::io::Error> {
     let server_address = format!("0.0.0.0:{}", port);
     println!("Starting server on {}", server_address);
     HttpServer::new(move || {
+        let mut cors = Cors::default();
+        cors = cors.allow_any_header();
+        cors = cors.allow_any_method();
+        cors = cors.allow_any_origin();
+
         App::new()
             .app_data(web::Data::new(data.clone()))
             .app_data(web::Data::new(layered_cache.clone()))
+            .wrap(cors)
             .wrap(Logger::new("\"%r\" %s %Dms"))
             // TODO: Remove this and let cloudflare handle encoding?
             .wrap(Compress::new(ContentEncoding::Auto))
