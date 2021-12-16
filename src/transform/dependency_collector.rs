@@ -55,6 +55,6 @@ impl<'a> Fold for DependencyCollector<'a> {
             }
         };
 
-        return node.fold_children_with(self);
+        node.fold_children_with(self)
     }
 }

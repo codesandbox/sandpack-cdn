@@ -90,7 +90,7 @@ fn get_versions() -> Versions {
         minor: 1,
         patch: 0,
     });
-    return versions;
+    versions
 }
 
 pub fn transform_file(filename: &str, code: &str) -> Result<TransformedFile, ServerError> {
@@ -208,10 +208,10 @@ pub fn transform_file(filename: &str, code: &str) -> Result<TransformedFile, Ser
 
                 let output = String::from(std::str::from_utf8(&buf).unwrap_or(""));
 
-                return Ok(TransformedFile {
+                Ok(TransformedFile {
                     content: output,
                     dependencies: dependencies,
-                });
+                })
             },
         )
     })

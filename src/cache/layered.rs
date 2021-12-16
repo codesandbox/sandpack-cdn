@@ -2,7 +2,7 @@ use std::sync::{Arc, Mutex};
 
 use crate::app_error::ServerError;
 use crate::cache::memory::InMemoryCache;
-use crate::cache::redis::RedisCache;
+// use crate::cache::redis::RedisCache;
 
 #[derive(Clone, Debug)]
 pub struct LayeredCache {

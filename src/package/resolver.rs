@@ -50,10 +50,8 @@ pub fn collect_files(
             let mut result: Vec<String> = vec![];
             for file_path in files_map.keys() {
                 if let Some(file_ext) = extract_file_extension(file_path) {
-                    if extensions.contains(file_ext) {
-                        if glob_pattern.matches(file_path) {
-                            result.push(file_path.to_owned());
-                        }
+                    if extensions.contains(file_ext) && glob_pattern.matches(file_path) {
+                        result.push(file_path.to_owned());
                     }
                 }
             }

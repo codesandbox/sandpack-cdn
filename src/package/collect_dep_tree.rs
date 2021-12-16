@@ -154,36 +154,34 @@ pub async fn collect_dep_tree(
             resolve_dep_futures.push(future);
         }
 
-        let new_dep_requeusts = join_all(resolve_dep_futures).await;
+        let new_dep_requests = join_all(resolve_dep_futures).await;
 
         dep_requests = Vec::new();
         resolve_dep_futures = Vec::new();
 
-        for new_dep_request_res in new_dep_requeusts {
-            if let Ok(Ok(Some((original_dep_req, resolved_version, transient_deps)))) =
-                new_dep_request_res
+        for new_dep_request_res in new_dep_requests.into_iter().flatten().flatten().flatten() {
+            let (original_dep_req, resolved_version, transient_deps) = new_dep_request_res;
+
+            if !dependencies
+                .iter()
+                .any(|d| d.name.eq(&original_dep_req.name))
             {
-                if !dependencies
+                dependencies.push(Dependency::new(
+                    original_dep_req.name,
+                    resolved_version.clone(),
+                    original_dep_req.depth,
+                ));
+            }
+
+            for transient_dep_req in transient_deps {
+                if dependencies
                     .iter()
-                    .any(|d| d.name.eq(&original_dep_req.name))
+                    .any(|d| d.name.eq(&transient_dep_req.name))
                 {
-                    dependencies.push(Dependency::new(
-                        original_dep_req.name,
-                        resolved_version.clone(),
-                        original_dep_req.depth,
-                    ));
+                    continue;
                 }
 
-                for transient_dep_req in transient_deps {
-                    if dependencies
-                        .iter()
-                        .any(|d| d.name.eq(&transient_dep_req.name))
-                    {
-                        continue;
-                    }
-
-                    dep_requests.push(transient_dep_req);
-                }
+                dep_requests.push(transient_dep_req);
             }
         }
     }

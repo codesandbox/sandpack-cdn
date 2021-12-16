@@ -14,7 +14,6 @@ use serde::{self, Deserialize, Serialize};
 use std::collections::HashMap;
 use std::env;
 use std::fs;
-use std::sync::Arc;
 
 mod app_error;
 mod cache;
@@ -54,7 +53,7 @@ async fn do_package_req(
     cache: &LayeredCache,
 ) -> Result<MinimalCachedModule, ServerError> {
     let decoded_specifier = decode_req_part(path)?;
-    transform_module_cached(decoded_specifier.as_str(), data_dir, &cache).await
+    transform_module_cached(decoded_specifier.as_str(), data_dir, cache).await
 }
 
 #[get("/package/{package_specifier}")]
