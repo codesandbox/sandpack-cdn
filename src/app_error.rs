@@ -18,8 +18,6 @@ pub enum ServerError {
     PackageVersionNotFound,
     #[error("Infallible error")]
     Infallible(#[from] std::convert::Infallible),
-    #[error("Redis error")]
-    Redis(#[from] redis::RedisError),
     #[error("Could not parse module")]
     SWCParseError { message: String },
     #[error("Could not download npm package manifest")]

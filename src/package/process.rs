@@ -286,10 +286,10 @@ async fn transform_package(
     };
 
     println!(
-        "\nMetrics for {}@{}\n{}",
+        "\nMetrics for {}@{}\n{}\n",
         package_name,
         package_version,
-        metrics.to_string(),
+        metrics.to_string()
     );
 
     return Ok((module_spec, dependencies));

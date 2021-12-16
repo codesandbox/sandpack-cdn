@@ -149,7 +149,6 @@ async fn main() -> Result<(), std::io::Error> {
     env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
 
     let layered_cache = LayeredCache::try_init(
-        "rediss://:c4d5cb5cb1dd4ad49bc9af0f565e9d53@eu1-tidy-bison-33953.upstash.io:33953",
         1000,
     )
     .await?;
