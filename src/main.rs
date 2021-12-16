@@ -14,7 +14,7 @@ use serde::{self, Deserialize, Serialize};
 use std::collections::HashMap;
 use std::env;
 use std::fs;
-use std::sync::{Arc, Mutex, MutexGuard};
+use std::sync::Arc;
 
 mod app_error;
 mod cache;
@@ -51,22 +51,22 @@ fn decode_req_part(part: &str) -> Result<String, ServerError> {
 async fn do_package_req(
     path: &str,
     data_dir: &str,
-    cache: &mut MutexGuard<'_, LayeredCache>,
+    cache: &LayeredCache,
 ) -> Result<MinimalCachedModule, ServerError> {
     let decoded_specifier = decode_req_part(path)?;
-    transform_module_cached(decoded_specifier.as_str(), data_dir, cache).await
+    transform_module_cached(decoded_specifier.as_str(), data_dir, &cache).await
 }
 
 #[get("/package/{package_specifier}")]
 async fn package_req_handler(
     path: web::Path<String>,
     data: web::Data<AppData>,
-    cache_arc: web::Data<Arc<Mutex<LayeredCache>>>,
+    cache: web::Data<LayeredCache>,
 ) -> impl Responder {
     let package_content = do_package_req(
         path.as_str(),
         data.data_dir.as_str(),
-        &mut cache_arc.lock().unwrap(),
+        &cache,
     )
     .await;
 
@@ -98,7 +98,7 @@ async fn package_req_handler(
 async fn process_dep_tree(
     raw_deps_str: &str,
     data_dir: &str,
-    cache: Arc<Arc<Mutex<LayeredCache>>>,
+    cache: &LayeredCache,
 ) -> Result<DependencyList, ServerError> {
     let decoded_deps_str = decode_req_part(raw_deps_str)?;
     let dep_map: HashMap<String, String> = serde_json::from_str(decoded_deps_str.as_str())?;
@@ -110,10 +110,15 @@ async fn process_dep_tree(
 async fn versions_req_handler(
     path: web::Path<String>,
     data: web::Data<AppData>,
-    cache_arc: web::Data<Arc<Mutex<LayeredCache>>>,
+    cache_arc: web::Data<LayeredCache>,
 ) -> impl Responder {
     let cache = cache_arc.into_inner();
-    let tree = process_dep_tree(path.into_inner().as_str(), data.data_dir.as_str(), cache).await;
+    let tree = process_dep_tree(
+        path.into_inner().as_str(),
+        data.data_dir.as_str(),
+        &cache
+    )
+    .await;
 
     // 15 minutes cache ttl
     let cache_ttl: u32 = 15 * 60;
@@ -144,13 +149,11 @@ async fn versions_req_handler(
 async fn main() -> Result<(), std::io::Error> {
     env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
 
-    let layered_cache = Arc::new(Mutex::new(
-        LayeredCache::new(
-            "rediss://:c4d5cb5cb1dd4ad49bc9af0f565e9d53@eu1-tidy-bison-33953.upstash.io:33953",
-            1000,
-        )
-        .await?,
-    ));
+    let layered_cache = LayeredCache::try_init(
+        "rediss://:c4d5cb5cb1dd4ad49bc9af0f565e9d53@eu1-tidy-bison-33953.upstash.io:33953",
+        1000,
+    )
+    .await?;
 
     let data_dir_path = env::current_dir()?.join("temp_files");
     let data_dir = data_dir_path.as_os_str().to_str().unwrap();

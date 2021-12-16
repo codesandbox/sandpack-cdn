@@ -1,5 +1,5 @@
 use chrono::{DateTime, Utc};
-use std::{collections::HashMap, sync::MutexGuard};
+use std::collections::HashMap;
 
 use crate::{app_error::ServerError, cache::layered::LayeredCache};
 use reqwest::StatusCode;
@@ -78,7 +78,7 @@ async fn download_package_manifest(
 
 pub async fn download_package_manifest_cached(
     package_name: &str,
-    cache: &mut MutexGuard<'_, LayeredCache>,
+    cache: &LayeredCache,
 ) -> Result<CachedPackageManifest, ServerError> {
     let cache_key = String::from(format!("v1::manifest::{}", package_name));
 

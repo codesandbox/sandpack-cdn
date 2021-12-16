@@ -1,5 +1,6 @@
 use lru::LruCache;
 
+#[derive(Debug)]
 pub struct InMemoryCache {
     cache: LruCache<String, String>,
 }
@@ -15,7 +16,7 @@ impl InMemoryCache {
     }
 
     pub fn get_value(&mut self, key: &str) -> Option<String> {
-        let val = self.cache.get(&String::from(key));
+        let val = self.cache.get(key);
         val.map(|v| v.clone())
     }
 }

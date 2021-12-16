@@ -1,9 +1,6 @@
 use node_semver::{Range, Version};
 use serde::{self, Deserialize, Serialize};
-use std::{
-    collections::{HashMap, VecDeque},
-    sync::{Arc, Mutex},
-};
+use std::collections::{HashMap, VecDeque};
 
 use crate::{app_error::ServerError, cache::layered::LayeredCache};
 
@@ -108,16 +105,15 @@ pub fn process_dep_map(
 async fn resolve_dep(
     req: DependencyRequest,
     data_dir: &str,
-    cache: Arc<Arc<Mutex<LayeredCache>>>,
+    cache: &LayeredCache,
 ) -> Result<Option<(String, Vec<DependencyRequest>)>, ServerError> {
-    let mut cache_claim = cache.lock().unwrap();
-    let manifest = download_package_manifest_cached(req.name.as_str(), &mut cache_claim).await?;
+    let manifest = download_package_manifest_cached(req.name.as_str(), cache).await?;
     if let Some(resolved_version) = req.resolve_version(&manifest) {
         let dependencies = module_dependencies_cached(
             req.name.as_str(),
             resolved_version.as_str(),
             data_dir,
-            &mut cache_claim,
+            cache,
         )
         .await?;
         let mut transient_deps: Vec<DependencyRequest> = Vec::with_capacity(dependencies.len());
@@ -140,38 +136,52 @@ async fn resolve_dep(
 
 pub async fn collect_dep_tree(
     deps: Vec<DependencyRequest>,
-    data_dir: &str,
-    cache: Arc<Arc<Mutex<LayeredCache>>>,
+    data_dir_slice: &str,
+    cache_ref: &LayeredCache,
 ) -> Result<DependencyList, ServerError> {
     let mut dependencies: DependencyList = Vec::new();
     let mut dep_queue: VecDeque<DependencyRequest> = VecDeque::from(deps);
+    let data_dir = String::from(data_dir_slice);
+    let cache = cache_ref.clone();
+    let mut resolve_dep_futures = Vec::new();
     while dep_queue.len() > 0 {
         let item = dep_queue.pop_front();
-        match item {
-            Some(dep_req) => {
-                // TODO: Only skip if version range also matches, also find a better way to de-duplicate, probably when they get added...
-                if let Some(_) = dependencies.iter().position(|d| d.name.eq(&dep_req.name)) {
-                    continue;
-                }
-
-                if let Some((resolved_version, transient_deps)) =
-                    resolve_dep(dep_req.clone(), data_dir, cache.clone()).await?
-                {
-                    dependencies.push(Dependency::new(
-                        dep_req.name,
-                        resolved_version.clone(),
-                        dep_req.depth,
-                    ));
-
-                    for transient_dep in transient_deps {
-                        dep_queue.push_back(transient_dep);
-                    }
-                }
-            }
-            None => {
-                break;
-            }
+        if let Some(dep_req) = item {
+            // TODO: Only skip if version range also matches, also find a better way to de-duplicate, probably when they get added...
+            let future =
+                tokio::spawn(async move { resolve_dep(dep_req, data_dir.as_str(), &cache).await });
+            resolve_dep_futures.push(future);
         }
+
+        break;
     }
+
+    // while dep_queue.len() > 0 {
+    //     let item = dep_queue.pop_front();
+    //     match item {
+    //         Some(dep_req) => {
+    //             // TODO: Only skip if version range also matches, also find a better way to de-duplicate, probably when they get added...
+    //             if let Some(_) = dependencies.iter().position(|d| d.name.eq(&dep_req.name)) {
+    //                 continue;
+    //             }
+
+    //             if let Some((resolved_version, transient_deps)) =
+    //                 resolve_dep(dep_req.clone(), data_dir, cache.clone()).await?
+    //             {
+    //                 dependencies.push(Dependency::new(
+    //                     dep_req.name,
+    //                     resolved_version.clone(),
+    //                     dep_req.depth,
+    //                 ));
+
+    //                 for transient_dep in transient_deps {
+    //                     dep_queue.push_back(transient_dep);
+    //                 }
+    //             }
+    //         }
+    //         None => {
+    //             break;
+    //         }
+    //     }
     Ok(dependencies)
 }

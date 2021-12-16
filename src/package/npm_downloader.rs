@@ -3,7 +3,6 @@ use std::fmt;
 use std::io::Cursor;
 use std::path::Path;
 use std::path::PathBuf;
-use std::sync::MutexGuard;
 use tar::Archive;
 use url::Url;
 
@@ -32,7 +31,7 @@ pub async fn download_package_content(
     package_name: &str,
     version: &str,
     data_dir: &str,
-    cache: &mut MutexGuard<'_, LayeredCache>,
+    cache: &LayeredCache,
 ) -> Result<PathBuf, ServerError> {
     let manifest: CachedPackageManifest =
         download_package_manifest_cached(package_name.clone(), cache).await?;

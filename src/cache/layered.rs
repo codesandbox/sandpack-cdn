@@ -1,30 +1,33 @@
+use std::sync::{Arc, Mutex};
+
 use crate::app_error::ServerError;
 use crate::cache::memory::InMemoryCache;
 use crate::cache::redis::RedisCache;
 
+#[derive(Clone, Debug)]
 pub struct LayeredCache {
     // redis: RedisCache,
-    memory: InMemoryCache,
+    memory: Arc<Mutex<InMemoryCache>>,
 }
 
 impl LayeredCache {
-    pub async fn new(
+    pub async fn try_init(
         redis_url: &'static str,
         in_memory_size: usize,
     ) -> Result<LayeredCache, ServerError> {
         // let redis = RedisCache::new(redis_url).await?;
-        let memory = InMemoryCache::new(in_memory_size);
+        let memory = Arc::new(Mutex::new(InMemoryCache::new(in_memory_size)));
         // Ok(LayeredCache { redis, memory })
         Ok(LayeredCache { memory })
     }
 
     pub async fn store_value(
-        &mut self,
+        &self,
         key: &str,
         data: &str,
     ) -> Result<(), ServerError> {
         println!("Writing {} to the cache", key);
-        self.memory.store_value(key, data);
+        self.memory.lock().expect("could not get write lock").store_value(key, data);
         // match self.redis.store_value(key, data).await {
         //     Err(err) => println!("Storing value to cache failed: {:?}", err),
         //     _ => {}
@@ -32,8 +35,8 @@ impl LayeredCache {
         Ok(())
     }
 
-    pub async fn get_value(&mut self, key: &str) -> Option<String> {
-        if let Some(found_in_memory) = self.memory.get_value(key) {
+    pub async fn get_value(&self, key: &str) -> Option<String> {
+        if let Some(found_in_memory) = self.memory.lock().expect("unable to get read lock").get_value(key) {
             println!("{} found in the memory cache", key);
             return Some(found_in_memory);
         }
