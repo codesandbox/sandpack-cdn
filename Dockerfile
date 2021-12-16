@@ -12,7 +12,7 @@ COPY . .
 # RUN cargo init --bin --name sandpack-cdn
 
 # Build (install) the binaries
-RUN cargo build --release
+RUN RUST_MIN_STACK=16777216 cargo build --release
 
 # Runtime image
 FROM rust:latest
