@@ -6,8 +6,8 @@ pub struct InMemoryCache {
 }
 
 impl InMemoryCache {
-    pub fn new(size: usize) -> InMemoryCache {
-        let cache: LruCache<String, String> = LruCache::new(size);
+    pub fn new(size: u64) -> InMemoryCache {
+        let cache: LruCache<String, String> = LruCache::new(size as usize);
         InMemoryCache { cache }
     }
 

@@ -9,9 +9,7 @@ pub struct LayeredCache {
 }
 
 impl LayeredCache {
-    pub async fn try_init(
-        in_memory_size: usize,
-    ) -> Result<LayeredCache, ServerError> {
+    pub async fn try_init(in_memory_size: u64) -> Result<LayeredCache, ServerError> {
         let memory = Arc::new(Mutex::new(InMemoryCache::new(in_memory_size)));
         Ok(LayeredCache { memory })
     }

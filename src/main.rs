@@ -62,12 +62,7 @@ async fn package_req_handler(
     data: web::Data<AppData>,
     cache: web::Data<LayeredCache>,
 ) -> impl Responder {
-    let package_content = do_package_req(
-        path.as_str(),
-        data.data_dir.as_str(),
-        &cache,
-    )
-    .await;
+    let package_content = do_package_req(path.as_str(), data.data_dir.as_str(), &cache).await;
 
     match package_content {
         Ok(response) => {
@@ -112,12 +107,7 @@ async fn versions_req_handler(
     cache_arc: web::Data<LayeredCache>,
 ) -> impl Responder {
     let cache = cache_arc.into_inner();
-    let tree = process_dep_tree(
-        path.into_inner().as_str(),
-        data.data_dir.as_str(),
-        &cache
-    )
-    .await;
+    let tree = process_dep_tree(path.into_inner().as_str(), data.data_dir.as_str(), &cache).await;
 
     // 15 minutes cache ttl
     let cache_ttl: u32 = 15 * 60;
@@ -148,10 +138,9 @@ async fn versions_req_handler(
 async fn main() -> Result<(), std::io::Error> {
     env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
 
-    let layered_cache = LayeredCache::try_init(
-        1000,
-    )
-    .await?;
+    // TODO: Calculate cache size dynamically based on available memory?
+    // 1 module ~ 512Mb
+    let layered_cache = LayeredCache::try_init(2500).await?;
 
     let data_dir_path = env::current_dir()?.join("temp_files");
     let data_dir = data_dir_path.as_os_str().to_str().unwrap();
