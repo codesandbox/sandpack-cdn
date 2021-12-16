@@ -1,30 +1,29 @@
 use crate::app_error::ServerError;
 
-use redis::{aio::MultiplexedConnection, Client};
+use redis::{aio::ConnectionManager, Client};
 
-#[derive(Clone)]
 pub struct RedisCache {
-    conn: MultiplexedConnection,
+    client: Client,
+    conn_manager: ConnectionManager,
 }
 
 impl RedisCache {
-    pub async fn new(redis_url: &'static str) -> Result<RedisCache, ServerError> {
-        let client = Client::open(redis_url)?;
-        let conn = client.get_multiplexed_async_connection().await?;
-        Ok(RedisCache { conn })
+    pub async fn try_init(redis_url: &'static str) -> Result<RedisCache, ServerError> {
+        let client: Client = Client::open(redis_url)?;
+        let conn_manager: ConnectionManager = client.get_tokio_connection_manager().await?;
+        Ok(RedisCache {
+            client,
+            conn_manager,
+        })
     }
 
-    pub async fn store_value(
-        &mut self,
-        key: &str,
-        data: &str,
-    ) -> Result<(), redis::RedisError> {
+    pub async fn store_value(&mut self, key: &str, data: &str) -> Result<(), redis::RedisError> {
         let mut write_cmd = redis::Cmd::new();
         let set_res: String = write_cmd
             .arg("SET")
             .arg(key)
             .arg(data)
-            .query_async(&mut self.conn)
+            .query_async(&mut self.conn_manager)
             .await?;
         Ok(())
     }
@@ -34,7 +33,7 @@ impl RedisCache {
         let result: String = get_cmd
             .arg("GET")
             .arg(key)
-            .query_async(&mut self.conn)
+            .query_async(&mut self.conn_manager)
             .await?;
         Ok(result)
     }

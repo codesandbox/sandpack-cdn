@@ -105,16 +105,16 @@ pub fn process_dep_map(
 
 async fn resolve_dep(
     req: DependencyRequest,
-    data_dir: &str,
-    cache: &LayeredCache,
+    data_dir: String,
+    cache: LayeredCache,
 ) -> Result<Option<(DependencyRequest, String, Vec<DependencyRequest>)>, ServerError> {
-    let manifest = download_package_manifest_cached(req.name.as_str(), cache).await?;
+    let manifest = download_package_manifest_cached(req.name.as_str(), &cache).await?;
     if let Some(resolved_version) = req.resolve_version(&manifest) {
         let dependencies = module_dependencies_cached(
             req.name.as_str(),
             resolved_version.as_str(),
-            data_dir,
-            cache,
+            data_dir.as_str(),
+            &cache,
         )
         .await?;
         let mut transient_deps: Vec<DependencyRequest> = Vec::with_capacity(dependencies.len());
@@ -147,10 +147,7 @@ pub async fn collect_dep_tree(
         for dep_req in dep_requests {
             let data_dir = String::from(data_dir_slice);
             let cache = cache_ref.clone();
-
-            // TODO: Only skip if version range also matches, also find a better way to de-duplicate, probably when they get added...
-            let future =
-                tokio::spawn(async move { resolve_dep(dep_req, data_dir.as_str(), &cache).await });
+            let future = tokio::spawn(async move { resolve_dep(dep_req, data_dir, cache).await });
             resolve_dep_futures.push(future);
         }
 
