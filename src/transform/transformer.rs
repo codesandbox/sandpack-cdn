@@ -210,7 +210,7 @@ pub fn transform_file(filename: &str, code: &str) -> Result<TransformedFile, Ser
 
                 Ok(TransformedFile {
                     content: output,
-                    dependencies: dependencies,
+                    dependencies,
                 })
             },
         )
