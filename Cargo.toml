@@ -28,3 +28,4 @@ chrono = { version = "0.4.19", features = ["serde"] }
 base64 = "0.13.0"
 async-recursion = "0.3.2"
 node-semver = "2.0.0"
+futures = "0.3.17"

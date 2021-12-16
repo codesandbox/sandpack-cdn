@@ -1,8 +1,9 @@
 use node_semver::{Range, Version};
 use serde::{self, Deserialize, Serialize};
-use std::collections::{HashMap, VecDeque};
+use std::collections::HashMap;
 
 use crate::{app_error::ServerError, cache::layered::LayeredCache};
+use futures::future::join_all;
 
 use super::{
     npm_package_manifest::{download_package_manifest_cached, CachedPackageManifest},
@@ -106,7 +107,7 @@ async fn resolve_dep(
     req: DependencyRequest,
     data_dir: &str,
     cache: &LayeredCache,
-) -> Result<Option<(String, Vec<DependencyRequest>)>, ServerError> {
+) -> Result<Option<(DependencyRequest, String, Vec<DependencyRequest>)>, ServerError> {
     let manifest = download_package_manifest_cached(req.name.as_str(), cache).await?;
     if let Some(resolved_version) = req.resolve_version(&manifest) {
         let dependencies = module_dependencies_cached(
@@ -129,7 +130,7 @@ async fn resolve_dep(
                 }
             }
         }
-        return Ok(Some((resolved_version, transient_deps)));
+        return Ok(Some((req, resolved_version, transient_deps)));
     }
     Ok(None)
 }
@@ -140,48 +141,52 @@ pub async fn collect_dep_tree(
     cache_ref: &LayeredCache,
 ) -> Result<DependencyList, ServerError> {
     let mut dependencies: DependencyList = Vec::new();
-    let mut dep_queue: VecDeque<DependencyRequest> = VecDeque::from(deps);
-    let data_dir = String::from(data_dir_slice);
-    let cache = cache_ref.clone();
     let mut resolve_dep_futures = Vec::new();
-    while dep_queue.len() > 0 {
-        let item = dep_queue.pop_front();
-        if let Some(dep_req) = item {
+    let mut dep_requests: Vec<DependencyRequest> = Vec::from(deps);
+    while !dep_requests.is_empty() {
+        for dep_req in dep_requests {
+            let data_dir = String::from(data_dir_slice);
+            let cache = cache_ref.clone();
+
             // TODO: Only skip if version range also matches, also find a better way to de-duplicate, probably when they get added...
             let future =
                 tokio::spawn(async move { resolve_dep(dep_req, data_dir.as_str(), &cache).await });
             resolve_dep_futures.push(future);
         }
 
-        break;
+        let new_dep_requeusts = join_all(resolve_dep_futures).await;
+
+        dep_requests = Vec::new();
+        resolve_dep_futures = Vec::new();
+
+        for new_dep_request_res in new_dep_requeusts {
+            if let Ok(Ok(Some((original_dep_req, resolved_version, transient_deps)))) =
+                new_dep_request_res
+            {
+                if !dependencies
+                    .iter()
+                    .any(|d| d.name.eq(&original_dep_req.name))
+                {
+                    dependencies.push(Dependency::new(
+                        original_dep_req.name,
+                        resolved_version.clone(),
+                        original_dep_req.depth,
+                    ));
+                }
+
+                for transient_dep_req in transient_deps {
+                    if dependencies
+                        .iter()
+                        .any(|d| d.name.eq(&transient_dep_req.name))
+                    {
+                        continue;
+                    }
+
+                    dep_requests.push(transient_dep_req);
+                }
+            }
+        }
     }
 
-    // while dep_queue.len() > 0 {
-    //     let item = dep_queue.pop_front();
-    //     match item {
-    //         Some(dep_req) => {
-    //             // TODO: Only skip if version range also matches, also find a better way to de-duplicate, probably when they get added...
-    //             if let Some(_) = dependencies.iter().position(|d| d.name.eq(&dep_req.name)) {
-    //                 continue;
-    //             }
-
-    //             if let Some((resolved_version, transient_deps)) =
-    //                 resolve_dep(dep_req.clone(), data_dir, cache.clone()).await?
-    //             {
-    //                 dependencies.push(Dependency::new(
-    //                     dep_req.name,
-    //                     resolved_version.clone(),
-    //                     dep_req.depth,
-    //                 ));
-
-    //                 for transient_dep in transient_deps {
-    //                     dep_queue.push_back(transient_dep);
-    //                 }
-    //             }
-    //         }
-    //         None => {
-    //             break;
-    //         }
-    //     }
     Ok(dependencies)
 }
