@@ -67,7 +67,8 @@ async fn package_req_handler(
     match package_content {
         Ok(response) => {
             let mut builder = HttpResponse::Ok();
-            let cache_ttl: u32 = 86400 * 365;
+            // 1 year
+            let cache_ttl: u32 = 365 * 24 * 3600;
             builder.insert_header(CacheControl(vec![
                 CacheDirective::Public,
                 CacheDirective::MaxAge(cache_ttl),
@@ -76,7 +77,8 @@ async fn package_req_handler(
         }
         Err(error) => {
             let mut builder = HttpResponse::build(StatusCode::INTERNAL_SERVER_ERROR);
-            let cache_ttl: u32 = 86400;
+            // 6 hours
+            let cache_ttl: u32 = 6 * 3600;
             builder.insert_header(CacheControl(vec![
                 CacheDirective::Public,
                 CacheDirective::MaxAge(cache_ttl),

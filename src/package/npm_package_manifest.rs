@@ -84,49 +84,83 @@ async fn download_package_manifest(
     Ok(Some((etag, manifest)))
 }
 
-pub async fn download_package_manifest_cached(
+fn get_cache_key(package_name: &str) -> String {
+    String::from(format!("v1::manifest::{}", package_name))
+}
+
+async fn download_and_cache(
     package_name: &str,
     cache: &LayeredCache,
-) -> Result<CachedPackageManifest, ServerError> {
-    let cache_key = String::from(format!("v1::manifest::{}", package_name));
-
-    let mut originally_cached_manifest: Option<CachedPackageManifest> = None;
-    if let Some(cached_value) = cache.get_value(cache_key.as_str()).await {
-        let deserialized: serde_json::Result<CachedPackageManifest> =
-            serde_json::from_str(cached_value.as_str());
-        if let Ok(found_manifest) = deserialized {
-            let time_diff = Utc::now() - found_manifest.fetched_at;
-            if time_diff.num_minutes() < 15 {
-                return Ok(found_manifest);
-            }
-
-            originally_cached_manifest = Some(found_manifest);
-        }
-    }
-
-    let download_manifest_result = download_package_manifest(
-        package_name,
-        originally_cached_manifest
-            .clone()
-            .map(|v| v.etag)
-            .unwrap_or(None),
-    )
-    .await?;
-
+    cached_etag: Option<String>,
+) -> Result<Option<CachedPackageManifest>, ServerError> {
+    let cache_key = get_cache_key(package_name);
+    let download_manifest_result = download_package_manifest(package_name, cached_etag).await?;
     if let Some((etag, manifest)) = download_manifest_result {
         let cached_manifest = CachedPackageManifest::from_manifest(manifest, etag);
         let serialized = serde_json::to_string(&cached_manifest)?;
         cache
             .store_value(cache_key.as_str(), serialized.as_str())
             .await?;
-        return Ok(cached_manifest);
+        return Ok(Some(cached_manifest));
+    } else {
+        return Ok(None);
+    }
+}
+
+pub async fn download_package_manifest_cached(
+    package_name: &str,
+    cache: &LayeredCache,
+) -> Result<CachedPackageManifest, ServerError> {
+    let cache_key = get_cache_key(package_name);
+    let mut originally_cached_manifest: Option<CachedPackageManifest> = None;
+    if let Some(cached_value) = cache.get_value(cache_key.as_str()).await {
+        let deserialized: serde_json::Result<CachedPackageManifest> =
+            serde_json::from_str(cached_value.as_str());
+        if let Ok(found_manifest) = deserialized {
+            // We return instantly if manifest is less than 15 minutes old
+            let time_diff = Utc::now() - found_manifest.fetched_at;
+            if time_diff.num_minutes() < 15 {
+                return Ok(found_manifest);
+            }
+            originally_cached_manifest = Some(found_manifest);
+        }
     }
 
-    match originally_cached_manifest {
-        Some(m) => Ok(m.clone()),
-        None => Err(ServerError::NpmManifestDownloadError {
-            status_code: 404,
-            package_name: String::from(package_name),
-        }),
+    if let Some(cached_manifest) = originally_cached_manifest.clone() {
+        // Fetch new manifest in the background and use the old one for this request
+        println!(
+            "Found npm manifest of {} in cache, fetching new version in background",
+            package_name
+        );
+
+        let pkg_name_string = String::from(package_name);
+        let cloned_cache = cache.clone();
+        let etag = cached_manifest.etag.clone();
+        tokio::spawn(async move {
+            match download_and_cache(pkg_name_string.as_str(), &cloned_cache, etag).await {
+                Ok(val) => {
+                    if let Some(_) = val {
+                        println!(
+                            "Updated manifest for npm module {}",
+                            pkg_name_string.as_str()
+                        );
+                    }
+                }
+                Err(err) => {
+                    println!("Error updating npm manifest cache {:?}", err);
+                }
+            }
+        });
+
+        return Ok(cached_manifest);
+    } else {
+        if let Some(result) = download_and_cache(package_name, cache, None).await? {
+            return Ok(result);
+        } else {
+            return Err(ServerError::NpmManifestDownloadError {
+                status_code: 404,
+                package_name: String::from(package_name),
+            });
+        }
     }
 }
