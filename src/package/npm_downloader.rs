@@ -11,6 +11,7 @@ use crate::cache::layered::LayeredCache;
 use crate::package::npm_package_manifest::{
     download_package_manifest_cached, CachedPackageManifest,
 };
+use crate::utils::request;
 
 #[derive(PartialEq, Eq)]
 pub enum TarballType {
@@ -46,18 +47,20 @@ pub async fn download_package_content(
         };
 
         // download the tarball
-        let response = reqwest::get(tarball_url.as_str()).await?;
+        let client = request::get_client(60)?;
+        let request = client.get(tarball_url.as_str()).build()?;
+        let response = client.execute(request).await?;
         let response_status = response.status();
         if !response_status.is_success() {
-            return Err(ServerError::RequestErrorStatus(response_status.as_u16()));
+            return Err(ServerError::NpmPackageDownloadError {
+                status_code: response_status.as_u16(),
+                package_name: String::from(package_name),
+                package_version: String::from(version),
+            });
         }
 
         // save the tarball
-        let dir_path = Path::new(data_dir).join(format!(
-            "{}-{}",
-            package_name,
-            version
-        ));
+        let dir_path = Path::new(data_dir).join(format!("{}-{}", package_name, version));
         let content = Cursor::new(response.bytes().await?);
 
         // Extract the tarball

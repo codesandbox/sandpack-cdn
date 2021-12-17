@@ -4,11 +4,11 @@ use thiserror::Error;
 pub enum ServerError {
     #[error("invalid semver")]
     InvalidSemver(#[from] node_semver::SemverError),
-    #[error("some request error occured...")]
+    #[error("Request failed")]
     FailedRequest(#[from] reqwest::Error),
-    #[error("some request error occured...")]
-    RequestErrorStatus(u16),
-    #[error("an io error occured...")]
+    #[error("Response has a non-200 status code")]
+    RequestErrorStatus { status_code: u16 },
+    #[error("IO Operation failed")]
     IoError(#[from] std::io::Error),
     #[error("Could not parse url")]
     UrlParseError(#[from] url::ParseError),
@@ -20,14 +20,23 @@ pub enum ServerError {
     Infallible(#[from] std::convert::Infallible),
     #[error("Could not parse module")]
     SWCParseError { message: String },
+    #[error("Could not download npm package")]
+    NpmPackageDownloadError {
+        status_code: u16,
+        package_name: String,
+        package_version: String,
+    },
     #[error("Could not download npm package manifest")]
-    NpmPackageManifestNotFound,
+    NpmManifestDownloadError {
+        status_code: u16,
+        package_name: String,
+    },
     #[error("Invalid package specifier")]
     InvalidPackageSpecifier,
     #[error("Invalid Base64 string")]
     InvalidBase64(#[from] base64::DecodeError),
     #[error("Invalid byte buffer")]
-    InvalidString(#[from] std::str::Utf8Error)
+    InvalidString(#[from] std::str::Utf8Error),
 }
 
 impl From<ServerError> for std::io::Error {

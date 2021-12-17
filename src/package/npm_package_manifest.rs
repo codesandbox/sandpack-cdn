@@ -1,6 +1,7 @@
 use chrono::{DateTime, Utc};
 use std::collections::HashMap;
 
+use crate::utils::request;
 use crate::{app_error::ServerError, cache::layered::LayeredCache};
 use reqwest::StatusCode;
 use serde::{self, Deserialize, Serialize};
@@ -53,7 +54,7 @@ async fn download_package_manifest(
     package_name: &str,
     cached_etag: Option<String>,
 ) -> Result<Option<(Option<String>, PackageManifest)>, ServerError> {
-    let client = reqwest::Client::new();
+    let client = request::get_client(5)?;
     let mut request = client.get(format!("https://registry.npmjs.org/{}", package_name));
     if let Some(cached_etag_val) = cached_etag {
         request = request.header("If-None-Match", cached_etag_val.as_str());
@@ -62,6 +63,13 @@ async fn download_package_manifest(
 
     if StatusCode::NOT_MODIFIED.eq(&response.status()) {
         return Ok(None);
+    }
+
+    if !response.status().is_success() {
+        return Err(ServerError::NpmManifestDownloadError {
+            status_code: response.status().as_u16(),
+            package_name: String::from(package_name),
+        });
     }
 
     let mut etag: Option<String> = None;
@@ -116,6 +124,9 @@ pub async fn download_package_manifest_cached(
 
     match originally_cached_manifest {
         Some(m) => Ok(m.clone()),
-        None => Err(ServerError::NpmPackageManifestNotFound),
+        None => Err(ServerError::NpmManifestDownloadError {
+            status_code: 404,
+            package_name: String::from(package_name),
+        }),
     }
 }

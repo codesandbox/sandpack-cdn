@@ -13,7 +13,7 @@ flate2 = "1.0.22"
 tar = "0.4.37"
 serde = { version = "1.0.131", features = ["derive"] }
 serde_json = "1.0.72"
-reqwest = { version = "0.11.7", features = ["json"] }
+reqwest = { version = "0.11.7", features = ["json", "brotli", "gzip", "deflate"] }
 tokio = { version = "1.14.0", features = ["full"] }
 url = "2.2.2"
 glob = "0.3.0"
