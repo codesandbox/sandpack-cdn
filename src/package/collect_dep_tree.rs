@@ -1,9 +1,13 @@
 use node_semver::{Range, Version};
+use parking_lot::Mutex;
 use serde::{self, Deserialize, Serialize};
-use std::collections::HashMap;
+use std::{
+    collections::{HashMap, VecDeque},
+    sync::Arc,
+};
+use tokio::task::JoinHandle;
 
 use crate::{app_error::ServerError, cache::layered::LayeredCache};
-use futures::future::join_all;
 
 use super::{
     npm_package_manifest::{download_package_manifest_cached, CachedPackageManifest},
@@ -58,7 +62,7 @@ impl DependencyRequest {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Dependency {
     #[serde(rename = "n")]
     name: String,
@@ -103,11 +107,13 @@ pub fn process_dep_map(
     Ok(deps)
 }
 
+type ResolveDepResult = Result<Option<(Dependency, Vec<DependencyRequest>)>, ServerError>;
+
 async fn resolve_dep(
     req: DependencyRequest,
     data_dir: String,
     cache: LayeredCache,
-) -> Result<Option<(DependencyRequest, String, Vec<DependencyRequest>)>, ServerError> {
+) -> ResolveDepResult {
     let manifest = download_package_manifest_cached(req.name.as_str(), &cache).await?;
     if let Some(resolved_version) = req.resolve_version(&manifest) {
         let dependencies = module_dependencies_cached(
@@ -130,58 +136,125 @@ async fn resolve_dep(
                 }
             }
         }
-        return Ok(Some((req, resolved_version, transient_deps)));
+
+        return Ok(Some((
+            Dependency::new(req.name, resolved_version, req.depth),
+            transient_deps,
+        )));
     }
     Ok(None)
 }
 
-pub async fn collect_dep_tree(
-    deps: Vec<DependencyRequest>,
-    data_dir_slice: &str,
-    cache_ref: &LayeredCache,
-) -> Result<DependencyList, ServerError> {
-    let mut dependencies: DependencyList = Vec::new();
-    let mut resolve_dep_futures = Vec::new();
-    let mut dep_requests: Vec<DependencyRequest> = Vec::from(deps);
-    while !dep_requests.is_empty() {
-        for dep_req in dep_requests {
-            let data_dir = String::from(data_dir_slice);
-            let cache = cache_ref.clone();
-            let future = tokio::spawn(async move { resolve_dep(dep_req, data_dir, cache).await });
-            resolve_dep_futures.push(future);
+#[derive(Debug, Clone)]
+struct DepTreeCollector {
+    data_dir: String,
+    cache: LayeredCache,
+    dependencies: Arc<Mutex<DependencyList>>,
+    futures: Arc<Mutex<VecDeque<JoinHandle<()>>>>,
+    in_progress: Arc<Mutex<Vec<DependencyRequest>>>,
+}
+
+impl DepTreeCollector {
+    pub fn new(data_dir: String, cache: LayeredCache) -> Self {
+        DepTreeCollector {
+            data_dir,
+            cache,
+            dependencies: Arc::new(Mutex::new(Vec::new())),
+            futures: Arc::new(Mutex::new(VecDeque::new())),
+            in_progress: Arc::new(Mutex::new(Vec::new())),
+        }
+    }
+
+    fn get_dependencies(&self) -> DependencyList {
+        self.dependencies.lock().clone()
+    }
+
+    fn add_dependency(&self, dep: Dependency) {
+        if !self
+            .dependencies
+            .lock()
+            .iter()
+            .any(|d| d.name.eq(&dep.name))
+        {
+            self.dependencies.lock().push(dep.clone());
+        }
+    }
+
+    fn add_future(&self, dep_req: DependencyRequest) {
+        let dep_collector = self.clone();
+        let future = tokio::spawn(async move {
+            let cache = dep_collector.cache.clone();
+            let data_dir = dep_collector.data_dir.clone();
+            let result = resolve_dep(dep_req, data_dir, cache).await;
+            if let Ok(Some((dependency, transient_deps))) = result {
+                dep_collector.add_dependency(dependency);
+                dep_collector.add_dep_requests(transient_deps);
+            }
+        });
+        self.futures.lock().push_back(future);
+    }
+
+    fn has_dep_request(&self, dep_request: DependencyRequest) -> bool {
+        if self
+            .dependencies
+            .lock()
+            .iter()
+            .any(|d| d.name.eq(&dep_request.name))
+        {
+            return true;
         }
 
-        let new_dep_requests = join_all(resolve_dep_futures).await;
+        if self
+            .in_progress
+            .lock()
+            .iter()
+            .any(|d| d.name.eq(&dep_request.name))
+        {
+            return true;
+        }
 
-        dep_requests = Vec::new();
-        resolve_dep_futures = Vec::new();
+        false
+    }
 
-        for new_dep_request_res in new_dep_requests.into_iter().flatten().flatten().flatten() {
-            let (original_dep_req, resolved_version, transient_deps) = new_dep_request_res;
+    fn add_dep_request(&self, dep_request: DependencyRequest) {
+        self.in_progress.lock().push(dep_request);
+    }
 
-            if !dependencies
-                .iter()
-                .any(|d| d.name.eq(&original_dep_req.name))
-            {
-                dependencies.push(Dependency::new(
-                    original_dep_req.name,
-                    resolved_version.clone(),
-                    original_dep_req.depth,
-                ));
-            }
-
-            for transient_dep_req in transient_deps {
-                if dependencies
-                    .iter()
-                    .any(|d| d.name.eq(&transient_dep_req.name))
-                {
-                    continue;
-                }
-
-                dep_requests.push(transient_dep_req);
+    fn add_dep_requests(&self, dep_requests: Vec<DependencyRequest>) {
+        for dep_req in dep_requests {
+            if !self.has_dep_request(dep_req.clone()) {
+                self.add_future(dep_req.clone());
+                self.add_dep_request(dep_req.clone());
             }
         }
     }
 
-    Ok(dependencies)
+    fn get_next_join(&self) -> Option<JoinHandle<()>> {
+        self.futures.lock().pop_front()
+    }
+
+    pub async fn try_collect(
+        dep_requests: Vec<DependencyRequest>,
+        data_dir: String,
+        cache: LayeredCache,
+    ) -> Result<DependencyList, ServerError> {
+        let collector = DepTreeCollector::new(data_dir, cache);
+        collector.add_dep_requests(dep_requests);
+
+        while let Some(handle) = collector.get_next_join() {
+            if let Err(err) = handle.await {
+                println!("Dependency collection error {:?}", err);
+            }
+        }
+
+        Ok(collector.get_dependencies())
+    }
+}
+
+pub async fn collect_dep_tree(
+    dep_requests: Vec<DependencyRequest>,
+    data_dir: &str,
+    cache: &LayeredCache,
+) -> Result<DependencyList, ServerError> {
+    DepTreeCollector::try_collect(dep_requests, String::from(data_dir), cache.clone()).await
 }

@@ -1,9 +1,10 @@
-use std::sync::{Arc, Mutex};
+use parking_lot::Mutex;
+use std::sync::Arc;
 
 use crate::app_error::ServerError;
 use crate::cache::memory::InMemoryCache;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct LayeredCache {
     memory: Arc<Mutex<InMemoryCache>>,
 }
@@ -15,10 +16,7 @@ impl LayeredCache {
     }
 
     fn store_memory_value(&self, key: &str, data: &str) {
-        self.memory
-            .lock()
-            .expect("could not get lock for mem-cache")
-            .store_value(key, data);
+        self.memory.lock().store_value(key, data);
     }
 
     pub async fn store_value(&self, key: &str, data: &str) -> Result<(), ServerError> {
@@ -28,10 +26,7 @@ impl LayeredCache {
     }
 
     fn get_memory_value(&self, key: &str) -> Option<String> {
-        self.memory
-            .lock()
-            .expect("could not get lock for mem-cache")
-            .get_value(key)
+        self.memory.lock().get_value(key)
     }
 
     pub async fn get_value(&self, key: &str) -> Option<String> {
