@@ -216,13 +216,31 @@ impl DepTreeCollector {
         false
     }
 
+    fn total_dep_count(&self) -> u64 {
+        (self.dependencies.lock().len() + self.in_progress.lock().len()) as u64
+    }
+
+    fn should_skip_dep_request(&self, dep_request: DependencyRequest) -> bool {
+        // Skip packages that start with @types/ as they don't contain any useful code, just typings...
+        if dep_request.name.as_str().starts_with("@types/") {
+            return true;
+        }
+
+        // Add a limit to the total amount of deps
+        if self.total_dep_count() > 500 {
+            return true;
+        }
+
+        self.has_dep_request(dep_request)
+    }
+
     fn add_dep_request(&self, dep_request: DependencyRequest) {
         self.in_progress.lock().push(dep_request);
     }
 
     fn add_dep_requests(&self, dep_requests: Vec<DependencyRequest>) {
         for dep_req in dep_requests {
-            if !self.has_dep_request(dep_req.clone()) {
+            if !self.should_skip_dep_request(dep_req.clone()) {
                 self.add_future(dep_req.clone());
                 self.add_dep_request(dep_req.clone());
             }
