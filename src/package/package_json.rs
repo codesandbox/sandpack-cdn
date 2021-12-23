@@ -135,9 +135,7 @@ pub fn collect_pkg_entries(pkg_json: PackageJSON) -> Result<Vec<String>, ServerE
 
     // This is a fallback to the old module export logic in case a module has no exports#. or exports is not a string
     if !has_main_export {
-        if let Some(main_entry) = get_main_entry(&pkg_json) {
-            entries.push(main_entry);
-        }
+        entries.push(get_main_entry(&pkg_json));
     }
 
     // Add additional, hardcoded exports
