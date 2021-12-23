@@ -39,6 +39,10 @@ pub enum ServerError {
     InvalidString(#[from] std::str::Utf8Error),
     #[error("Join error")]
     JoinError(#[from] tokio::task::JoinError),
+    #[error("Invalid CDN version")]
+    InvalidCDNVersion,
+    #[error("Could not parse integer")]
+    IntegerParse(#[from] std::num::ParseIntError),
 }
 
 impl From<ServerError> for std::io::Error {

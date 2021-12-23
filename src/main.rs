@@ -9,7 +9,9 @@ use actix_web::{
 use app_error::ServerError;
 use base64::decode as decode_base64;
 use env_logger::Env;
+use lazy_static::lazy_static;
 use package::collect_dep_tree::{collect_dep_tree, process_dep_map, DependencyList};
+use regex::Regex;
 use serde::{self, Deserialize, Serialize};
 use std::collections::HashMap;
 use std::env;
@@ -22,6 +24,11 @@ mod utils;
 
 use cache::layered::LayeredCache;
 use package::process::{transform_module_cached, MinimalCachedModule};
+
+lazy_static! {
+    static ref VERSION_RE: Regex = Regex::new("^(\\d+)\\((.*)\\)$").unwrap();
+    static ref LATEST_VERSION: u64 = 0;
+}
 
 #[derive(Clone)]
 struct AppData {
@@ -43,6 +50,21 @@ impl ErrorResponse {
 fn decode_req_part(part: &str) -> Result<String, ServerError> {
     let decoded = decode_base64(part)?;
     let str_value = std::str::from_utf8(&decoded)?;
+
+    if let Some(parts) = VERSION_RE.captures(str_value) {
+        if let Some(version_match) = parts.get(1) {
+            let version = version_match.as_str().parse::<u64>()?;
+            if version > *LATEST_VERSION {
+                return Err(ServerError::InvalidCDNVersion);
+            }
+        }
+
+        if let Some(content_match) = parts.get(2) {
+            return Ok(String::from(content_match.as_str()));
+        }
+    }
+
+    // Fallback to no version
     Ok(String::from(str_value))
 }
 
