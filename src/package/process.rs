@@ -212,7 +212,7 @@ impl TransformationMetrics {
     }
 }
 
-async fn transform_package(
+fn transform_package(
     pkg_output_path: PathBuf,
     package_name: &str,
     package_version: &str,
@@ -314,16 +314,22 @@ pub async fn process_package(
             .await?;
     metrics.download_duration_ms = download_start_time.elapsed().as_millis();
 
-    let transform_result = transform_package(
-        pkg_output_path.clone(),
-        package_name,
-        package_version,
-        &mut metrics,
-    )
-    .await;
+    // Transform module in new thread
+    let package_name_string = String::from(package_name);
+    let package_version_string = String::from(package_version);
+    let cloned_pkg_output_path = pkg_output_path.clone();
+    let task = tokio::task::spawn_blocking(move || {
+        transform_package(
+            cloned_pkg_output_path,
+            package_name_string.as_str(),
+            package_version_string.as_str(),
+            &mut metrics,
+        )
+    });
+    let transform_result = task.await?;
 
     // Cleanup package directory
-    fs::remove_dir_all(pkg_output_path)?;
+    tokio::fs::remove_dir_all(pkg_output_path).await?;
 
     transform_result
 }

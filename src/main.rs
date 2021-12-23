@@ -13,7 +13,6 @@ use package::collect_dep_tree::{collect_dep_tree, process_dep_map, DependencyLis
 use serde::{self, Deserialize, Serialize};
 use std::collections::HashMap;
 use std::env;
-use std::fs;
 
 mod app_error;
 mod cache;
@@ -151,7 +150,7 @@ async fn main() -> Result<(), std::io::Error> {
     };
 
     // create data directory
-    fs::create_dir_all(String::from(data_dir))?;
+    tokio::fs::create_dir_all(String::from(data_dir)).await?;
 
     let port = match env::var("CASE_INSENSITIVE") {
         Ok(var) => var,
