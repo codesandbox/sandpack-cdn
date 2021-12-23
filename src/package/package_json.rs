@@ -66,26 +66,26 @@ pub fn get_export_entry(exports: &PackageJSONExport) -> Option<String> {
 }
 
 // main fields order: 'exports#.', 'module', 'browser', 'main', 'jsnext:main'
-fn get_main_entry(pkg_json: &PackageJSON) -> Option<String> {
+fn get_main_entry(pkg_json: &PackageJSON) -> String {
     if let Some(module_export) = pkg_json.module.clone() {
-        return Some(module_export);
+        return module_export;
     }
 
     if let Some(browser_export) = pkg_json.browser.clone() {
         if let PackageJSONExport::Value(val) = browser_export {
-            return Some(val);
+            return val;
         }
     }
 
     if let Some(main_export) = pkg_json.main.clone() {
-        return Some(main_export);
+        return main_export;
     }
 
     if let Some(js_next_main_export) = pkg_json.js_next_main.clone() {
-        return Some(js_next_main_export);
+        return js_next_main_export;
     }
 
-    return None;
+    return String::from("index");
 }
 
 pub fn collect_pkg_entries(pkg_json: PackageJSON) -> Result<Vec<String>, ServerError> {
