@@ -1,7 +1,6 @@
 use crate::app_error::ServerError;
 use crate::package::additional_exports::get_additional_exports;
 
-use node_semver::Version;
 use serde::{self, Deserialize, Serialize};
 use serde_json;
 use std::collections::HashMap;
@@ -89,8 +88,6 @@ fn get_main_entry(pkg_json: &PackageJSON) -> String {
 }
 
 pub fn collect_pkg_entries(pkg_json: PackageJSON) -> Result<Vec<String>, ServerError> {
-    let parsed_pkg_version = Version::parse(pkg_json.version.as_str())?;
-
     let mut entries: Vec<String> = Vec::new();
     let mut has_main_export = false;
 
@@ -138,13 +135,7 @@ pub fn collect_pkg_entries(pkg_json: PackageJSON) -> Result<Vec<String>, ServerE
         entries.push(get_main_entry(&pkg_json));
     }
 
-    // Add additional, hardcoded exports
-    // Used for packages like react that are used a lot but have not properly defined exports yet
-    let mut package_key = pkg_json.name.clone();
-    package_key.push('@');
-    package_key.push_str(parsed_pkg_version.major.to_string().as_str());
-
-    let mut additional_exports = get_additional_exports(package_key.as_str());
+    let mut additional_exports = get_additional_exports(pkg_json.name.as_str());
     entries.append(&mut additional_exports);
 
     // Sort and deduplicate...

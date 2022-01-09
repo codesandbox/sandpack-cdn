@@ -27,7 +27,7 @@ use package::process::{transform_module_cached, MinimalCachedModule};
 
 lazy_static! {
     static ref VERSION_RE: Regex = Regex::new("^(\\d+)\\((.*)\\)$").unwrap();
-    static ref LATEST_VERSION: u64 = 0;
+    static ref LATEST_VERSION: u64 = 1;
 }
 
 #[derive(Clone)]
