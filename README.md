@@ -13,6 +13,7 @@ Some good packages to test the CDN:
 - Relative and wildcard exports: `framer@2.0.0-beta.13`
 - Array exports: `@babel/runtime@7.16.5`
 - No main export, fallback to index: `object-assign@4.1.1`
+- Remapping using the browser field: `@emotion/unitless@0.7.5` - Not implemented yet, TODO: Implement this
 
 ## Running the project
 
