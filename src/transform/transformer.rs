@@ -15,6 +15,7 @@ use swc_ecmascript::parser::{EsConfig, Parser, StringInput, Syntax};
 use swc_ecmascript::transforms::modules::common_js::common_js;
 use swc_ecmascript::transforms::modules::common_js::Config as CommonJSConfig;
 use swc_ecmascript::transforms::resolver::resolver_with_mark;
+use swc_ecmascript::transforms::Assumptions;
 use swc_ecmascript::transforms::{
     compat::reserved_words::reserved_words, fixer, helpers, hygiene,
     optimization::simplify::dead_branch_remover, optimization::simplify::expr_simplifier,
@@ -38,10 +39,7 @@ fn parse(
     let comments = SingleThreadedComments::default();
     let syntax = Syntax::Es(EsConfig {
         jsx: false,
-        dynamic_import: true,
         export_default_from: true,
-        export_namespace_from: true,
-        import_meta: true,
         decorators: true,
         ..Default::default()
     });
@@ -164,7 +162,12 @@ pub fn transform_file(filename: &str, code: &str) -> Result<TransformedFile, Ser
                 let module = {
                     let mut passes = chain!(
                         // Transpile new syntax to older syntax if needed
-                        preset_env(global_mark, Some(&comments), preset_env_config),
+                        preset_env(
+                            global_mark,
+                            Some(&comments),
+                            preset_env_config,
+                            Assumptions::all()
+                        ),
                         // Inject SWC helpers if needed.
                         helpers::inject_helpers(),
                     );

@@ -28,11 +28,12 @@ impl<'a> DependencyCollector<'a> {
 
 impl<'a> Fold for DependencyCollector<'a> {
     fn fold_call_expr(&mut self, node: ast::CallExpr) -> ast::CallExpr {
-        use ast::{Expr::*, ExprOrSuper::*};
+        use ast::{Callee::*, Expr::*};
 
         let call_expr = match node.callee.clone() {
-            Super(_) => return node,
             Expr(boxed) => boxed,
+            // Super and import
+            _ => return node,
         };
 
         match &*call_expr {

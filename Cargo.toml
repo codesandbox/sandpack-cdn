@@ -11,15 +11,15 @@ thiserror = "1.0.30"
 env_logger = "0.9.0"
 flate2 = "1.0.22"
 tar = "0.4.37"
-serde = { version = "1.0.131", features = ["derive"] }
-serde_json = "1.0.72"
+serde = { version = "1.0.136", features = ["derive"] }
+serde_json = "1.0.79"
 reqwest = { version = "0.11.7", features = ["json", "brotli", "gzip", "deflate"] }
-tokio = { version = "1.14.0", features = ["full"] }
+tokio = { version = "1.17.0", features = ["full"] }
 url = "2.2.2"
 glob = "0.3.0"
-swc_ecmascript = { version = "0.88.3", features = ["parser", "transforms", "module", "optimization", "react", "typescript", "utils", "visit", "codegen", "utils"] }
-swc_ecma_preset_env = "0.67.5"
-swc_common = { version = "0.14.7", features = ["tty-emitter", "sourcemap"] }
+swc_ecmascript = { version = "0.130.0", features = ["parser", "transforms", "module", "optimization", "react", "typescript", "utils", "visit", "codegen", "utils"] }
+swc_ecma_preset_env = "0.104.0"
+swc_common = { version = "0.17.13", features = ["tty-emitter", "sourcemap"] }
 swc_atoms = "0.2.9"
 lazy_static = "1.4.0"
 lru = "0.7.0"
