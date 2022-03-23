@@ -11,3 +11,6 @@ pub fn get_client(timeout_secs: u64) -> Result<Client, ServerError> {
     let client = client_builder.build()?;
     Ok(client)
 }
+
+
+
