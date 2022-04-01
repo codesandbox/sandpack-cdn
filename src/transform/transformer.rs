@@ -23,6 +23,7 @@ use swc_ecmascript::transforms::{
 };
 use swc_ecmascript::visit::FoldWith;
 
+#[derive(Debug)]
 pub struct TransformedFile {
     pub content: String,
     pub dependencies: HashSet<String>,
@@ -197,6 +198,19 @@ pub fn transform_file(filename: &str, code: &str) -> Result<TransformedFile, Ser
                     module.fold_with(&mut passes)
                 };
 
+                // Remove sourcemap comment
+                {
+                    let (mut _leading_comments, mut trailing_comments) = comments.borrow_all_mut();
+                    for (_key, value) in trailing_comments.iter_mut() {
+                        if let Some(index) = value
+                            .iter()
+                            .position(|comment| comment.text.starts_with("# sourceMappingURL"))
+                        {
+                            value.remove(index);
+                        }
+                    }
+                }
+
                 // Print code...
                 let mut buf = vec![];
                 let writer = Box::new(JsWriter::new(source_map.clone(), "\n", &mut buf, None));
@@ -218,4 +232,33 @@ pub fn transform_file(filename: &str, code: &str) -> Result<TransformedFile, Ser
             },
         )
     })
+}
+
+#[cfg(test)]
+mod test {
+    use crate::transform::transformer::transform_file;
+
+    #[test]
+    fn inlines_env_variables() {
+        assert_eq!(
+            transform_file("index.js", "module.exports = process.env.NODE_ENV;")
+                .unwrap()
+                .content,
+            String::from("\"use strict\";module.exports=\"development\";")
+        );
+    }
+
+    #[test]
+    fn remove_sourcemap_comment() {
+        // TODO: Allow inline sourcemaps?
+        assert_eq!(
+            transform_file(
+                "index.js",
+                "module.exports = \"hello world\";\n//other-comment\n//# sourceMappingURL=index.js.map"
+            )
+            .unwrap()
+            .content,
+            String::from("\"use strict\";module.exports=\"hello world\"; //other-comment\n")
+        );
+    }
 }
