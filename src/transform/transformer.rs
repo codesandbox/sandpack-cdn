@@ -1,5 +1,6 @@
 use crate::app_error::ServerError;
 use std::collections::{HashMap, HashSet};
+use tracing::info;
 
 use crate::transform::decl_collector::collect_decls;
 use crate::transform::dependency_collector::dependency_collector;
@@ -92,8 +93,9 @@ fn get_versions() -> Versions {
     versions
 }
 
+#[tracing::instrument]
 pub fn transform_file(filename: &str, code: &str) -> Result<TransformedFile, ServerError> {
-    println!("Transforming file: {}", filename);
+    info!("Transforming file: {}", filename);
 
     // Error early if filename does not end in js: js, cjs, mjs, ...
     let ext = &filename[filename.len() - 2..];

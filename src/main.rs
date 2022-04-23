@@ -1,31 +1,25 @@
-use actix_web::middleware::Logger;
-use actix_web::{
-    get,
-    http::header::{CacheControl, CacheDirective},
-    http::StatusCode,
-    web, App, HttpResponse, HttpServer, Responder,
-};
 use app_error::ServerError;
 use base64::decode as decode_base64;
-use env_logger::Env;
 use lazy_static::lazy_static;
 use package::collect_dep_tree::{collect_dep_tree, process_dep_map, DependencyList};
 use regex::Regex;
 use serde::{self, Deserialize, Serialize};
 use std::collections::HashMap;
 use std::env;
-use tracing_honeycomb::new_honeycomb_telemetry_layer;
-use tracing_subscriber::filter::LevelFilter;
-use tracing_subscriber::layer::SubscriberExt;
-use tracing_subscriber::registry;
+use std::net::SocketAddr;
+use warp::{Filter, Rejection, Reply};
 
 mod app_error;
 mod cache;
+mod custom_reply;
 mod package;
+mod routes;
+mod setup_tracing;
 mod transform;
 mod utils;
 
 use cache::layered::LayeredCache;
+use custom_reply::CustomReply;
 use package::process::{transform_module_cached, MinimalCachedModule};
 
 lazy_static! {
@@ -34,7 +28,7 @@ lazy_static! {
 }
 
 #[derive(Clone)]
-struct AppData {
+pub struct AppData {
     data_dir: String,
 }
 
@@ -71,48 +65,48 @@ fn decode_req_part(part: &str) -> Result<String, ServerError> {
     Ok(String::from(str_value))
 }
 
-async fn do_package_req(
-    path: &str,
-    data_dir: &str,
-    cache: &LayeredCache,
-) -> Result<MinimalCachedModule, ServerError> {
-    let decoded_specifier = decode_req_part(path)?;
-    transform_module_cached(decoded_specifier.as_str(), data_dir, cache).await
-}
-
-#[get("/package/{package_specifier}")]
+// #[get("/package/{package_specifier}")]
 async fn package_req_handler(
-    path: web::Path<String>,
-    data: web::Data<AppData>,
-    cache: web::Data<LayeredCache>,
-) -> impl Responder {
-    let package_content = do_package_req(path.as_str(), data.data_dir.as_str(), &cache).await;
+    path: String,
+    data: AppData,
+    cache: LayeredCache,
+) -> Result<impl Reply, Rejection> {
+    let decoded_specifier = decode_req_part(path.as_str())?;
+    let package_content =
+        transform_module_cached(decoded_specifier.as_str(), data.data_dir.as_str(), &cache).await?;
 
-    match package_content {
-        Ok(response) => {
-            let mut builder = HttpResponse::Ok();
-            // 1 year
-            let cache_ttl: u32 = 365 * 24 * 3600;
-            builder.insert_header(CacheControl(vec![
-                CacheDirective::Public,
-                CacheDirective::MaxAge(cache_ttl),
-            ]));
-            builder.json(response)
-        }
-        Err(error) => {
-            let mut builder = HttpResponse::build(StatusCode::INTERNAL_SERVER_ERROR);
-            // 6 hours
-            let cache_ttl: u32 = 6 * 3600;
-            builder.insert_header(CacheControl(vec![
-                CacheDirective::Public,
-                CacheDirective::MaxAge(cache_ttl),
-            ]));
-            builder.json(ErrorResponse::new(
-                format!("{}", error),
-                format!("{:?}", error),
-            ))
-        }
-    }
+    let mut reply = CustomReply::json(&package_content);
+    reply.add_header(
+        "cache-control",
+        format!("public, max-age={}", 365 * 24 * 3600).as_str(),
+    );
+    Ok(reply)
+
+    // match package_content {
+    //     Ok(response) => {
+    //         let mut builder = HttpResponse::Ok();
+    //         // 1 year
+    //
+    //         builder.insert_header(CacheControl(vec![
+    //             CacheDirective::Public,
+    //             CacheDirective::MaxAge(cache_ttl),
+    //         ]));
+    //         builder.json(response)
+    //     }
+    //     Err(error) => {
+    //         let mut builder = HttpResponse::build(StatusCode::INTERNAL_SERVER_ERROR);
+    //         // 6 hours
+    //         let cache_ttl: u32 = 6 * 3600;
+    //         builder.insert_header(CacheControl(vec![
+    //             CacheDirective::Public,
+    //             CacheDirective::MaxAge(cache_ttl),
+    //         ]));
+    //         builder.json(ErrorResponse::new(
+    //             format!("{}", error),
+    //             format!("{:?}", error),
+    //         ))
+    //     }
+    // }
 }
 
 async fn process_dep_tree(
@@ -126,62 +120,50 @@ async fn process_dep_tree(
     return collect_dep_tree(dep_requests, data_dir, cache).await;
 }
 
-#[get("/dep_tree/{dependencies}")]
-async fn versions_req_handler(
-    path: web::Path<String>,
-    data: web::Data<AppData>,
-    cache_arc: web::Data<LayeredCache>,
-) -> impl Responder {
-    let cache = cache_arc.into_inner();
-    let tree = process_dep_tree(path.into_inner().as_str(), data.data_dir.as_str(), &cache).await;
+// #[get("/dep_tree/{dependencies}")]
+// async fn versions_req_handler(
+//     path: web::Path<String>,
+//     data: web::Data<AppData>,
+//     cache_arc: web::Data<LayeredCache>,
+// ) -> impl Responder {
+//     let cache = cache_arc.into_inner();
+//     let tree = process_dep_tree(path.into_inner().as_str(), data.data_dir.as_str(), &cache).await;
 
-    // 15 minutes cache ttl
-    let cache_ttl: u32 = 15 * 60;
-    match tree {
-        Ok(response) => {
-            let mut builder = HttpResponse::Ok();
-            builder.insert_header(CacheControl(vec![
-                CacheDirective::Public,
-                CacheDirective::MaxAge(cache_ttl),
-            ]));
-            builder.json(response)
-        }
-        Err(error) => {
-            let mut builder = HttpResponse::build(StatusCode::INTERNAL_SERVER_ERROR);
-            builder.insert_header(CacheControl(vec![
-                CacheDirective::Public,
-                CacheDirective::MaxAge(cache_ttl),
-            ]));
-            builder.json(ErrorResponse::new(
-                format!("{}", error),
-                format!("{:?}", error),
-            ))
-        }
-    }
-}
+//     // 15 minutes cache ttl
+//     let cache_ttl: u32 = 15 * 60;
+//     match tree {
+//         Ok(response) => {
+//             let mut builder = HttpResponse::Ok();
+//             builder.insert_header(CacheControl(vec![
+//                 CacheDirective::Public,
+//                 CacheDirective::MaxAge(cache_ttl),
+//             ]));
+//             builder.json(response)
+//         }
+//         Err(error) => {
+//             let mut builder = HttpResponse::build(StatusCode::INTERNAL_SERVER_ERROR);
+//             builder.insert_header(CacheControl(vec![
+//                 CacheDirective::Public,
+//                 CacheDirective::MaxAge(cache_ttl),
+//             ]));
+//             builder.json(ErrorResponse::new(
+//                 format!("{}", error),
+//                 format!("{:?}", error),
+//             ))
+//         }
+//     }
+// }
 
-#[actix_web::main]
+#[tokio::main]
 async fn main() -> Result<(), std::io::Error> {
-    let honeycomb_config = libhoney::Config {
-        options: libhoney::client::Options {
-            api_key: "6TRdsEEi4WhE4pbcQIGYdA".to_string(),
-            dataset: "sandpack-cdn".to_string(),
-            ..libhoney::client::Options::default()
-        },
-        transmission_options: libhoney::transmission::Options::default(),
-    };
+    let port = match env::var("PORT") {
+        Ok(var) => var,
+        Err(_) => String::from("8080"),
+    }
+    .parse::<u16>()
+    .unwrap();
 
-    let telemetry_layer = new_honeycomb_telemetry_layer("my-service-name", honeycomb_config);
-
-    // NOTE: the underlying subscriber MUST be the Registry subscriber
-    let subscriber = registry::Registry::default() // provide underlying span data store
-        .with(LevelFilter::INFO) // filter out low-level debug tracing (eg tokio executor)
-        .with(tracing_subscriber::fmt::Layer::default()) // log to stdout
-        .with(telemetry_layer); // publish to honeycomb backend
-
-    tracing::subscriber::set_global_default(subscriber).expect("setting global default failed");
-
-    env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
+    setup_tracing::setup_tracing();
 
     // TODO: Calculate cache size dynamically based on available memory?
     // 1 module ~ 512Mb
@@ -189,29 +171,25 @@ async fn main() -> Result<(), std::io::Error> {
 
     let data_dir_path = env::current_dir()?.join("temp_files");
     let data_dir = data_dir_path.as_os_str().to_str().unwrap();
-    let data = AppData {
+    let app_data = AppData {
         data_dir: String::from(data_dir),
     };
 
     // create data directory
     tokio::fs::create_dir_all(String::from(data_dir)).await?;
 
-    let port = match env::var("CASE_INSENSITIVE") {
-        Ok(var) => var,
-        Err(_) => String::from("8080"),
-    };
+    let cors = warp::cors()
+        .allow_any_origin()
+        .allow_methods(vec!["POST", "GET", "PUT"]);
 
-    let server_address = format!("0.0.0.0:{}", port);
-    println!("Starting server on {}", server_address);
-    HttpServer::new(move || {
-        App::new()
-            .app_data(web::Data::new(data.clone()))
-            .app_data(web::Data::new(layered_cache.clone()))
-            .wrap(Logger::new("\"%r\" %s %Dms"))
-            .service(package_req_handler)
-            .service(versions_req_handler)
-    })
-    .bind(server_address)?
-    .run()
-    .await
+    let filter = routes::routes(app_data, layered_cache)
+        .with(warp::trace::request())
+        .with(cors)
+        .with(warp::compression::gzip());
+
+    let addr: SocketAddr = ([0, 0, 0, 0], port).into();
+    println!("Server running on {}", addr);
+    warp::serve(filter).run(addr).await;
+
+    Ok(())
 }
