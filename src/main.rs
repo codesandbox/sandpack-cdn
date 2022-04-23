@@ -7,7 +7,8 @@ use serde::{self, Deserialize, Serialize};
 use std::collections::HashMap;
 use std::env;
 use std::net::SocketAddr;
-use warp::{Filter, Rejection, Reply};
+use warp::Filter;
+use cache::layered::LayeredCache;
 
 mod app_error;
 mod cache;
@@ -17,10 +18,6 @@ mod routes;
 mod setup_tracing;
 mod transform;
 mod utils;
-
-use cache::layered::LayeredCache;
-use custom_reply::CustomReply;
-use package::process::{transform_module_cached, MinimalCachedModule};
 
 lazy_static! {
     static ref VERSION_RE: Regex = Regex::new("^(\\d+)\\((.*)\\)$").unwrap();
@@ -65,50 +62,6 @@ fn decode_req_part(part: &str) -> Result<String, ServerError> {
     Ok(String::from(str_value))
 }
 
-// #[get("/package/{package_specifier}")]
-async fn package_req_handler(
-    path: String,
-    data: AppData,
-    cache: LayeredCache,
-) -> Result<impl Reply, Rejection> {
-    let decoded_specifier = decode_req_part(path.as_str())?;
-    let package_content =
-        transform_module_cached(decoded_specifier.as_str(), data.data_dir.as_str(), &cache).await?;
-
-    let mut reply = CustomReply::json(&package_content);
-    reply.add_header(
-        "cache-control",
-        format!("public, max-age={}", 365 * 24 * 3600).as_str(),
-    );
-    Ok(reply)
-
-    // match package_content {
-    //     Ok(response) => {
-    //         let mut builder = HttpResponse::Ok();
-    //         // 1 year
-    //
-    //         builder.insert_header(CacheControl(vec![
-    //             CacheDirective::Public,
-    //             CacheDirective::MaxAge(cache_ttl),
-    //         ]));
-    //         builder.json(response)
-    //     }
-    //     Err(error) => {
-    //         let mut builder = HttpResponse::build(StatusCode::INTERNAL_SERVER_ERROR);
-    //         // 6 hours
-    //         let cache_ttl: u32 = 6 * 3600;
-    //         builder.insert_header(CacheControl(vec![
-    //             CacheDirective::Public,
-    //             CacheDirective::MaxAge(cache_ttl),
-    //         ]));
-    //         builder.json(ErrorResponse::new(
-    //             format!("{}", error),
-    //             format!("{:?}", error),
-    //         ))
-    //     }
-    // }
-}
-
 async fn process_dep_tree(
     raw_deps_str: &str,
     data_dir: &str,
@@ -119,40 +72,6 @@ async fn process_dep_tree(
     let dep_requests = process_dep_map(dep_map, 0)?;
     return collect_dep_tree(dep_requests, data_dir, cache).await;
 }
-
-// #[get("/dep_tree/{dependencies}")]
-// async fn versions_req_handler(
-//     path: web::Path<String>,
-//     data: web::Data<AppData>,
-//     cache_arc: web::Data<LayeredCache>,
-// ) -> impl Responder {
-//     let cache = cache_arc.into_inner();
-//     let tree = process_dep_tree(path.into_inner().as_str(), data.data_dir.as_str(), &cache).await;
-
-//     // 15 minutes cache ttl
-//     let cache_ttl: u32 = 15 * 60;
-//     match tree {
-//         Ok(response) => {
-//             let mut builder = HttpResponse::Ok();
-//             builder.insert_header(CacheControl(vec![
-//                 CacheDirective::Public,
-//                 CacheDirective::MaxAge(cache_ttl),
-//             ]));
-//             builder.json(response)
-//         }
-//         Err(error) => {
-//             let mut builder = HttpResponse::build(StatusCode::INTERNAL_SERVER_ERROR);
-//             builder.insert_header(CacheControl(vec![
-//                 CacheDirective::Public,
-//                 CacheDirective::MaxAge(cache_ttl),
-//             ]));
-//             builder.json(ErrorResponse::new(
-//                 format!("{}", error),
-//                 format!("{:?}", error),
-//             ))
-//         }
-//     }
-// }
 
 #[tokio::main]
 async fn main() -> Result<(), std::io::Error> {
