@@ -3,7 +3,6 @@ use serde::{self, Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::time::Instant;
 use tracing::{error, info, span, Level};
 use transform::transformer::transform_file;
 
@@ -287,6 +286,7 @@ fn transform_package(
     return Ok((module_spec, dependencies));
 }
 
+#[tracing::instrument(name = "process_npm_package", skip(data_dir, cache))]
 pub async fn process_package(
     package_name: &str,
     package_version: &str,
@@ -298,7 +298,6 @@ pub async fn process_package(
         package_name, package_version
     );
 
-    let download_start_time = Instant::now();
     let pkg_output_path: PathBuf =
         npm_downloader::download_package_content(package_name, package_version, data_dir, cache)
             .await?;

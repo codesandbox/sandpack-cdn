@@ -2,7 +2,7 @@ use chrono::{DateTime, Utc};
 use std::collections::HashMap;
 use reqwest::StatusCode;
 use serde::{self, Deserialize, Serialize};
-use tracing::info;
+use tracing::{info, error};
 
 use crate::utils::request;
 use crate::{app_error::ServerError, cache::layered::LayeredCache};
@@ -148,7 +148,7 @@ pub async fn download_package_manifest_cached(
                     }
                 }
                 Err(err) => {
-                    info!("Error updating npm manifest cache {:?}", err);
+                    error!("Error updating npm manifest cache {:?}", err);
                 }
             }
         });
