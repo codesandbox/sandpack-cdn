@@ -51,6 +51,7 @@ impl CachedPackageManifest {
     }
 }
 
+#[tracing::instrument("download_package_manifest", skip(cached_etag))]
 async fn download_package_manifest(
     package_name: &str,
     cached_etag: Option<String>,
@@ -89,7 +90,8 @@ fn get_cache_key(package_name: &str) -> String {
     String::from(format!("v1::manifest::{}", package_name))
 }
 
-async fn download_and_cache(
+#[tracing::instrument("download_and_cache_manifest", skip(cache))]
+async fn download_and_cache_manifest(
     package_name: &str,
     cache: &LayeredCache,
     cached_etag: Option<String>,
@@ -138,7 +140,7 @@ pub async fn download_package_manifest_cached(
         let cloned_cache = cache.clone();
         let etag = cached_manifest.etag.clone();
         tokio::spawn(async move {
-            match download_and_cache(pkg_name_string.as_str(), &cloned_cache, etag).await {
+            match download_and_cache_manifest(pkg_name_string.as_str(), &cloned_cache, etag).await {
                 Ok(val) => {
                     if let Some(_) = val {
                         info!(
@@ -155,7 +157,7 @@ pub async fn download_package_manifest_cached(
 
         return Ok(cached_manifest);
     } else {
-        if let Some(result) = download_and_cache(package_name, cache, None).await? {
+        if let Some(result) = download_and_cache_manifest(package_name, cache, None).await? {
             return Ok(result);
         } else {
             return Err(ServerError::NpmManifestDownloadError {

@@ -110,6 +110,7 @@ pub fn process_dep_map(
 
 type ResolveDepResult = Result<Option<(Dependency, Vec<DependencyRequest>)>, ServerError>;
 
+#[tracing::instrument(name = "resolve_dep", skip(cache, data_dir))]
 async fn resolve_dep(
     req: DependencyRequest,
     data_dir: String,
