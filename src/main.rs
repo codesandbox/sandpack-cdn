@@ -2,6 +2,7 @@ use cache::layered::LayeredCache;
 use std::env;
 use std::net::SocketAddr;
 use warp::Filter;
+use dotenv::dotenv;
 
 mod app_error;
 mod cache;
@@ -19,6 +20,8 @@ pub struct AppData {
 
 #[tokio::main]
 async fn main() -> Result<(), std::io::Error> {
+    dotenv().ok();
+    
     let port = match env::var("PORT") {
         Ok(var) => var,
         Err(_) => String::from("8080"),

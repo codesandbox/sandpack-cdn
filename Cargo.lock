@@ -465,6 +465,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "dotenv"
+version = "0.15.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "77c90badedccf4105eca100756a0b1289e191f6fcbdadd3cee1d2f614f97da8f"
+
+[[package]]
 name = "either"
 version = "1.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1857,6 +1863,7 @@ version = "0.0.0"
 dependencies = [
  "base64 0.13.0",
  "chrono",
+ "dotenv",
  "env_logger",
  "flate2",
  "futures",

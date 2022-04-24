@@ -34,3 +34,4 @@ opentelemetry = { version = "0.17.0", features = ["rt-tokio", "metrics"] }
 opentelemetry-otlp = { version = "0.10.0", features = ["tonic", "tls", "tls-roots"] }
 tonic = "0.6.2"
 warp = {version = "0.3.2", features = ["compression"]}
+dotenv = "0.15.0"
