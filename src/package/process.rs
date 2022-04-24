@@ -4,6 +4,7 @@ use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
+use tracing::{error, info, span, Level};
 use transform::transformer::transform_file;
 
 use crate::app_error::ServerError;
@@ -162,7 +163,7 @@ fn transform_files(
                             );
                         }
                         Err(err) => {
-                            println!("{:?}", err);
+                            error!("{:?}", err);
 
                             result_map.insert(
                                 found_file.clone(),
@@ -176,7 +177,7 @@ fn transform_files(
                     },
                     // TODO: Return an error in this case?
                     Err(err) => {
-                        println!("Error reading file: {:?}", err);
+                        error!("Error reading file: {:?}", err);
                         result_map.insert(found_file.clone(), MinimalFile::Failed(false));
                     }
                 }
@@ -185,50 +186,40 @@ fn transform_files(
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TransformationMetrics {
-    pub download_duration_ms: u128,
-    pub file_collection_duration_ms: u128,
-    pub transformation_duration_ms: u128,
-}
-
-impl TransformationMetrics {
-    pub fn new() -> Self {
-        TransformationMetrics {
-            download_duration_ms: 0,
-            file_collection_duration_ms: 0,
-            transformation_duration_ms: 0,
-        }
-    }
-
-    pub fn to_string(&self) -> String {
-        format!(
-            "Download: {}ms\nFile Collection: {}ms\nTransformation: {}ms\n",
-            self.download_duration_ms,
-            self.file_collection_duration_ms,
-            self.transformation_duration_ms
-        )
-    }
-}
-
+#[tracing::instrument(name = "transform_package", skip(pkg_output_path))]
 fn transform_package(
     pkg_output_path: PathBuf,
     package_name: &str,
     package_version: &str,
-    metrics: &mut TransformationMetrics,
 ) -> Result<(MinimalCachedModule, ModuleDependenciesMap), ServerError> {
-    let file_collection_start_time = Instant::now();
     let mut file_paths: HashMap<String, u64> = HashMap::new();
-    collect_file_paths(
-        pkg_output_path.clone(),
-        pkg_output_path.clone(),
-        &mut file_paths,
-    )?;
-    metrics.file_collection_duration_ms = file_collection_start_time.elapsed().as_millis();
+    {
+        let collect_files_span = span!(
+            Level::INFO,
+            "pkg_collect_file_paths",
+            package_name = package_name,
+            package_version = package_version
+        )
+        .entered();
+        collect_file_paths(
+            pkg_output_path.clone(),
+            pkg_output_path.clone(),
+            &mut file_paths,
+        )?;
+        collect_files_span.exit();
+    }
 
     let mut module_files: HashMap<String, MinimalFile> = HashMap::new();
     let mut used_modules: HashSet<String> = HashSet::new();
 
+    // Read and process pkg.json
+    let read_pkg_json = span!(
+        Level::INFO,
+        "read_pkg_json",
+        package_name = package_name,
+        package_version = package_version
+    )
+    .entered();
     let pkg_json_content = fs::read_to_string(Path::new(&pkg_output_path).join("package.json"))?;
     let parsed_pkg_json: PackageJSON = package_json::parse_pkg_json(pkg_json_content.clone())?;
 
@@ -241,18 +232,27 @@ fn transform_package(
             is_transpiled: false,
         },
     );
+    read_pkg_json.exit();
 
     // transform entries
-    let file_collection_start_time = Instant::now();
-    transform_files(
-        package_json::collect_pkg_entries(parsed_pkg_json.clone())?,
-        ".",
-        &mut module_files,
-        &file_paths,
-        pkg_output_path,
-        &mut used_modules,
-    );
-    metrics.transformation_duration_ms = file_collection_start_time.elapsed().as_millis();
+    {
+        let transform_files_span = span!(
+            Level::INFO,
+            "pkg_transform_files",
+            package_name = package_name,
+            package_version = package_version
+        )
+        .entered();
+        transform_files(
+            package_json::collect_pkg_entries(parsed_pkg_json.clone())?,
+            ".",
+            &mut module_files,
+            &file_paths,
+            pkg_output_path,
+            &mut used_modules,
+        );
+        transform_files_span.exit();
+    }
 
     // add remaining files as ignored files
     for (key, value) in &file_paths {
@@ -284,13 +284,6 @@ fn transform_package(
         modules: used_modules,
     };
 
-    println!(
-        "\nMetrics for {}@{}\n{}\n",
-        package_name,
-        package_version,
-        metrics.to_string()
-    );
-
     return Ok((module_spec, dependencies));
 }
 
@@ -300,18 +293,15 @@ pub async fn process_package(
     data_dir: &str,
     cache: &LayeredCache,
 ) -> Result<(MinimalCachedModule, ModuleDependenciesMap), ServerError> {
-    println!(
+    info!(
         "Started processing package: {}@{}",
         package_name, package_version
     );
-
-    let mut metrics = TransformationMetrics::new();
 
     let download_start_time = Instant::now();
     let pkg_output_path: PathBuf =
         npm_downloader::download_package_content(package_name, package_version, data_dir, cache)
             .await?;
-    metrics.download_duration_ms = download_start_time.elapsed().as_millis();
 
     // Transform module in new thread
     let package_name_string = String::from(package_name);
@@ -322,7 +312,6 @@ pub async fn process_package(
             cloned_pkg_output_path,
             package_name_string.as_str(),
             package_version_string.as_str(),
-            &mut metrics,
         )
     });
     let transform_result = task.await?;

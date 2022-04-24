@@ -2,6 +2,7 @@ use chrono::{DateTime, Utc};
 use std::collections::HashMap;
 use reqwest::StatusCode;
 use serde::{self, Deserialize, Serialize};
+use tracing::info;
 
 use crate::utils::request;
 use crate::{app_error::ServerError, cache::layered::LayeredCache};
@@ -128,7 +129,7 @@ pub async fn download_package_manifest_cached(
 
     if let Some(cached_manifest) = originally_cached_manifest.clone() {
         // Fetch new manifest in the background and use the old one for this request
-        println!(
+        info!(
             "Found npm manifest of {} in cache, fetching new version in background",
             package_name
         );
@@ -140,14 +141,14 @@ pub async fn download_package_manifest_cached(
             match download_and_cache(pkg_name_string.as_str(), &cloned_cache, etag).await {
                 Ok(val) => {
                     if let Some(_) = val {
-                        println!(
+                        info!(
                             "Updated manifest for npm module {}",
                             pkg_name_string.as_str()
                         );
                     }
                 }
                 Err(err) => {
-                    println!("Error updating npm manifest cache {:?}", err);
+                    info!("Error updating npm manifest cache {:?}", err);
                 }
             }
         });

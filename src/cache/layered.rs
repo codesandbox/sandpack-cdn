@@ -1,5 +1,6 @@
 use parking_lot::Mutex;
 use std::sync::Arc;
+use tracing::info;
 
 use crate::app_error::ServerError;
 
@@ -21,7 +22,7 @@ impl LayeredCache {
     }
 
     pub async fn store_value(&self, key: &str, data: &str) -> Result<(), ServerError> {
-        println!("Writing {} to the cache", key);
+        info!("Writing {} to the cache", key);
         self.store_memory_value(key, data);
         Ok(())
     }
@@ -32,7 +33,7 @@ impl LayeredCache {
 
     pub async fn get_value(&self, key: &str) -> Option<String> {
         if let Some(found_in_memory) = self.get_memory_value(key) {
-            println!("{} found in the memory cache", key);
+            info!("{} found in the memory cache", key);
             return Some(found_in_memory);
         }
 

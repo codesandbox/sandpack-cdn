@@ -6,6 +6,7 @@ use std::{
     sync::Arc,
 };
 use tokio::task::JoinHandle;
+use tracing::error;
 
 use crate::{app_error::ServerError, cache::layered::LayeredCache};
 
@@ -95,7 +96,7 @@ pub fn process_dep_map(
                 deps.push(dep);
             }
             Err(err) => {
-                println!(
+                error!(
                     "Failed to parse dep range {} for {}. {:?}",
                     val.as_str(),
                     key.as_str(),
@@ -261,7 +262,7 @@ impl DepTreeCollector {
 
         while let Some(handle) = collector.get_next_join() {
             if let Err(err) = handle.await {
-                println!("Dependency collection error {:?}", err);
+                error!("Dependency collection error {:?}", err);
             }
         }
 

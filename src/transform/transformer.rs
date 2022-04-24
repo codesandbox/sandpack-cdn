@@ -94,7 +94,7 @@ fn get_versions() -> Versions {
     versions
 }
 
-#[tracing::instrument]
+#[tracing::instrument(name = "transform_file", skip(code))]
 pub fn transform_file(filename: &str, code: &str) -> Result<TransformedFile, ServerError> {
     info!("Transforming file: {}", filename);
 

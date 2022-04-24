@@ -27,6 +27,7 @@ impl std::fmt::Display for TarballType {
     }
 }
 
+#[tracing::instrument(name = "download_package_content", skip(data_dir, cache))]
 pub async fn download_package_content(
     package_name: &str,
     version: &str,
