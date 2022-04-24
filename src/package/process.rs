@@ -287,7 +287,7 @@ fn transform_package(
 }
 
 #[tracing::instrument(name = "process_npm_package", skip(data_dir, cache))]
-pub async fn process_package(
+pub async fn process_npm_package(
     package_name: &str,
     package_version: &str,
     data_dir: &str,
@@ -352,6 +352,7 @@ fn get_dependencies_cache_key(package_name: &str, package_version: &str) -> Stri
     ));
 }
 
+#[tracing::instrument(name = "transform_module_and_cache", skip(data_dir, cache))]
 pub async fn transform_module_and_cache(
     package_name: &str,
     package_version: &str,
@@ -359,8 +360,8 @@ pub async fn transform_module_and_cache(
     cache: &LayeredCache,
 ) -> Result<(MinimalCachedModule, ModuleDependenciesMap), ServerError> {
     let (transformed_module, module_dependencies) =
-        process_package(package_name, package_version, data_dir, cache).await?;
-
+        process_npm_package(package_name, package_version, data_dir, cache).await?;
+        
     let transform_cache_key = get_transform_cache_key(package_name, package_version);
     let transformed_module_serialized = serde_json::to_string(&transformed_module)?;
     cache
@@ -369,7 +370,7 @@ pub async fn transform_module_and_cache(
             transformed_module_serialized.as_str(),
         )
         .await?;
-
+        
     let dependencies_cache_key = get_dependencies_cache_key(package_name, package_version);
     let module_dependencies_serialized = serde_json::to_string(&module_dependencies)?;
     cache
