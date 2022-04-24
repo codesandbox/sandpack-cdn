@@ -2,7 +2,8 @@ use parking_lot::Mutex;
 use std::sync::Arc;
 
 use crate::app_error::ServerError;
-use crate::cache::memory::InMemoryCache;
+
+use super::memory::InMemoryCache;
 
 #[derive(Debug, Clone)]
 pub struct LayeredCache {

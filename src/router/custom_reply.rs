@@ -8,6 +8,8 @@ use warp::{
     Reply,
 };
 
+use crate::app_error::ServerError;
+
 pub struct CustomReply {
     body: String,
     status: StatusCode,
@@ -15,17 +17,17 @@ pub struct CustomReply {
 }
 
 impl CustomReply {
-    pub fn json<T>(value: &T) -> CustomReply
+    pub fn json<T>(value: &T) -> Result<CustomReply, ServerError>
     where
         T: Serialize,
     {
         let mut reply = CustomReply {
-            body: serde_json::to_string(value).unwrap(),
+            body: serde_json::to_string(value)?,
             status: StatusCode::OK,
             headers: HashMap::new(),
         };
         reply.add_header("content-type", "application/json");
-        reply
+        Ok(reply)
     }
 
     pub fn add_header(&mut self, name: &str, value: &str) {

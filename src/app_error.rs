@@ -1,5 +1,5 @@
 use thiserror::Error;
-use warp::{Rejection, reject::Reject};
+use warp::hyper::http;
 
 #[derive(Error, Debug)]
 pub enum ServerError {
@@ -44,16 +44,12 @@ pub enum ServerError {
     InvalidCDNVersion,
     #[error("Could not parse integer")]
     IntegerParse(#[from] std::num::ParseIntError),
+    #[error("Invalid status code")]
+    InvalidStatusCode(#[from] http::status::InvalidStatusCode),
 }
 
 impl From<ServerError> for std::io::Error {
     fn from(err: ServerError) -> Self {
         std::io::Error::new(std::io::ErrorKind::Other, format!("{:?}", err))
-    }
-}
-
-impl From<ServerError> for Rejection {
-    fn from(other: ServerError) -> Self {
-        warp::reject::reject()
     }
 }

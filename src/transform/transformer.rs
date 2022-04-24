@@ -1,10 +1,5 @@
-use crate::app_error::ServerError;
 use std::collections::{HashMap, HashSet};
 use tracing::info;
-
-use crate::transform::decl_collector::collect_decls;
-use crate::transform::dependency_collector::dependency_collector;
-use crate::transform::env_replacer::EnvReplacer;
 use swc_atoms::{js_word, JsWord};
 use swc_common::comments::SingleThreadedComments;
 use swc_common::{chain, sync::Lrc, FileName, Globals, Mark, SourceMap};
@@ -23,6 +18,12 @@ use swc_ecmascript::transforms::{
     proposals::decorators,
 };
 use swc_ecmascript::visit::FoldWith;
+
+use crate::app_error::ServerError;
+
+use super::decl_collector::collect_decls;
+use super::dependency_collector::dependency_collector;
+use super::env_replacer::EnvReplacer;
 
 #[derive(Debug)]
 pub struct TransformedFile {

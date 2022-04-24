@@ -1,6 +1,7 @@
-use crate::app_error::ServerError;
 use reqwest::{Client, ClientBuilder};
 use std::time::Duration;
+
+use crate::app_error::ServerError;
 
 pub fn get_client(timeout_secs: u64) -> Result<Client, ServerError> {
     let client_builder = ClientBuilder::new()

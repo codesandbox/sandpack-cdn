@@ -1,11 +1,3 @@
-use crate::app_error::ServerError;
-use crate::cache::layered::LayeredCache;
-use crate::package::npm_downloader;
-use crate::package::package_json;
-use crate::package::package_json::PackageJSON;
-use crate::package::resolver;
-use crate::transform;
-
 use node_semver::Version;
 use serde::{self, Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -13,6 +5,13 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
 use transform::transformer::transform_file;
+
+use crate::app_error::ServerError;
+use crate::cache::layered::LayeredCache;
+use crate::transform;
+
+use super::package_json::PackageJSON;
+use super::{npm_downloader, package_json, resolver};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]

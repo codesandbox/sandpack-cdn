@@ -8,10 +8,9 @@ use url::Url;
 
 use crate::app_error::ServerError;
 use crate::cache::layered::LayeredCache;
-use crate::package::npm_package_manifest::{
-    download_package_manifest_cached, CachedPackageManifest,
-};
 use crate::utils::request;
+
+use super::npm_package_manifest::{download_package_manifest_cached, CachedPackageManifest};
 
 #[derive(PartialEq, Eq)]
 pub enum TarballType {
