@@ -21,9 +21,13 @@ impl ErrorReply {
         }
     }
 
-    pub fn as_reply(&self) -> Result<CustomReply, ServerError> {
+    pub fn as_reply(&self, cache_ttl: u32) -> Result<CustomReply, ServerError> {
         let mut reply = CustomReply::json(self)?;
         reply.set_status(StatusCode::from_u16(self.status)?);
+        reply.add_header(
+            "cache-control",
+            format!("public, max-age={}", cache_ttl).as_str(),
+        );
         Ok(reply)
     }
 }

@@ -31,7 +31,7 @@ pub async fn get_package_data_reply(
 pub async fn package_data_handler(path: String, data: AppData) -> Result<impl Reply, Rejection> {
     match get_package_data_reply(path, data).await {
         Ok(reply) => Ok(reply),
-        Err(err) => Ok(ErrorReply::from(err).as_reply().unwrap()),
+        Err(err) => Ok(ErrorReply::from(err).as_reply(3600).unwrap()),
     }
 }
 
