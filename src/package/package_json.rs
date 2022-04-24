@@ -1,9 +1,10 @@
-use crate::app_error::ServerError;
-use crate::package::additional_exports::get_additional_exports;
-
 use serde::{self, Deserialize, Serialize};
 use serde_json;
 use std::collections::HashMap;
+
+use crate::app_error::ServerError;
+
+use super::additional_exports::get_additional_exports;
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone)]
 #[serde(untagged)]

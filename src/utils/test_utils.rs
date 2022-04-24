@@ -1,7 +1,7 @@
-use crate::app_error::ServerError;
-
 use std::env;
 use std::fs;
+
+use crate::app_error::ServerError;
 
 pub fn read_fixture(fixture_name: &str) -> Result<String, ServerError> {
     let fixture_path = env::current_dir()?.join(fixture_name);

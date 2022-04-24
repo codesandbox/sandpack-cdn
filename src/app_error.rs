@@ -1,4 +1,5 @@
 use thiserror::Error;
+use warp::hyper::http;
 
 #[derive(Error, Debug)]
 pub enum ServerError {
@@ -43,6 +44,8 @@ pub enum ServerError {
     InvalidCDNVersion,
     #[error("Could not parse integer")]
     IntegerParse(#[from] std::num::ParseIntError),
+    #[error("Invalid status code")]
+    InvalidStatusCode(#[from] http::status::InvalidStatusCode),
 }
 
 impl From<ServerError> for std::io::Error {

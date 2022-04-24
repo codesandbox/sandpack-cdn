@@ -1,11 +1,12 @@
 use std::collections::HashSet;
 
-use crate::transform::utils::*;
 use swc_atoms::JsWord;
 use swc_common::SyntaxContext;
 use swc_ecmascript::ast;
 use swc_ecmascript::utils::ident::IdentLike;
 use swc_ecmascript::visit::{Fold, FoldWith};
+
+use super::utils::*;
 
 /// This pass collects dependencies in a module and compiles references as needed to work with Parcel's JSRuntime.
 pub fn dependency_collector<'a>(

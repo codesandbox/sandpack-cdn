@@ -1,5 +1,4 @@
 use std::collections::HashSet;
-
 use swc_atoms::JsWord;
 use swc_common::{Span, SyntaxContext};
 use swc_ecmascript::ast::{self, MemberProp};

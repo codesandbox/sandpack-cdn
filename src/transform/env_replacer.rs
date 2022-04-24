@@ -1,12 +1,13 @@
 use std::collections::{HashMap, HashSet};
 use std::vec;
 
-use crate::transform::utils::match_member_expr;
 use ast::*;
 use swc_atoms::{js_word, JsWord};
 use swc_common::{SyntaxContext, DUMMY_SP};
 use swc_ecmascript::ast;
 use swc_ecmascript::visit::{Fold, FoldWith};
+
+use super::utils::match_member_expr;
 
 pub struct EnvReplacer<'a> {
     pub is_browser: bool,
