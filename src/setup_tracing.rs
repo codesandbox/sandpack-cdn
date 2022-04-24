@@ -8,18 +8,28 @@ use tracing_subscriber::filter::LevelFilter;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::Registry;
 
+const HEADER_PREFIX: &str = "OTEL_METADATA_";
+
+// Used environment variables
+// OTEL_METADATA_X_HONEYCOMB_TEAM = honeycomb api key
+// OTEL_EXPORTER_OTLP_ENDPOINT = https://api.honeycomb.io:443
 fn init_opentelemetry() -> Result<sdktrace::Tracer, TraceError> {
     let mut metadata = MetadataMap::new();
-    metadata.insert(
-        MetadataKey::from_str("x-honeycomb-team").unwrap(),
-        "6TRdsEEi4WhE4pbcQIGYdA".parse().unwrap(),
-    );
+    for (key, value) in env::vars()
+        .filter(|(name, _)| name.starts_with(HEADER_PREFIX))
+        .map(|(name, value)| {
+            let header_name = name
+                .strip_prefix(HEADER_PREFIX)
+                .map(|h| h.replace('_', "-"))
+                .map(|h| h.to_ascii_lowercase())
+                .unwrap();
+            (header_name, value)
+        })
+    {
+        metadata.insert(MetadataKey::from_str(&key).unwrap(), value.parse().unwrap());
+    }
 
     env::set_var("OTEL_SERVICE_NAME", "sandpack-cdn");
-    env::set_var(
-        "OTEL_EXPORTER_OTLP_ENDPOINT",
-        "https://api.honeycomb.io:443",
-    );
     let exporter = opentelemetry_otlp::new_exporter()
         .tonic()
         .with_env()

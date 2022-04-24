@@ -19,6 +19,13 @@ Some good packages to test the CDN:
 
 Run the following command: `RUST_MIN_STACK=16777216 cargo run`
 
+## Environment variables
+
+### Tracing
+
+- OpenTelemetry exporter endpoint: `OTEL_EXPORTER_OTLP_ENDPOINT`
+- OpenTelemetry metadata headers, prefix with `OTEL_METADATA_`, for example for honeycomb you add: `OTEL_METADATA_X_HONEYCOMB_TEAM=<API_TOKEN>`
+
 ## Deploy the app
 
 ### Staging
