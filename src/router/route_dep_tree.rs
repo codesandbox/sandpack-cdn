@@ -34,7 +34,6 @@ pub async fn get_dep_tree_reply(path: String, data: AppData) -> Result<CustomRep
     Ok(reply)
 }
 
-// TODO: Handle failure, with cache of 5 minutes?
 pub async fn dep_tree_route_handler(path: String, data: AppData) -> Result<impl Reply, Rejection> {
     match get_dep_tree_reply(path, data).await {
         Ok(reply) => Ok(reply),
