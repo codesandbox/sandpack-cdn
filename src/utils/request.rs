@@ -1,14 +1,22 @@
-use reqwest::{Client, ClientBuilder};
+use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
+use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
 use std::time::Duration;
 
-use crate::app_error::ServerError;
+pub fn get_client(timeout_secs: u64) -> ClientWithMiddleware {
+    let retry_policy = ExponentialBackoff::builder().build_with_max_retries(3);
 
-pub fn get_client(timeout_secs: u64) -> Result<Client, ServerError> {
-    let client_builder = ClientBuilder::new()
+    let client_builder = reqwest::ClientBuilder::new()
         .timeout(Duration::new(timeout_secs, 0))
         .deflate(true)
         .gzip(true)
         .brotli(true);
-    let client = client_builder.build()?;
-    Ok(client)
+    let base_client = client_builder
+        .build()
+        .expect("reqwest::ClientBuilder::build()");
+
+    let client = ClientBuilder::new(base_client)
+        .with(RetryTransientMiddleware::new_with_policy(retry_policy))
+        .build();
+
+    client
 }

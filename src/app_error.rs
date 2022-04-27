@@ -5,8 +5,10 @@ use warp::hyper::http;
 pub enum ServerError {
     #[error("invalid semver")]
     InvalidSemver(#[from] node_semver::SemverError),
+    #[error("Failed request")]
+    FailedRequest(#[from] reqwest_middleware::Error),
     #[error("Request failed")]
-    FailedRequest(#[from] reqwest::Error),
+    RequestFailed(#[from] reqwest::Error),
     #[error("Response has a non-200 status code")]
     RequestErrorStatus { status_code: u16 },
     #[error("IO Operation failed")]

@@ -56,7 +56,7 @@ async fn download_package_manifest(
     package_name: &str,
     cached_etag: Option<String>,
 ) -> Result<Option<(Option<String>, PackageManifest)>, ServerError> {
-    let client = request::get_client(5)?;
+    let client = request::get_client(30);
     let mut request = client.get(format!("https://registry.npmjs.org/{}", package_name));
     if let Some(cached_etag_val) = cached_etag {
         request = request.header("If-None-Match", cached_etag_val.as_str());

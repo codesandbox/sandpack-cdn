@@ -47,9 +47,8 @@ pub async fn download_package_content(
         };
 
         // download the tarball
-        let client = request::get_client(60)?;
-        let request = client.get(tarball_url.as_str()).build()?;
-        let response = client.execute(request).await?;
+        let client = request::get_client(120);
+        let response = client.get(tarball_url.as_str()).send().await?;
         let response_status = response.status();
         if !response_status.is_success() {
             return Err(ServerError::NpmPackageDownloadError {
