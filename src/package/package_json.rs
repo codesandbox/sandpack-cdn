@@ -96,6 +96,11 @@ pub fn collect_pkg_entries(pkg_json: PackageJSON) -> Result<Vec<String>, ServerE
         match &exports_field {
             PackageJSONExport::Map(exports_map) => {
                 for (key, value) in exports_map.iter() {
+                    // Skip things with .node or .server as we don't care about node things in the browser
+                    if key.contains(".node") || key.contains(".server") {
+                        continue;
+                    }
+
                     // If an export does not start with a dot it is a conditional group, handle it differently.
                     // Whoever invented this really does not respect tooling developers time
                     if !key.starts_with(".") {

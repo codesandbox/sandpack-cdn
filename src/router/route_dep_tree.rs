@@ -5,12 +5,12 @@ use warp::{Filter, Rejection, Reply};
 use crate::app_error::ServerError;
 use crate::cache::layered::LayeredCache;
 use crate::package::collect_dep_tree::{collect_dep_tree, process_dep_map, DependencyList};
-use crate::utils::decode_req_part;
 use crate::AppData;
 
 use super::custom_reply::CustomReply;
 use super::error_reply::ErrorReply;
 use super::routes::with_app_data;
+use super::utils::decode_req_part;
 
 async fn process_dep_tree(
     raw_deps_str: &str,
