@@ -14,10 +14,11 @@ pub async fn get_package_data_reply(
     data: AppData,
 ) -> Result<CustomReply, ServerError> {
     let decoded_specifier = decode_req_part(path.as_str())?;
+    let mut cache = data.cache.clone();
     let package_content = transform_module_cached(
         decoded_specifier.as_str(),
         data.data_dir.as_str(),
-        &data.cache,
+        &mut cache,
     )
     .await?;
     let mut reply = CustomReply::json(&package_content)?;

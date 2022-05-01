@@ -1,8 +1,8 @@
 use chrono::{DateTime, Utc};
-use std::collections::HashMap;
 use reqwest::StatusCode;
 use serde::{self, Deserialize, Serialize};
-use tracing::{info, error};
+use std::collections::HashMap;
+use tracing::{error, info};
 
 use crate::utils::request;
 use crate::{app_error::ServerError, cache::layered::LayeredCache};
@@ -93,7 +93,7 @@ fn get_cache_key(package_name: &str) -> String {
 #[tracing::instrument("download_and_cache_manifest", skip(cache))]
 async fn download_and_cache_manifest(
     package_name: &str,
-    cache: &LayeredCache,
+    cache: &mut LayeredCache,
     cached_etag: Option<String>,
 ) -> Result<Option<CachedPackageManifest>, ServerError> {
     let cache_key = get_cache_key(package_name);
@@ -129,6 +129,7 @@ pub async fn download_package_manifest_cached(
         }
     }
 
+    let mut cloned_cache = cache.clone();
     if let Some(cached_manifest) = originally_cached_manifest.clone() {
         // Fetch new manifest in the background and use the old one for this request
         info!(
@@ -137,10 +138,11 @@ pub async fn download_package_manifest_cached(
         );
 
         let pkg_name_string = String::from(package_name);
-        let cloned_cache = cache.clone();
         let etag = cached_manifest.etag.clone();
         tokio::spawn(async move {
-            match download_and_cache_manifest(pkg_name_string.as_str(), &cloned_cache, etag).await {
+            match download_and_cache_manifest(pkg_name_string.as_str(), &mut cloned_cache, etag)
+                .await
+            {
                 Ok(val) => {
                     if let Some(_) = val {
                         info!(
@@ -157,7 +159,9 @@ pub async fn download_package_manifest_cached(
 
         return Ok(cached_manifest);
     } else {
-        if let Some(result) = download_and_cache_manifest(package_name, cache, None).await? {
+        if let Some(result) =
+            download_and_cache_manifest(package_name, &mut cloned_cache, None).await?
+        {
             return Ok(result);
         } else {
             return Err(ServerError::NpmManifestDownloadError {

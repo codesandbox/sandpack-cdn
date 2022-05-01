@@ -114,15 +114,15 @@ type ResolveDepResult = Result<Option<(Dependency, Vec<DependencyRequest>)>, Ser
 async fn resolve_dep(
     req: DependencyRequest,
     data_dir: String,
-    cache: LayeredCache,
+    cache: &mut LayeredCache,
 ) -> ResolveDepResult {
-    let manifest = download_package_manifest_cached(req.name.as_str(), &cache).await?;
+    let manifest = download_package_manifest_cached(req.name.as_str(), cache).await?;
     if let Some(resolved_version) = req.resolve_version(&manifest) {
         let dependencies = module_dependencies_cached(
             req.name.as_str(),
             resolved_version.as_str(),
             data_dir.as_str(),
-            &cache,
+            cache,
         )
         .await?;
         let mut transient_deps: Vec<DependencyRequest> = Vec::with_capacity(dependencies.len());
@@ -185,9 +185,9 @@ impl DepTreeCollector {
     fn add_future(&self, dep_req: DependencyRequest) {
         let dep_collector = self.clone();
         let future = tokio::spawn(async move {
-            let cache = dep_collector.cache.clone();
+            let mut cache = dep_collector.cache.clone();
             let data_dir = dep_collector.data_dir.clone();
-            let result = resolve_dep(dep_req, data_dir, cache).await;
+            let result = resolve_dep(dep_req, data_dir, &mut cache).await;
             if let Ok(Some((dependency, transient_deps))) = result {
                 dep_collector.add_dependency(dependency);
                 dep_collector.add_dep_requests(transient_deps);

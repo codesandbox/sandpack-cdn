@@ -357,7 +357,7 @@ pub async fn transform_module_and_cache(
     package_name: &str,
     package_version: &str,
     data_dir: &str,
-    cache: &LayeredCache,
+    cache: &mut LayeredCache,
 ) -> Result<(MinimalCachedModule, ModuleDependenciesMap), ServerError> {
     let (transformed_module, module_dependencies) =
         process_npm_package(package_name, package_version, data_dir, cache).await?;
@@ -386,7 +386,7 @@ pub async fn transform_module_and_cache(
 pub async fn transform_module_cached(
     package_specifier: &str,
     data_dir: &str,
-    cache: &LayeredCache,
+    cache: &mut LayeredCache,
 ) -> Result<MinimalCachedModule, ServerError> {
     let (package_name, package_version) = parse_package_specifier(package_specifier)?;
 
@@ -414,7 +414,7 @@ pub async fn module_dependencies_cached(
     package_name: &str,
     package_version: &str,
     data_dir: &str,
-    cache: &LayeredCache,
+    cache: &mut LayeredCache,
 ) -> Result<ModuleDependenciesMap, ServerError> {
     let transform_cache_key = get_dependencies_cache_key(package_name, package_version);
     if let Some(cached_value) = cache.get_value(transform_cache_key.as_str()).await {
