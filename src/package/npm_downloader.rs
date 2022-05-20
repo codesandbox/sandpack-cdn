@@ -35,7 +35,7 @@ pub async fn download_package_content(
     cache: &LayeredCache,
 ) -> Result<PathBuf, ServerError> {
     let manifest: CachedPackageManifest =
-        download_package_manifest_cached(package_name.clone(), cache).await?;
+        download_package_manifest_cached(package_name, cache).await?;
     if let Some(tarball_url) = manifest.versions.get(version) {
         // process the tarball url
         let parsed_tarball_url: Url = Url::parse(tarball_url.as_str())?;
@@ -72,8 +72,8 @@ pub async fn download_package_content(
             archive.unpack(dir_path.clone())?;
         }
 
-        return Ok(dir_path.clone().join("package"));
+        Ok(dir_path.clone().join("package"))
     } else {
-        return Err(ServerError::PackageVersionNotFound);
+        Err(ServerError::PackageVersionNotFound)
     }
 }

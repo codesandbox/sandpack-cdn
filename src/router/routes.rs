@@ -10,7 +10,7 @@ pub fn routes(
     app_data: AppData,
 ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
     package_data_route(app_data.clone())
-        .or(dep_tree_route(app_data.clone()))
+        .or(dep_tree_route(app_data))
         .or(not_found_route())
 }
 

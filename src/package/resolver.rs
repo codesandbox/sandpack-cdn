@@ -3,13 +3,13 @@ use std::collections::{HashMap, HashSet, LinkedList};
 
 pub fn make_mod_specifier_absolute(cwd: &str, mod_specifier: &str) -> String {
     let mut full_path = String::from(cwd);
-    full_path.push_str("/");
+    full_path.push('/');
     full_path.push_str(mod_specifier);
-    let curr_path_parts = full_path.split("/");
+    let curr_path_parts = full_path.split('/');
 
     let mut result_parts: Vec<&str> = Vec::new();
     for part in curr_path_parts {
-        if part == "." || part == "" {
+        if part == "." || part.is_empty() {
             continue;
         } else if part == ".." {
             result_parts.pop();
@@ -18,23 +18,23 @@ pub fn make_mod_specifier_absolute(cwd: &str, mod_specifier: &str) -> String {
         }
     }
 
-    return result_parts.join("/");
+    result_parts.join("/")
 }
 
 pub fn file_path_to_dirname(file_path: &str) -> String {
-    return make_mod_specifier_absolute(file_path, "..");
+    make_mod_specifier_absolute(file_path, "..")
 }
 
 pub fn extract_file_extension(file_path: &str) -> Option<&str> {
     if let Some(ext_index) = file_path.rfind('.') {
         let ext_name = &file_path[ext_index..];
-        if ext_name == "" || ext_name == "." || ext_name.contains("/") {
+        if ext_name.is_empty() || ext_name == "." || ext_name.contains('/') {
             return None;
         } else {
             return Some(ext_name);
         }
     }
-    return None;
+    None
 }
 
 pub fn collect_files(
@@ -42,7 +42,7 @@ pub fn collect_files(
     files_map: &HashMap<String, u64>,
     optional_curr_ext: Option<&str>,
 ) -> Vec<String> {
-    if abs_file_pattern.contains("*") {
+    if abs_file_pattern.contains('*') {
         // if we can't turn this into a pattern we assume it's an invalid pattern and see it as a simple module specifier
         if let Ok(glob_pattern) = Pattern::new(abs_file_pattern) {
             let extensions =
@@ -77,7 +77,7 @@ pub fn collect_files(
         concatenated_str.push_str(ext);
 
         if files_map.contains_key(concatenated_str.as_str()) {
-            return vec![String::from(concatenated_str)];
+            return vec![concatenated_str];
         }
     }
 
@@ -88,7 +88,7 @@ pub fn collect_files(
         concatenated_str.push_str(ext);
 
         if files_map.contains_key(concatenated_str.as_str()) {
-            return vec![String::from(concatenated_str)];
+            return vec![concatenated_str];
         }
     }
 

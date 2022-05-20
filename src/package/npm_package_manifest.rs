@@ -87,7 +87,7 @@ async fn download_package_manifest(
 }
 
 fn get_cache_key(package_name: &str) -> String {
-    String::from(format!("v1::manifest::{}", package_name))
+    format!("v1::manifest::{}", package_name)
 }
 
 #[tracing::instrument("download_and_cache_manifest", skip(cache))]
@@ -104,9 +104,9 @@ async fn download_and_cache_manifest(
         cache
             .store_value(cache_key.as_str(), serialized.as_str())
             .await?;
-        return Ok(Some(cached_manifest));
+        Ok(Some(cached_manifest))
     } else {
-        return Ok(None);
+        Ok(None)
     }
 }
 
@@ -144,7 +144,7 @@ pub async fn download_package_manifest_cached(
                 .await
             {
                 Ok(val) => {
-                    if let Some(_) = val {
+                    if val.is_some() {
                         info!(
                             "Updated manifest for npm module {}",
                             pkg_name_string.as_str()
@@ -157,17 +157,15 @@ pub async fn download_package_manifest_cached(
             }
         });
 
-        return Ok(cached_manifest);
+        Ok(cached_manifest)
+    } else if let Some(result) =
+        download_and_cache_manifest(package_name, &mut cloned_cache, None).await?
+    {
+        Ok(result)
     } else {
-        if let Some(result) =
-            download_and_cache_manifest(package_name, &mut cloned_cache, None).await?
-        {
-            return Ok(result);
-        } else {
-            return Err(ServerError::NpmManifestDownloadError {
-                status_code: 404,
-                package_name: String::from(package_name),
-            });
-        }
+        Err(ServerError::NpmManifestDownloadError {
+            status_code: 404,
+            package_name: String::from(package_name),
+        })
     }
 }

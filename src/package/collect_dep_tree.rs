@@ -45,7 +45,7 @@ impl DependencyRequest {
 
     pub fn resolve_version(&self, manifest: &CachedPackageManifest) -> Option<String> {
         match self.version_range.clone() {
-            VersionRange::Alias(alias_str) => manifest.dist_tags.get(&alias_str).map(|v| v.clone()),
+            VersionRange::Alias(alias_str) => manifest.dist_tags.get(&alias_str).cloned(),
             VersionRange::Range(range) => {
                 let mut versions: Vec<&String> = manifest.versions.keys().collect();
                 versions.sort_by(|a, b| b.cmp(a));
@@ -178,7 +178,7 @@ impl DepTreeCollector {
             .iter()
             .any(|d| d.name.eq(&dep.name))
         {
-            self.dependencies.lock().push(dep.clone());
+            self.dependencies.lock().push(dep);
         }
     }
 

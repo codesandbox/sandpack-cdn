@@ -1,5 +1,4 @@
 use std::collections::{HashMap, HashSet};
-use tracing::info;
 use swc_atoms::{js_word, JsWord};
 use swc_common::comments::SingleThreadedComments;
 use swc_common::{chain, sync::Lrc, FileName, Globals, Mark, SourceMap};
@@ -18,6 +17,7 @@ use swc_ecmascript::transforms::{
     proposals::decorators,
 };
 use swc_ecmascript::visit::FoldWith;
+use tracing::info;
 
 use crate::app_error::ServerError;
 
@@ -65,33 +65,34 @@ fn parse(
 
 fn get_versions() -> Versions {
     // based on `npx browserslist ">1%, not ie 11, not op_mini all"`
-    let mut versions = Versions::default();
-    versions.chrome = Some(Version {
-        major: 93,
-        minor: 0,
-        patch: 0,
-    });
-    versions.edge = Some(Version {
-        major: 94,
-        minor: 0,
-        patch: 0,
-    });
-    versions.firefox = Some(Version {
-        major: 93,
-        minor: 0,
-        patch: 0,
-    });
-    versions.ios = Some(Version {
-        major: 14,
-        minor: 0,
-        patch: 0,
-    });
-    versions.safari = Some(Version {
-        major: 14,
-        minor: 1,
-        patch: 0,
-    });
-    versions
+    swc_ecma_preset_env::BrowserData::<std::option::Option<swc_ecma_preset_env::Version>> {
+        chrome: Some(Version {
+            major: 93,
+            minor: 0,
+            patch: 0,
+        }),
+        edge: Some(Version {
+            major: 94,
+            minor: 0,
+            patch: 0,
+        }),
+        firefox: Some(Version {
+            major: 93,
+            minor: 0,
+            patch: 0,
+        }),
+        ios: Some(Version {
+            major: 14,
+            minor: 0,
+            patch: 0,
+        }),
+        safari: Some(Version {
+            major: 14,
+            minor: 1,
+            patch: 0,
+        }),
+        ..Default::default()
+    }
 }
 
 #[tracing::instrument(name = "transform_file", skip(code))]

@@ -24,7 +24,7 @@ pub fn match_member_expr(
         }
 
         match &*member.obj {
-            Member(m) => member = &m,
+            Member(m) => member = m,
             Ident(Ident { ref sym, span, .. }) => {
                 return idents.len() == 1
                     && sym == idents.pop().unwrap()

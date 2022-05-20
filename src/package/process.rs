@@ -90,17 +90,17 @@ fn collect_file_paths(
     Ok(())
 }
 
-fn deps_to_files_and_modules(deps: &Vec<String>) -> (HashSet<String>, HashSet<String>) {
+fn deps_to_files_and_modules(deps: &[String]) -> (HashSet<String>, HashSet<String>) {
     let mut used_modules: HashSet<String> = HashSet::new();
     let mut file_specifiers: HashSet<String> = HashSet::new();
 
     for dep in deps {
-        if !dep.starts_with(".") {
-            let parts: Vec<&str> = dep.split("/").collect();
-            if parts.len() > 0 {
+        if !dep.starts_with('.') {
+            let parts: Vec<&str> = dep.split('/').collect();
+            if !parts.is_empty() {
                 let mut module_specifier = String::from(parts[0]);
-                if module_specifier.starts_with("@") {
-                    module_specifier.push_str("/");
+                if module_specifier.starts_with('@') {
+                    module_specifier.push('/');
                     module_specifier.push_str(parts[1]);
                 }
                 used_modules.insert(module_specifier);
@@ -110,7 +110,7 @@ fn deps_to_files_and_modules(deps: &Vec<String>) -> (HashSet<String>, HashSet<St
         }
     }
 
-    return (file_specifiers, used_modules);
+    (file_specifiers, used_modules)
 }
 
 fn transform_files(
@@ -226,7 +226,7 @@ fn transform_package(
     module_files.insert(
         String::from("package.json"),
         MinimalFile::File {
-            content: pkg_json_content.clone(),
+            content: pkg_json_content,
             dependencies: vec![],
             is_transpiled: false,
         },
@@ -283,7 +283,7 @@ fn transform_package(
         modules: used_modules,
     };
 
-    return Ok((module_spec, dependencies));
+    Ok((module_spec, dependencies))
 }
 
 #[tracing::instrument(name = "process_npm_package", skip(data_dir, cache))]
@@ -322,7 +322,7 @@ pub async fn process_npm_package(
 }
 
 fn parse_package_specifier(package_specifier: &str) -> Result<(String, String), ServerError> {
-    let mut parts: Vec<&str> = package_specifier.split("@").collect();
+    let mut parts: Vec<&str> = package_specifier.split('@').collect();
     let package_version_opt = parts.pop();
     if let Some(package_version) = package_version_opt {
         if parts.len() > 2 {
@@ -332,24 +332,18 @@ fn parse_package_specifier(package_specifier: &str) -> Result<(String, String), 
         let package_name = parts.join("@");
         let parsed_version = Version::parse(package_version)?;
 
-        return Ok((package_name, parsed_version.to_string()));
+        Ok((package_name, parsed_version.to_string()))
     } else {
-        return Err(ServerError::InvalidPackageSpecifier);
+        Err(ServerError::InvalidPackageSpecifier)
     }
 }
 
 fn get_transform_cache_key(package_name: &str, package_version: &str) -> String {
-    return String::from(format!(
-        "v1::transform::{}@{}",
-        package_name, package_version
-    ));
+    format!("v1::transform::{}@{}", package_name, package_version)
 }
 
 fn get_dependencies_cache_key(package_name: &str, package_version: &str) -> String {
-    return String::from(format!(
-        "v1::dependencies::{}@{}",
-        package_name, package_version
-    ));
+    format!("v1::dependencies::{}@{}", package_name, package_version)
 }
 
 #[tracing::instrument(name = "transform_module_and_cache", skip(data_dir, cache))]
@@ -361,7 +355,7 @@ pub async fn transform_module_and_cache(
 ) -> Result<(MinimalCachedModule, ModuleDependenciesMap), ServerError> {
     let (transformed_module, module_dependencies) =
         process_npm_package(package_name, package_version, data_dir, cache).await?;
-        
+
     let transform_cache_key = get_transform_cache_key(package_name, package_version);
     let transformed_module_serialized = serde_json::to_string(&transformed_module)?;
     cache
@@ -370,7 +364,7 @@ pub async fn transform_module_and_cache(
             transformed_module_serialized.as_str(),
         )
         .await?;
-        
+
     let dependencies_cache_key = get_dependencies_cache_key(package_name, package_version);
     let module_dependencies_serialized = serde_json::to_string(&module_dependencies)?;
     cache

@@ -14,9 +14,7 @@ pub fn get_client(timeout_secs: u64) -> ClientWithMiddleware {
         .build()
         .expect("reqwest::ClientBuilder::build()");
 
-    let client = ClientBuilder::new(base_client)
+    ClientBuilder::new(base_client)
         .with(RetryTransientMiddleware::new_with_policy(retry_policy))
-        .build();
-
-    client
+        .build()
 }

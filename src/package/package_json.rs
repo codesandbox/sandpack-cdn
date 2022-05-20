@@ -40,12 +40,8 @@ pub fn get_export_entry(exports: &PackageJSONExport) -> Option<String> {
         PackageJSONExport::Value(s) => Some(s.clone()),
         PackageJSONExport::Map(nested_exports_value) => {
             for key in ["browser", "development", "default", "require", "import"] {
-                let found_value = nested_exports_value.get(key);
-                match found_value {
-                    Some(v) => {
-                        return get_export_entry(v);
-                    }
-                    _ => {}
+                if let Some(v) = nested_exports_value.get(key) {
+                    return get_export_entry(v);
                 }
             }
 
@@ -71,10 +67,8 @@ fn get_main_entry(pkg_json: &PackageJSON) -> String {
         return module_export;
     }
 
-    if let Some(browser_export) = pkg_json.browser.clone() {
-        if let PackageJSONExport::Value(val) = browser_export {
-            return val;
-        }
+    if let Some(PackageJSONExport::Value(val)) = pkg_json.browser.clone() {
+        return val;
     }
 
     if let Some(main_export) = pkg_json.main.clone() {
@@ -85,7 +79,7 @@ fn get_main_entry(pkg_json: &PackageJSON) -> String {
         return js_next_main_export;
     }
 
-    return String::from("index");
+    String::from("index")
 }
 
 pub fn collect_pkg_entries(pkg_json: PackageJSON) -> Result<Vec<String>, ServerError> {
@@ -103,7 +97,7 @@ pub fn collect_pkg_entries(pkg_json: PackageJSON) -> Result<Vec<String>, ServerE
 
                     // If an export does not start with a dot it is a conditional group, handle it differently.
                     // Whoever invented this really does not respect tooling developers time
-                    if !key.starts_with(".") {
+                    if !key.starts_with('.') {
                         let new_export_value = PackageJSONExport::Map(exports_map.clone());
                         if let Some(main_export) = get_export_entry(&new_export_value) {
                             has_main_export = true;
@@ -113,7 +107,7 @@ pub fn collect_pkg_entries(pkg_json: PackageJSON) -> Result<Vec<String>, ServerE
                     }
 
                     // Export starts with a dot, now we have relative exports
-                    if let Some(export_val) = get_export_entry(&value) {
+                    if let Some(export_val) = get_export_entry(value) {
                         entries.push(export_val);
 
                         if key.eq(".") {
