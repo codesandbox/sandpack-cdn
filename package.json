@@ -1,0 +1,8 @@
+{
+  "name": "sandpack-cdn",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "git@github.com:DeMoorJasper/sandpack-cdn.git",
+  "author": "Jasper De Moor <jasperdemoor@gmail.com>",
+  "license": "MIT"
+}
