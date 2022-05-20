@@ -5,7 +5,18 @@
   "repository": "git@github.com:DeMoorJasper/sandpack-cdn.git",
   "author": "Jasper De Moor <jasperdemoor@gmail.com>",
   "license": "MIT",
-  "devDependencies": {
-    "jest": "^28.1.0"
+  "scripts": {
+    "ci:run_tests": "node ./run_tests",
+    "test": "jest"
+  },
+  "devDependencies": {},
+  "dependencies": {
+    "@swc/core": "^1.2.187",
+    "@swc/jest": "^0.2.21",
+    "@types/jest": "^27.5.1",
+    "jest": "^28.1.0",
+    "node-fetch": "^2.6.7",
+    "typescript": "^4.6.4",
+    "url-join": "^4.0.1"
   }
 }

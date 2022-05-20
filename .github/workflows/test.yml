@@ -13,24 +13,26 @@ jobs:
         with:
           toolchain: stable
           profile: minimal
-          override: 
+          override:
       - run: cargo check
       - run: cargo test
       - run: cargo clippy
 
-  # TODO: Actually write these
-  # integration-tests:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v2
-  #     - name: Setup Node.js
-  #       uses: actions/setup-node@v2
-  #       with:
-  #         node-version: 16
-  #     - name: Install Rust
-  #       uses: actions-rs/toolchain@v1
-  #       with:
-  #         toolchain: stable
-  #         profile: minimal
-  #         override: true
-  #     - uses: bahmutov/npm-install@v1.1.0
+  integration-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: 16
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+      - name: Cargo build release
+        run: RUST_MIN_STACK=16777216 cargo build --release
+      - uses: bahmutov/npm-install@v1.1.0
+      - run: yarn ci:run_tests

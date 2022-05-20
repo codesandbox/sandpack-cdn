@@ -1,0 +1,4118 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`@babel/runtime@7.16.5 1`] = `
+Array [
+  Array [
+    "helpers/applyDecoratedDescriptor.js",
+    "object",
+  ],
+  Array [
+    "helpers/arrayLikeToArray.js",
+    "object",
+  ],
+  Array [
+    "helpers/arrayWithHoles.js",
+    "object",
+  ],
+  Array [
+    "helpers/arrayWithoutHoles.js",
+    "object",
+  ],
+  Array [
+    "helpers/assertThisInitialized.js",
+    "object",
+  ],
+  Array [
+    "helpers/AsyncGenerator.js",
+    "object",
+  ],
+  Array [
+    "helpers/asyncGeneratorDelegate.js",
+    "object",
+  ],
+  Array [
+    "helpers/asyncIterator.js",
+    "object",
+  ],
+  Array [
+    "helpers/asyncToGenerator.js",
+    "object",
+  ],
+  Array [
+    "helpers/awaitAsyncGenerator.js",
+    "object",
+  ],
+  Array [
+    "helpers/AwaitValue.js",
+    "object",
+  ],
+  Array [
+    "helpers/checkPrivateRedeclaration.js",
+    "object",
+  ],
+  Array [
+    "helpers/classApplyDescriptorDestructureSet.js",
+    "object",
+  ],
+  Array [
+    "helpers/classApplyDescriptorGet.js",
+    "object",
+  ],
+  Array [
+    "helpers/classApplyDescriptorSet.js",
+    "object",
+  ],
+  Array [
+    "helpers/classCallCheck.js",
+    "object",
+  ],
+  Array [
+    "helpers/classCheckPrivateStaticAccess.js",
+    "object",
+  ],
+  Array [
+    "helpers/classCheckPrivateStaticFieldDescriptor.js",
+    "object",
+  ],
+  Array [
+    "helpers/classExtractFieldDescriptor.js",
+    "object",
+  ],
+  Array [
+    "helpers/classNameTDZError.js",
+    "object",
+  ],
+  Array [
+    "helpers/classPrivateFieldDestructureSet.js",
+    "object",
+  ],
+  Array [
+    "helpers/classPrivateFieldGet.js",
+    "object",
+  ],
+  Array [
+    "helpers/classPrivateFieldInitSpec.js",
+    "object",
+  ],
+  Array [
+    "helpers/classPrivateFieldLooseBase.js",
+    "object",
+  ],
+  Array [
+    "helpers/classPrivateFieldLooseKey.js",
+    "object",
+  ],
+  Array [
+    "helpers/classPrivateFieldSet.js",
+    "object",
+  ],
+  Array [
+    "helpers/classPrivateMethodGet.js",
+    "object",
+  ],
+  Array [
+    "helpers/classPrivateMethodInitSpec.js",
+    "object",
+  ],
+  Array [
+    "helpers/classPrivateMethodSet.js",
+    "object",
+  ],
+  Array [
+    "helpers/classStaticPrivateFieldDestructureSet.js",
+    "object",
+  ],
+  Array [
+    "helpers/classStaticPrivateFieldSpecGet.js",
+    "object",
+  ],
+  Array [
+    "helpers/classStaticPrivateFieldSpecSet.js",
+    "object",
+  ],
+  Array [
+    "helpers/classStaticPrivateMethodGet.js",
+    "object",
+  ],
+  Array [
+    "helpers/classStaticPrivateMethodSet.js",
+    "object",
+  ],
+  Array [
+    "helpers/construct.js",
+    "object",
+  ],
+  Array [
+    "helpers/createClass.js",
+    "object",
+  ],
+  Array [
+    "helpers/createForOfIteratorHelper.js",
+    "object",
+  ],
+  Array [
+    "helpers/createForOfIteratorHelperLoose.js",
+    "object",
+  ],
+  Array [
+    "helpers/createSuper.js",
+    "object",
+  ],
+  Array [
+    "helpers/decorate.js",
+    "object",
+  ],
+  Array [
+    "helpers/defaults.js",
+    "object",
+  ],
+  Array [
+    "helpers/defineEnumerableProperties.js",
+    "object",
+  ],
+  Array [
+    "helpers/defineProperty.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/applyDecoratedDescriptor.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/arrayLikeToArray.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/arrayWithHoles.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/arrayWithoutHoles.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/assertThisInitialized.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/AsyncGenerator.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/asyncGeneratorDelegate.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/asyncIterator.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/asyncToGenerator.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/awaitAsyncGenerator.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/AwaitValue.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/checkPrivateRedeclaration.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/classApplyDescriptorDestructureSet.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/classApplyDescriptorGet.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/classApplyDescriptorSet.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/classCallCheck.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/classCheckPrivateStaticAccess.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/classCheckPrivateStaticFieldDescriptor.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/classExtractFieldDescriptor.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/classNameTDZError.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/classPrivateFieldDestructureSet.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/classPrivateFieldGet.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/classPrivateFieldInitSpec.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/classPrivateFieldLooseBase.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/classPrivateFieldLooseKey.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/classPrivateFieldSet.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/classPrivateMethodGet.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/classPrivateMethodInitSpec.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/classPrivateMethodSet.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/classStaticPrivateFieldDestructureSet.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/classStaticPrivateFieldSpecGet.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/classStaticPrivateFieldSpecSet.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/classStaticPrivateMethodGet.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/classStaticPrivateMethodSet.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/construct.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/createClass.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/createForOfIteratorHelper.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/createForOfIteratorHelperLoose.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/createSuper.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/decorate.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/defaults.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/defineEnumerableProperties.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/defineProperty.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/extends.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/get.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/getPrototypeOf.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/inherits.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/inheritsLoose.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/initializerDefineProperty.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/initializerWarningHelper.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/instanceof.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/interopRequireDefault.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/interopRequireWildcard.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/isNativeFunction.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/isNativeReflectConstruct.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/iterableToArray.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/iterableToArrayLimit.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/iterableToArrayLimitLoose.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/jsx.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/maybeArrayLike.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/newArrowCheck.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/nonIterableRest.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/nonIterableSpread.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/objectDestructuringEmpty.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/objectSpread.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/objectSpread2.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/objectWithoutProperties.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/objectWithoutPropertiesLoose.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/package.json",
+    "number",
+  ],
+  Array [
+    "helpers/esm/possibleConstructorReturn.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/readOnlyError.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/set.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/setPrototypeOf.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/skipFirstGeneratorNext.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/slicedToArray.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/slicedToArrayLoose.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/superPropBase.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/taggedTemplateLiteral.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/taggedTemplateLiteralLoose.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/tdz.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/temporalRef.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/temporalUndefined.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/toArray.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/toConsumableArray.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/toPrimitive.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/toPropertyKey.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/typeof.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/unsupportedIterableToArray.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/wrapAsyncGenerator.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/wrapNativeSuper.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/wrapRegExp.js",
+    "object",
+  ],
+  Array [
+    "helpers/esm/writeOnlyError.js",
+    "object",
+  ],
+  Array [
+    "helpers/extends.js",
+    "object",
+  ],
+  Array [
+    "helpers/get.js",
+    "object",
+  ],
+  Array [
+    "helpers/getPrototypeOf.js",
+    "object",
+  ],
+  Array [
+    "helpers/inherits.js",
+    "object",
+  ],
+  Array [
+    "helpers/inheritsLoose.js",
+    "object",
+  ],
+  Array [
+    "helpers/initializerDefineProperty.js",
+    "object",
+  ],
+  Array [
+    "helpers/initializerWarningHelper.js",
+    "object",
+  ],
+  Array [
+    "helpers/instanceof.js",
+    "object",
+  ],
+  Array [
+    "helpers/interopRequireDefault.js",
+    "object",
+  ],
+  Array [
+    "helpers/interopRequireWildcard.js",
+    "object",
+  ],
+  Array [
+    "helpers/isNativeFunction.js",
+    "object",
+  ],
+  Array [
+    "helpers/isNativeReflectConstruct.js",
+    "object",
+  ],
+  Array [
+    "helpers/iterableToArray.js",
+    "object",
+  ],
+  Array [
+    "helpers/iterableToArrayLimit.js",
+    "object",
+  ],
+  Array [
+    "helpers/iterableToArrayLimitLoose.js",
+    "object",
+  ],
+  Array [
+    "helpers/jsx.js",
+    "object",
+  ],
+  Array [
+    "helpers/maybeArrayLike.js",
+    "object",
+  ],
+  Array [
+    "helpers/newArrowCheck.js",
+    "object",
+  ],
+  Array [
+    "helpers/nonIterableRest.js",
+    "object",
+  ],
+  Array [
+    "helpers/nonIterableSpread.js",
+    "object",
+  ],
+  Array [
+    "helpers/objectDestructuringEmpty.js",
+    "object",
+  ],
+  Array [
+    "helpers/objectSpread.js",
+    "object",
+  ],
+  Array [
+    "helpers/objectSpread2.js",
+    "object",
+  ],
+  Array [
+    "helpers/objectWithoutProperties.js",
+    "object",
+  ],
+  Array [
+    "helpers/objectWithoutPropertiesLoose.js",
+    "object",
+  ],
+  Array [
+    "helpers/possibleConstructorReturn.js",
+    "object",
+  ],
+  Array [
+    "helpers/readOnlyError.js",
+    "object",
+  ],
+  Array [
+    "helpers/set.js",
+    "object",
+  ],
+  Array [
+    "helpers/setPrototypeOf.js",
+    "object",
+  ],
+  Array [
+    "helpers/skipFirstGeneratorNext.js",
+    "object",
+  ],
+  Array [
+    "helpers/slicedToArray.js",
+    "object",
+  ],
+  Array [
+    "helpers/slicedToArrayLoose.js",
+    "object",
+  ],
+  Array [
+    "helpers/superPropBase.js",
+    "object",
+  ],
+  Array [
+    "helpers/taggedTemplateLiteral.js",
+    "object",
+  ],
+  Array [
+    "helpers/taggedTemplateLiteralLoose.js",
+    "object",
+  ],
+  Array [
+    "helpers/tdz.js",
+    "object",
+  ],
+  Array [
+    "helpers/temporalRef.js",
+    "object",
+  ],
+  Array [
+    "helpers/temporalUndefined.js",
+    "object",
+  ],
+  Array [
+    "helpers/toArray.js",
+    "object",
+  ],
+  Array [
+    "helpers/toConsumableArray.js",
+    "object",
+  ],
+  Array [
+    "helpers/toPrimitive.js",
+    "object",
+  ],
+  Array [
+    "helpers/toPropertyKey.js",
+    "object",
+  ],
+  Array [
+    "helpers/typeof.js",
+    "object",
+  ],
+  Array [
+    "helpers/unsupportedIterableToArray.js",
+    "object",
+  ],
+  Array [
+    "helpers/wrapAsyncGenerator.js",
+    "object",
+  ],
+  Array [
+    "helpers/wrapNativeSuper.js",
+    "object",
+  ],
+  Array [
+    "helpers/wrapRegExp.js",
+    "object",
+  ],
+  Array [
+    "helpers/writeOnlyError.js",
+    "object",
+  ],
+  Array [
+    "LICENSE",
+    "number",
+  ],
+  Array [
+    "package.json",
+    "object",
+  ],
+  Array [
+    "README.md",
+    "number",
+  ],
+  Array [
+    "regenerator/index.js",
+    "object",
+  ],
+]
+`;
+
+exports[`framer@1.3.6 1`] = `
+Array [
+  Array [
+    "build/esm/framer.debug.js",
+    "object",
+  ],
+  Array [
+    "build/esm/framer.debug.js.map",
+    "number",
+  ],
+  Array [
+    "build/esm/framer.js",
+    "number",
+  ],
+  Array [
+    "build/esm/framer.js.map",
+    "number",
+  ],
+  Array [
+    "build/framer.api.json",
+    "number",
+  ],
+  Array [
+    "build/framer.d.ts",
+    "number",
+  ],
+  Array [
+    "build/framer.debug.js",
+    "number",
+  ],
+  Array [
+    "build/framer.debug.js.map",
+    "number",
+  ],
+  Array [
+    "build/framer.js",
+    "number",
+  ],
+  Array [
+    "build/framer.js.map",
+    "number",
+  ],
+  Array [
+    "CHANGELOG.md",
+    "number",
+  ],
+  Array [
+    "LICENSE.md",
+    "number",
+  ],
+  Array [
+    "package.json",
+    "object",
+  ],
+  Array [
+    "README.md",
+    "number",
+  ],
+  Array [
+    "resource.d.ts",
+    "number",
+  ],
+]
+`;
+
+exports[`framer@2.0.0-beta.13 1`] = `
+Array [
+  Array [
+    "build/animation/Animatable/Animatable.d.ts",
+    "number",
+  ],
+  Array [
+    "build/animation/Animatable/Animatable.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/animation/Animatable/Animatable.js",
+    "object",
+  ],
+  Array [
+    "build/animation/Animatable/Animatable.js.map",
+    "number",
+  ],
+  Array [
+    "build/animation/Animatable/index.d.ts",
+    "number",
+  ],
+  Array [
+    "build/animation/Animatable/index.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/animation/Animatable/index.js",
+    "object",
+  ],
+  Array [
+    "build/animation/Animatable/index.js.map",
+    "number",
+  ],
+  Array [
+    "build/animation/Animatable/Observers.d.ts",
+    "number",
+  ],
+  Array [
+    "build/animation/Animatable/Observers.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/animation/Animatable/Observers.js",
+    "object",
+  ],
+  Array [
+    "build/animation/Animatable/Observers.js.map",
+    "number",
+  ],
+  Array [
+    "build/animation/Animators/Animator.d.ts",
+    "number",
+  ],
+  Array [
+    "build/animation/Animators/Animator.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/animation/Animators/Animator.js",
+    "object",
+  ],
+  Array [
+    "build/animation/Animators/Animator.js.map",
+    "number",
+  ],
+  Array [
+    "build/animation/Animators/FrictionAnimator.d.ts",
+    "number",
+  ],
+  Array [
+    "build/animation/Animators/FrictionAnimator.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/animation/Animators/FrictionAnimator.js",
+    "object",
+  ],
+  Array [
+    "build/animation/Animators/FrictionAnimator.js.map",
+    "number",
+  ],
+  Array [
+    "build/animation/Animators/InertialScrollAnimator.d.ts",
+    "number",
+  ],
+  Array [
+    "build/animation/Animators/InertialScrollAnimator.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/animation/Animators/InertialScrollAnimator.js",
+    "object",
+  ],
+  Array [
+    "build/animation/Animators/InertialScrollAnimator.js.map",
+    "number",
+  ],
+  Array [
+    "build/animation/Animators/Integrator.d.ts",
+    "number",
+  ],
+  Array [
+    "build/animation/Animators/Integrator.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/animation/Animators/Integrator.js",
+    "object",
+  ],
+  Array [
+    "build/animation/Animators/Integrator.js.map",
+    "number",
+  ],
+  Array [
+    "build/animation/Animators/SpringAnimator.d.ts",
+    "number",
+  ],
+  Array [
+    "build/animation/Animators/SpringAnimator.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/animation/Animators/SpringAnimator.js",
+    "object",
+  ],
+  Array [
+    "build/animation/Animators/SpringAnimator.js.map",
+    "number",
+  ],
+  Array [
+    "build/animation/Animators/SpringCurveValueConverter.d.ts",
+    "number",
+  ],
+  Array [
+    "build/animation/Animators/SpringCurveValueConverter.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/animation/Animators/SpringCurveValueConverter.js",
+    "object",
+  ],
+  Array [
+    "build/animation/Animators/SpringCurveValueConverter.js.map",
+    "number",
+  ],
+  Array [
+    "build/animation/Drivers/AnimationDriver.d.ts",
+    "number",
+  ],
+  Array [
+    "build/animation/Drivers/AnimationDriver.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/animation/Drivers/AnimationDriver.js",
+    "object",
+  ],
+  Array [
+    "build/animation/Drivers/AnimationDriver.js.map",
+    "number",
+  ],
+  Array [
+    "build/animation/Drivers/MainLoopDriver.d.ts",
+    "number",
+  ],
+  Array [
+    "build/animation/Drivers/MainLoopDriver.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/animation/Drivers/MainLoopDriver.js",
+    "object",
+  ],
+  Array [
+    "build/animation/Drivers/MainLoopDriver.js.map",
+    "number",
+  ],
+  Array [
+    "build/components/AnimateLayout/LayoutIdContext.d.ts",
+    "number",
+  ],
+  Array [
+    "build/components/AnimateLayout/LayoutIdContext.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/components/AnimateLayout/LayoutIdContext.js",
+    "object",
+  ],
+  Array [
+    "build/components/AnimateLayout/LayoutIdContext.js.map",
+    "number",
+  ],
+  Array [
+    "build/components/AnimateLayout/SharedLayoutRoot.d.ts",
+    "number",
+  ],
+  Array [
+    "build/components/AnimateLayout/SharedLayoutRoot.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/components/AnimateLayout/SharedLayoutRoot.js",
+    "object",
+  ],
+  Array [
+    "build/components/AnimateLayout/SharedLayoutRoot.js.map",
+    "number",
+  ],
+  Array [
+    "build/components/AnimateLayout/SharedLayoutTree.d.ts",
+    "number",
+  ],
+  Array [
+    "build/components/AnimateLayout/SharedLayoutTree.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/components/AnimateLayout/SharedLayoutTree.js",
+    "object",
+  ],
+  Array [
+    "build/components/AnimateLayout/SharedLayoutTree.js.map",
+    "number",
+  ],
+  Array [
+    "build/components/EmptyState.d.ts",
+    "number",
+  ],
+  Array [
+    "build/components/EmptyState.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/components/EmptyState.js",
+    "object",
+  ],
+  Array [
+    "build/components/EmptyState.js.map",
+    "number",
+  ],
+  Array [
+    "build/components/hoc/WithDragging.d.ts",
+    "number",
+  ],
+  Array [
+    "build/components/hoc/WithDragging.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/components/hoc/WithDragging.js",
+    "object",
+  ],
+  Array [
+    "build/components/hoc/WithDragging.js.map",
+    "number",
+  ],
+  Array [
+    "build/components/hoc/WithEvents.d.ts",
+    "number",
+  ],
+  Array [
+    "build/components/hoc/WithEvents.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/components/hoc/WithEvents.js",
+    "object",
+  ],
+  Array [
+    "build/components/hoc/WithEvents.js.map",
+    "number",
+  ],
+  Array [
+    "build/components/hoc/withMeasuredSize.d.ts",
+    "number",
+  ],
+  Array [
+    "build/components/hoc/withMeasuredSize.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/components/hoc/withMeasuredSize.js",
+    "object",
+  ],
+  Array [
+    "build/components/hoc/withMeasuredSize.js.map",
+    "number",
+  ],
+  Array [
+    "build/components/MagicMotionCrossfadeRoot.d.ts",
+    "number",
+  ],
+  Array [
+    "build/components/MagicMotionCrossfadeRoot.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/components/MagicMotionCrossfadeRoot.js",
+    "object",
+  ],
+  Array [
+    "build/components/MagicMotionCrossfadeRoot.js.map",
+    "number",
+  ],
+  Array [
+    "build/components/Navigation.d.ts",
+    "number",
+  ],
+  Array [
+    "build/components/Navigation.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/components/Navigation.js",
+    "object",
+  ],
+  Array [
+    "build/components/Navigation.js.map",
+    "number",
+  ],
+  Array [
+    "build/components/NavigationContainer.d.ts",
+    "number",
+  ],
+  Array [
+    "build/components/NavigationContainer.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/components/NavigationContainer.js",
+    "object",
+  ],
+  Array [
+    "build/components/NavigationContainer.js.map",
+    "number",
+  ],
+  Array [
+    "build/components/NavigationContainerContext.d.ts",
+    "number",
+  ],
+  Array [
+    "build/components/NavigationContainerContext.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/components/NavigationContainerContext.js",
+    "object",
+  ],
+  Array [
+    "build/components/NavigationContainerContext.js.map",
+    "number",
+  ],
+  Array [
+    "build/components/NavigationContext.d.ts",
+    "number",
+  ],
+  Array [
+    "build/components/NavigationContext.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/components/NavigationContext.js",
+    "object",
+  ],
+  Array [
+    "build/components/NavigationContext.js.map",
+    "number",
+  ],
+  Array [
+    "build/components/NavigationRouteContext.d.ts",
+    "number",
+  ],
+  Array [
+    "build/components/NavigationRouteContext.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/components/NavigationRouteContext.js",
+    "object",
+  ],
+  Array [
+    "build/components/NavigationRouteContext.js.map",
+    "number",
+  ],
+  Array [
+    "build/components/NavigationTargetContext.d.ts",
+    "number",
+  ],
+  Array [
+    "build/components/NavigationTargetContext.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/components/NavigationTargetContext.js",
+    "object",
+  ],
+  Array [
+    "build/components/NavigationTargetContext.js.map",
+    "number",
+  ],
+  Array [
+    "build/components/NavigationTransitions.d.ts",
+    "number",
+  ],
+  Array [
+    "build/components/NavigationTransitions.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/components/NavigationTransitions.js",
+    "object",
+  ],
+  Array [
+    "build/components/NavigationTransitions.js.map",
+    "number",
+  ],
+  Array [
+    "build/components/NavigatorMock.d.ts",
+    "number",
+  ],
+  Array [
+    "build/components/NavigatorMock.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/components/NavigatorMock.js",
+    "object",
+  ],
+  Array [
+    "build/components/NavigatorMock.js.map",
+    "number",
+  ],
+  Array [
+    "build/components/Page/EmulatedPage.d.ts",
+    "number",
+  ],
+  Array [
+    "build/components/Page/EmulatedPage.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/components/Page/EmulatedPage.js",
+    "object",
+  ],
+  Array [
+    "build/components/Page/EmulatedPage.js.map",
+    "number",
+  ],
+  Array [
+    "build/components/Page/PageContainer.d.ts",
+    "number",
+  ],
+  Array [
+    "build/components/Page/PageContainer.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/components/Page/PageContainer.js",
+    "object",
+  ],
+  Array [
+    "build/components/Page/PageContainer.js.map",
+    "number",
+  ],
+  Array [
+    "build/components/Page/types.d.ts",
+    "number",
+  ],
+  Array [
+    "build/components/Page/types.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/components/Page/types.js",
+    "object",
+  ],
+  Array [
+    "build/components/Page/types.js.map",
+    "number",
+  ],
+  Array [
+    "build/components/reduceNavigationStateForAction.d.ts",
+    "number",
+  ],
+  Array [
+    "build/components/reduceNavigationStateForAction.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/components/reduceNavigationStateForAction.js",
+    "object",
+  ],
+  Array [
+    "build/components/reduceNavigationStateForAction.js.map",
+    "number",
+  ],
+  Array [
+    "build/components/Scroll/EmulatedScroll.d.ts",
+    "number",
+  ],
+  Array [
+    "build/components/Scroll/EmulatedScroll.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/components/Scroll/EmulatedScroll.js",
+    "object",
+  ],
+  Array [
+    "build/components/Scroll/EmulatedScroll.js.map",
+    "number",
+  ],
+  Array [
+    "build/components/Scroll/NativeScroll.d.ts",
+    "number",
+  ],
+  Array [
+    "build/components/Scroll/NativeScroll.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/components/Scroll/NativeScroll.js",
+    "object",
+  ],
+  Array [
+    "build/components/Scroll/NativeScroll.js.map",
+    "number",
+  ],
+  Array [
+    "build/components/Scroll/Scroll.d.ts",
+    "number",
+  ],
+  Array [
+    "build/components/Scroll/Scroll.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/components/Scroll/Scroll.js",
+    "object",
+  ],
+  Array [
+    "build/components/Scroll/Scroll.js.map",
+    "number",
+  ],
+  Array [
+    "build/components/Scroll/types.d.ts",
+    "number",
+  ],
+  Array [
+    "build/components/Scroll/types.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/components/Scroll/types.js",
+    "object",
+  ],
+  Array [
+    "build/components/Scroll/types.js.map",
+    "number",
+  ],
+  Array [
+    "build/components/Scroll/useWheelScroll.d.ts",
+    "number",
+  ],
+  Array [
+    "build/components/Scroll/useWheelScroll.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/components/Scroll/useWheelScroll.js",
+    "object",
+  ],
+  Array [
+    "build/components/Scroll/useWheelScroll.js.map",
+    "number",
+  ],
+  Array [
+    "build/components/Stack/Stack.d.ts",
+    "number",
+  ],
+  Array [
+    "build/components/Stack/Stack.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/components/Stack/Stack.js",
+    "object",
+  ],
+  Array [
+    "build/components/Stack/Stack.js.map",
+    "number",
+  ],
+  Array [
+    "build/components/Stack/types.d.ts",
+    "number",
+  ],
+  Array [
+    "build/components/Stack/types.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/components/Stack/types.js",
+    "object",
+  ],
+  Array [
+    "build/components/Stack/types.js.map",
+    "number",
+  ],
+  Array [
+    "build/components/useNavigation.d.ts",
+    "number",
+  ],
+  Array [
+    "build/components/useNavigation.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/components/useNavigation.js",
+    "object",
+  ],
+  Array [
+    "build/components/useNavigation.js.map",
+    "number",
+  ],
+  Array [
+    "build/components/utils/animatePointWithInertia.d.ts",
+    "number",
+  ],
+  Array [
+    "build/components/utils/animatePointWithInertia.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/components/utils/animatePointWithInertia.js",
+    "object",
+  ],
+  Array [
+    "build/components/utils/animatePointWithInertia.js.map",
+    "number",
+  ],
+  Array [
+    "build/components/utils/paddingFromProps.d.ts",
+    "number",
+  ],
+  Array [
+    "build/components/utils/paddingFromProps.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/components/utils/paddingFromProps.js",
+    "object",
+  ],
+  Array [
+    "build/components/utils/paddingFromProps.js.map",
+    "number",
+  ],
+  Array [
+    "build/components/utils/useConstant.d.ts",
+    "number",
+  ],
+  Array [
+    "build/components/utils/useConstant.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/components/utils/useConstant.js",
+    "object",
+  ],
+  Array [
+    "build/components/utils/useConstant.js.map",
+    "number",
+  ],
+  Array [
+    "build/components/utils/useEmulatedTouchScroll.d.ts",
+    "number",
+  ],
+  Array [
+    "build/components/utils/useEmulatedTouchScroll.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/components/utils/useEmulatedTouchScroll.js",
+    "object",
+  ],
+  Array [
+    "build/components/utils/useEmulatedTouchScroll.js.map",
+    "number",
+  ],
+  Array [
+    "build/components/utils/useMap.d.ts",
+    "number",
+  ],
+  Array [
+    "build/components/utils/useMap.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/components/utils/useMap.js",
+    "object",
+  ],
+  Array [
+    "build/components/utils/useMap.js.map",
+    "number",
+  ],
+  Array [
+    "build/components/utils/useUpdateScrollOffset.d.ts",
+    "number",
+  ],
+  Array [
+    "build/components/utils/useUpdateScrollOffset.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/components/utils/useUpdateScrollOffset.js",
+    "object",
+  ],
+  Array [
+    "build/components/utils/useUpdateScrollOffset.js.map",
+    "number",
+  ],
+  Array [
+    "build/core/EventEmitter.d.ts",
+    "number",
+  ],
+  Array [
+    "build/core/EventEmitter.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/core/EventEmitter.js",
+    "object",
+  ],
+  Array [
+    "build/core/EventEmitter.js.map",
+    "number",
+  ],
+  Array [
+    "build/core/Loop.d.ts",
+    "number",
+  ],
+  Array [
+    "build/core/Loop.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/core/Loop.js",
+    "object",
+  ],
+  Array [
+    "build/core/Loop.js.map",
+    "number",
+  ],
+  Array [
+    "build/core/Time.d.ts",
+    "number",
+  ],
+  Array [
+    "build/core/Time.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/core/Time.js",
+    "object",
+  ],
+  Array [
+    "build/core/Time.js.map",
+    "number",
+  ],
+  Array [
+    "build/data/Data.d.ts",
+    "number",
+  ],
+  Array [
+    "build/data/Data.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/data/Data.js",
+    "object",
+  ],
+  Array [
+    "build/data/Data.js.map",
+    "number",
+  ],
+  Array [
+    "build/data/ObservableObject.d.ts",
+    "number",
+  ],
+  Array [
+    "build/data/ObservableObject.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/data/ObservableObject.js",
+    "object",
+  ],
+  Array [
+    "build/data/ObservableObject.js.map",
+    "number",
+  ],
+  Array [
+    "build/deprecated/convertColorProps.d.ts",
+    "number",
+  ],
+  Array [
+    "build/deprecated/convertColorProps.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/deprecated/convertColorProps.js",
+    "object",
+  ],
+  Array [
+    "build/deprecated/convertColorProps.js.map",
+    "number",
+  ],
+  Array [
+    "build/deprecated/DataObserver.d.ts",
+    "number",
+  ],
+  Array [
+    "build/deprecated/DataObserver.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/deprecated/DataObserver.js",
+    "object",
+  ],
+  Array [
+    "build/deprecated/DataObserver.js.map",
+    "number",
+  ],
+  Array [
+    "build/deprecated/WithOverride.d.ts",
+    "number",
+  ],
+  Array [
+    "build/deprecated/WithOverride.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/deprecated/WithOverride.js",
+    "object",
+  ],
+  Array [
+    "build/deprecated/WithOverride.js.map",
+    "number",
+  ],
+  Array [
+    "build/events/FramerEvent.d.ts",
+    "number",
+  ],
+  Array [
+    "build/events/FramerEvent.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/events/FramerEvent.js",
+    "object",
+  ],
+  Array [
+    "build/events/FramerEvent.js.map",
+    "number",
+  ],
+  Array [
+    "build/events/FramerEventSession.d.ts",
+    "number",
+  ],
+  Array [
+    "build/events/FramerEventSession.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/events/FramerEventSession.js",
+    "object",
+  ],
+  Array [
+    "build/events/FramerEventSession.js.map",
+    "number",
+  ],
+  Array [
+    "build/events/recognizer/GestureRecognizer.d.ts",
+    "number",
+  ],
+  Array [
+    "build/events/recognizer/GestureRecognizer.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/events/recognizer/GestureRecognizer.js",
+    "object",
+  ],
+  Array [
+    "build/events/recognizer/GestureRecognizer.js.map",
+    "number",
+  ],
+  Array [
+    "build/events/recognizer/MouseWheelGestureRecognizer.d.ts",
+    "number",
+  ],
+  Array [
+    "build/events/recognizer/MouseWheelGestureRecognizer.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/events/recognizer/MouseWheelGestureRecognizer.js",
+    "object",
+  ],
+  Array [
+    "build/events/recognizer/MouseWheelGestureRecognizer.js.map",
+    "number",
+  ],
+  Array [
+    "build/events/recognizer/PanGestureRecognizer.d.ts",
+    "number",
+  ],
+  Array [
+    "build/events/recognizer/PanGestureRecognizer.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/events/recognizer/PanGestureRecognizer.js",
+    "object",
+  ],
+  Array [
+    "build/events/recognizer/PanGestureRecognizer.js.map",
+    "number",
+  ],
+  Array [
+    "build/events/recognizer/TapGestureRecognizer.d.ts",
+    "number",
+  ],
+  Array [
+    "build/events/recognizer/TapGestureRecognizer.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/events/recognizer/TapGestureRecognizer.js",
+    "object",
+  ],
+  Array [
+    "build/events/recognizer/TapGestureRecognizer.js.map",
+    "number",
+  ],
+  Array [
+    "build/index.d.ts",
+    "number",
+  ],
+  Array [
+    "build/index.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/index.js",
+    "object",
+  ],
+  Array [
+    "build/index.js.map",
+    "number",
+  ],
+  Array [
+    "build/interpolation/Interpolation.d.ts",
+    "number",
+  ],
+  Array [
+    "build/interpolation/Interpolation.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/interpolation/Interpolation.js",
+    "object",
+  ],
+  Array [
+    "build/interpolation/Interpolation.js.map",
+    "number",
+  ],
+  Array [
+    "build/interpolation/NumberInterpolation.d.ts",
+    "number",
+  ],
+  Array [
+    "build/interpolation/NumberInterpolation.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/interpolation/NumberInterpolation.js",
+    "object",
+  ],
+  Array [
+    "build/interpolation/NumberInterpolation.js.map",
+    "number",
+  ],
+  Array [
+    "build/modules/cx.d.ts",
+    "number",
+  ],
+  Array [
+    "build/modules/cx.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/modules/cx.js",
+    "object",
+  ],
+  Array [
+    "build/modules/cx.js.map",
+    "number",
+  ],
+  Array [
+    "build/modules/framerPageLink.d.ts",
+    "number",
+  ],
+  Array [
+    "build/modules/framerPageLink.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/modules/framerPageLink.js",
+    "object",
+  ],
+  Array [
+    "build/modules/framerPageLink.js.map",
+    "number",
+  ],
+  Array [
+    "build/modules/hocOptions.d.ts",
+    "number",
+  ],
+  Array [
+    "build/modules/hocOptions.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/modules/hocOptions.js",
+    "object",
+  ],
+  Array [
+    "build/modules/hocOptions.js.map",
+    "number",
+  ],
+  Array [
+    "build/modules/useActiveVariantCallback.d.ts",
+    "number",
+  ],
+  Array [
+    "build/modules/useActiveVariantCallback.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/modules/useActiveVariantCallback.js",
+    "object",
+  ],
+  Array [
+    "build/modules/useActiveVariantCallback.js.map",
+    "number",
+  ],
+  Array [
+    "build/modules/useAddVariantProps.d.ts",
+    "number",
+  ],
+  Array [
+    "build/modules/useAddVariantProps.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/modules/useAddVariantProps.js",
+    "object",
+  ],
+  Array [
+    "build/modules/useAddVariantProps.js.map",
+    "number",
+  ],
+  Array [
+    "build/modules/useBreakpointVariants.d.ts",
+    "number",
+  ],
+  Array [
+    "build/modules/useBreakpointVariants.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/modules/useBreakpointVariants.js",
+    "object",
+  ],
+  Array [
+    "build/modules/useBreakpointVariants.js.map",
+    "number",
+  ],
+  Array [
+    "build/modules/useForceUpdate.d.ts",
+    "number",
+  ],
+  Array [
+    "build/modules/useForceUpdate.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/modules/useForceUpdate.js",
+    "object",
+  ],
+  Array [
+    "build/modules/useForceUpdate.js.map",
+    "number",
+  ],
+  Array [
+    "build/modules/useGamepad.d.ts",
+    "number",
+  ],
+  Array [
+    "build/modules/useGamepad.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/modules/useGamepad.js",
+    "object",
+  ],
+  Array [
+    "build/modules/useGamepad.js.map",
+    "number",
+  ],
+  Array [
+    "build/modules/useHotkey.d.ts",
+    "number",
+  ],
+  Array [
+    "build/modules/useHotkey.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/modules/useHotkey.js",
+    "object",
+  ],
+  Array [
+    "build/modules/useHotkey.js.map",
+    "number",
+  ],
+  Array [
+    "build/modules/useIsOnFramerCanvas.d.ts",
+    "number",
+  ],
+  Array [
+    "build/modules/useIsOnFramerCanvas.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/modules/useIsOnFramerCanvas.js",
+    "object",
+  ],
+  Array [
+    "build/modules/useIsOnFramerCanvas.js.map",
+    "number",
+  ],
+  Array [
+    "build/modules/useNavigate.d.ts",
+    "number",
+  ],
+  Array [
+    "build/modules/useNavigate.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/modules/useNavigate.js",
+    "object",
+  ],
+  Array [
+    "build/modules/useNavigate.js.map",
+    "number",
+  ],
+  Array [
+    "build/modules/useOnVariantChange.d.ts",
+    "number",
+  ],
+  Array [
+    "build/modules/useOnVariantChange.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/modules/useOnVariantChange.js",
+    "object",
+  ],
+  Array [
+    "build/modules/useOnVariantChange.js.map",
+    "number",
+  ],
+  Array [
+    "build/modules/useVariantState.d.ts",
+    "number",
+  ],
+  Array [
+    "build/modules/useVariantState.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/modules/useVariantState.js",
+    "object",
+  ],
+  Array [
+    "build/modules/useVariantState.js.map",
+    "number",
+  ],
+  Array [
+    "build/modules/withCSS.d.ts",
+    "number",
+  ],
+  Array [
+    "build/modules/withCSS.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/modules/withCSS.js",
+    "object",
+  ],
+  Array [
+    "build/modules/withCSS.js.map",
+    "number",
+  ],
+  Array [
+    "build/modules/withVariantAppearEffect.d.ts",
+    "number",
+  ],
+  Array [
+    "build/modules/withVariantAppearEffect.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/modules/withVariantAppearEffect.js",
+    "object",
+  ],
+  Array [
+    "build/modules/withVariantAppearEffect.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/componentLoader/definition.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/componentLoader/definition.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/componentLoader/definition.js",
+    "object",
+  ],
+  Array [
+    "build/render/componentLoader/definition.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/componentLoader/index.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/componentLoader/index.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/componentLoader/index.js",
+    "object",
+  ],
+  Array [
+    "build/render/componentLoader/index.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/fonts/CustomFontSource.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/fonts/CustomFontSource.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/fonts/CustomFontSource.js",
+    "object",
+  ],
+  Array [
+    "build/render/fonts/CustomFontSource.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/fonts/fonts.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/fonts/fonts.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/fonts/fonts.js",
+    "object",
+  ],
+  Array [
+    "build/render/fonts/fonts.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/fonts/fontStore.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/fonts/fontStore.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/fonts/fontStore.js",
+    "object",
+  ],
+  Array [
+    "build/render/fonts/fontStore.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/fonts/GoogleFontSource.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/fonts/GoogleFontSource.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/fonts/GoogleFontSource.js",
+    "object",
+  ],
+  Array [
+    "build/render/fonts/GoogleFontSource.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/fonts/loadFont.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/fonts/loadFont.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/fonts/loadFont.js",
+    "object",
+  ],
+  Array [
+    "build/render/fonts/loadFont.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/fonts/LocalFontSource.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/fonts/LocalFontSource.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/fonts/LocalFontSource.js",
+    "object",
+  ],
+  Array [
+    "build/render/fonts/LocalFontSource.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/fonts/types.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/fonts/types.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/fonts/types.js",
+    "object",
+  ],
+  Array [
+    "build/render/fonts/types.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/fonts/useFontLoadStatus.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/fonts/useFontLoadStatus.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/fonts/useFontLoadStatus.js",
+    "object",
+  ],
+  Array [
+    "build/render/fonts/useFontLoadStatus.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/fonts/utils.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/fonts/utils.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/fonts/utils.js",
+    "object",
+  ],
+  Array [
+    "build/render/fonts/utils.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/presentation/ComponentContainerContext.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/presentation/ComponentContainerContext.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/presentation/ComponentContainerContext.js",
+    "object",
+  ],
+  Array [
+    "build/render/presentation/ComponentContainerContext.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/presentation/CustomProperties.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/presentation/CustomProperties.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/presentation/CustomProperties.js",
+    "object",
+  ],
+  Array [
+    "build/render/presentation/CustomProperties.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/presentation/Frame/DeprecatedFrame.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/presentation/Frame/DeprecatedFrame.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/presentation/Frame/DeprecatedFrame.js",
+    "object",
+  ],
+  Array [
+    "build/render/presentation/Frame/DeprecatedFrame.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/presentation/Frame/FrameWithMotion.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/presentation/Frame/FrameWithMotion.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/presentation/Frame/FrameWithMotion.js",
+    "object",
+  ],
+  Array [
+    "build/render/presentation/Frame/FrameWithMotion.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/presentation/Frame/getStyleForFrameProps.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/presentation/Frame/getStyleForFrameProps.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/presentation/Frame/getStyleForFrameProps.js",
+    "object",
+  ],
+  Array [
+    "build/render/presentation/Frame/getStyleForFrameProps.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/presentation/Frame/index.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/presentation/Frame/index.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/presentation/Frame/index.js",
+    "object",
+  ],
+  Array [
+    "build/render/presentation/Frame/index.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/presentation/Frame/isDeprecatedFrameProps.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/presentation/Frame/isDeprecatedFrameProps.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/presentation/Frame/isDeprecatedFrameProps.js",
+    "object",
+  ],
+  Array [
+    "build/render/presentation/Frame/isDeprecatedFrameProps.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/presentation/Frame/types.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/presentation/Frame/types.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/presentation/Frame/types.js",
+    "object",
+  ],
+  Array [
+    "build/render/presentation/Frame/types.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/presentation/GradientElement.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/presentation/GradientElement.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/presentation/GradientElement.js",
+    "object",
+  ],
+  Array [
+    "build/render/presentation/GradientElement.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/presentation/Image.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/presentation/Image.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/presentation/Image.js",
+    "object",
+  ],
+  Array [
+    "build/render/presentation/Image.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/presentation/ImagePatternElement.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/presentation/ImagePatternElement.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/presentation/ImagePatternElement.js",
+    "object",
+  ],
+  Array [
+    "build/render/presentation/ImagePatternElement.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/presentation/Layer.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/presentation/Layer.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/presentation/Layer.js",
+    "object",
+  ],
+  Array [
+    "build/render/presentation/Layer.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/presentation/SVG.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/presentation/SVG.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/presentation/SVG.js",
+    "object",
+  ],
+  Array [
+    "build/render/presentation/SVG.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/presentation/SVGRoot.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/presentation/SVGRoot.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/presentation/SVGRoot.js",
+    "object",
+  ],
+  Array [
+    "build/render/presentation/SVGRoot.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/presentation/Text.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/presentation/Text.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/presentation/Text.js",
+    "object",
+  ],
+  Array [
+    "build/render/presentation/Text.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/presentation/Vector.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/presentation/Vector.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/presentation/Vector.js",
+    "object",
+  ],
+  Array [
+    "build/render/presentation/Vector.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/presentation/VectorGroup.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/presentation/VectorGroup.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/presentation/VectorGroup.js",
+    "object",
+  ],
+  Array [
+    "build/render/presentation/VectorGroup.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/style/BackgroundImageComponent.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/style/BackgroundImageComponent.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/style/BackgroundImageComponent.js",
+    "object",
+  ],
+  Array [
+    "build/render/style/BackgroundImageComponent.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/style/backgroundImageFromProps.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/style/backgroundImageFromProps.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/style/backgroundImageFromProps.js",
+    "object",
+  ],
+  Array [
+    "build/render/style/backgroundImageFromProps.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/style/BorderComponent.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/style/BorderComponent.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/style/BorderComponent.js",
+    "object",
+  ],
+  Array [
+    "build/render/style/BorderComponent.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/style/collectVisualStyleFromProps.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/style/collectVisualStyleFromProps.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/style/collectVisualStyleFromProps.js",
+    "object",
+  ],
+  Array [
+    "build/render/style/collectVisualStyleFromProps.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/style/shadow.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/style/shadow.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/style/shadow.js",
+    "object",
+  ],
+  Array [
+    "build/render/style/shadow.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/StyleSheetContext.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/StyleSheetContext.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/StyleSheetContext.js",
+    "object",
+  ],
+  Array [
+    "build/render/StyleSheetContext.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/traits/BackdropFilters.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/traits/BackdropFilters.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/traits/BackdropFilters.js",
+    "object",
+  ],
+  Array [
+    "build/render/traits/BackdropFilters.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/traits/Background.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/traits/Background.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/traits/Background.js",
+    "object",
+  ],
+  Array [
+    "build/render/traits/Background.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/traits/Blending.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/traits/Blending.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/traits/Blending.js",
+    "object",
+  ],
+  Array [
+    "build/render/traits/Blending.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/traits/Fill.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/traits/Fill.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/traits/Fill.js",
+    "object",
+  ],
+  Array [
+    "build/render/traits/Fill.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/traits/Filters.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/traits/Filters.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/traits/Filters.js",
+    "object",
+  ],
+  Array [
+    "build/render/traits/Filters.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/traits/FreeSpace.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/traits/FreeSpace.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/traits/FreeSpace.js",
+    "object",
+  ],
+  Array [
+    "build/render/traits/FreeSpace.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/traits/Opacity.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/traits/Opacity.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/traits/Opacity.js",
+    "object",
+  ],
+  Array [
+    "build/render/traits/Opacity.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/traits/Overflow.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/traits/Overflow.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/traits/Overflow.js",
+    "object",
+  ],
+  Array [
+    "build/render/traits/Overflow.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/traits/Path.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/traits/Path.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/traits/Path.js",
+    "object",
+  ],
+  Array [
+    "build/render/traits/Path.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/traits/Radius.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/traits/Radius.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/traits/Radius.js",
+    "object",
+  ],
+  Array [
+    "build/render/traits/Radius.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/traits/Shadow.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/traits/Shadow.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/traits/Shadow.js",
+    "object",
+  ],
+  Array [
+    "build/render/traits/Shadow.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/traits/TextColor.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/traits/TextColor.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/traits/TextColor.js",
+    "object",
+  ],
+  Array [
+    "build/render/traits/TextColor.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/traits/Transform.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/traits/Transform.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/traits/Transform.js",
+    "object",
+  ],
+  Array [
+    "build/render/traits/Transform.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/Action.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/types/Action.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/Action.js",
+    "object",
+  ],
+  Array [
+    "build/render/types/Action.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/BackgroundImage.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/types/BackgroundImage.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/BackgroundImage.js",
+    "object",
+  ],
+  Array [
+    "build/render/types/BackgroundImage.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/Color/Color.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/types/Color/Color.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/Color/Color.js",
+    "object",
+  ],
+  Array [
+    "build/render/types/Color/Color.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/Color/ConvertColor.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/types/Color/ConvertColor.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/Color/ConvertColor.js",
+    "object",
+  ],
+  Array [
+    "build/render/types/Color/ConvertColor.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/Color/converters.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/types/Color/converters.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/Color/converters.js",
+    "object",
+  ],
+  Array [
+    "build/render/types/Color/converters.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/Color/CSSNames.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/types/Color/CSSNames.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/Color/CSSNames.js",
+    "object",
+  ],
+  Array [
+    "build/render/types/Color/CSSNames.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/Color/index.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/types/Color/index.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/Color/index.js",
+    "object",
+  ],
+  Array [
+    "build/render/types/Color/index.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/Color/types.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/types/Color/types.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/Color/types.js",
+    "object",
+  ],
+  Array [
+    "build/render/types/Color/types.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/Color/Utils.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/types/Color/Utils.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/Color/Utils.js",
+    "object",
+  ],
+  Array [
+    "build/render/types/Color/Utils.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/Constraints.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/types/Constraints.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/Constraints.js",
+    "object",
+  ],
+  Array [
+    "build/render/types/Constraints.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/Gradient.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/types/Gradient.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/Gradient.js",
+    "object",
+  ],
+  Array [
+    "build/render/types/Gradient.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/GradientColorStop.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/types/GradientColorStop.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/GradientColorStop.js",
+    "object",
+  ],
+  Array [
+    "build/render/types/GradientColorStop.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/LinearGradient.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/types/LinearGradient.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/LinearGradient.js",
+    "object",
+  ],
+  Array [
+    "build/render/types/LinearGradient.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/MultiStopGradient.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/types/MultiStopGradient.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/MultiStopGradient.js",
+    "object",
+  ],
+  Array [
+    "build/render/types/MultiStopGradient.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/NewConstraints.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/types/NewConstraints.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/NewConstraints.js",
+    "object",
+  ],
+  Array [
+    "build/render/types/NewConstraints.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/PathSegment.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/types/PathSegment.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/PathSegment.js",
+    "object",
+  ],
+  Array [
+    "build/render/types/PathSegment.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/Point.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/types/Point.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/Point.js",
+    "object",
+  ],
+  Array [
+    "build/render/types/Point.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/PropertyControls.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/types/PropertyControls.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/PropertyControls.js",
+    "object",
+  ],
+  Array [
+    "build/render/types/PropertyControls.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/RadialGradient.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/types/RadialGradient.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/RadialGradient.js",
+    "object",
+  ],
+  Array [
+    "build/render/types/RadialGradient.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/Rect.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/types/Rect.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/Rect.js",
+    "object",
+  ],
+  Array [
+    "build/render/types/Rect.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/RenderEnvironment.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/types/RenderEnvironment.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/RenderEnvironment.js",
+    "object",
+  ],
+  Array [
+    "build/render/types/RenderEnvironment.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/Shadow.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/types/Shadow.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/Shadow.js",
+    "object",
+  ],
+  Array [
+    "build/render/types/Shadow.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/SimpleGradient.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/types/SimpleGradient.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/SimpleGradient.js",
+    "object",
+  ],
+  Array [
+    "build/render/types/SimpleGradient.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/Size.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/types/Size.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/Size.js",
+    "object",
+  ],
+  Array [
+    "build/render/types/Size.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/Stroke.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/types/Stroke.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/Stroke.js",
+    "object",
+  ],
+  Array [
+    "build/render/types/Stroke.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/StrokeAlignment.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/types/StrokeAlignment.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/StrokeAlignment.js",
+    "object",
+  ],
+  Array [
+    "build/render/types/StrokeAlignment.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/svgElementAttributeDefaults.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/types/svgElementAttributeDefaults.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/svgElementAttributeDefaults.js",
+    "object",
+  ],
+  Array [
+    "build/render/types/svgElementAttributeDefaults.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/TransformValues.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/types/TransformValues.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/types/TransformValues.js",
+    "object",
+  ],
+  Array [
+    "build/render/types/TransformValues.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/createTransformValues.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/utils/createTransformValues.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/createTransformValues.js",
+    "object",
+  ],
+  Array [
+    "build/render/utils/createTransformValues.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/debounce.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/utils/debounce.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/debounce.js",
+    "object",
+  ],
+  Array [
+    "build/render/utils/debounce.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/elementPropertiesForGradient.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/utils/elementPropertiesForGradient.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/elementPropertiesForGradient.js",
+    "object",
+  ],
+  Array [
+    "build/render/utils/elementPropertiesForGradient.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/extractStyleFromProps.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/utils/extractStyleFromProps.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/extractStyleFromProps.js",
+    "object",
+  ],
+  Array [
+    "build/render/utils/extractStyleFromProps.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/filtersForNode.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/utils/filtersForNode.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/filtersForNode.js",
+    "object",
+  ],
+  Array [
+    "build/render/utils/filtersForNode.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/getMeasurableCodeComponentChildren.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/utils/getMeasurableCodeComponentChildren.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/getMeasurableCodeComponentChildren.js",
+    "object",
+  ],
+  Array [
+    "build/render/utils/getMeasurableCodeComponentChildren.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/gradientColorStops.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/utils/gradientColorStops.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/gradientColorStops.js",
+    "object",
+  ],
+  Array [
+    "build/render/utils/gradientColorStops.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/imagePatternPropsForFill.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/utils/imagePatternPropsForFill.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/imagePatternPropsForFill.js",
+    "object",
+  ],
+  Array [
+    "build/render/utils/imagePatternPropsForFill.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/imageRendering.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/utils/imageRendering.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/imageRendering.js",
+    "object",
+  ],
+  Array [
+    "build/render/utils/imageRendering.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/imageUrlForAsset.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/utils/imageUrlForAsset.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/imageUrlForAsset.js",
+    "object",
+  ],
+  Array [
+    "build/render/utils/imageUrlForAsset.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/injectComponentCSSRules.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/utils/injectComponentCSSRules.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/injectComponentCSSRules.js",
+    "object",
+  ],
+  Array [
+    "build/render/utils/injectComponentCSSRules.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/isEqual.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/utils/isEqual.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/isEqual.js",
+    "object",
+  ],
+  Array [
+    "build/render/utils/isEqual.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/isFiniteNumber.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/utils/isFiniteNumber.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/isFiniteNumber.js",
+    "object",
+  ],
+  Array [
+    "build/render/utils/isFiniteNumber.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/isMotionValue.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/utils/isMotionValue.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/isMotionValue.js",
+    "object",
+  ],
+  Array [
+    "build/render/utils/isMotionValue.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/isShallowEqualArray.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/utils/isShallowEqualArray.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/isShallowEqualArray.js",
+    "object",
+  ],
+  Array [
+    "build/render/utils/isShallowEqualArray.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/layoutHintDataPropsForCenter.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/utils/layoutHintDataPropsForCenter.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/layoutHintDataPropsForCenter.js",
+    "object",
+  ],
+  Array [
+    "build/render/utils/layoutHintDataPropsForCenter.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/nodeIdFromString.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/utils/nodeIdFromString.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/nodeIdFromString.js",
+    "object",
+  ],
+  Array [
+    "build/render/utils/nodeIdFromString.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/processOverrideForwarding.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/utils/processOverrideForwarding.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/processOverrideForwarding.js",
+    "object",
+  ],
+  Array [
+    "build/render/utils/processOverrideForwarding.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/roundedNumber.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/utils/roundedNumber.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/roundedNumber.js",
+    "object",
+  ],
+  Array [
+    "build/render/utils/roundedNumber.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/setDocumentStyles.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/utils/setDocumentStyles.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/setDocumentStyles.js",
+    "object",
+  ],
+  Array [
+    "build/render/utils/setDocumentStyles.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/setLayerBacked.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/utils/setLayerBacked.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/setLayerBacked.js",
+    "object",
+  ],
+  Array [
+    "build/render/utils/setLayerBacked.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/transformCustomValues.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/utils/transformCustomValues.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/transformCustomValues.js",
+    "object",
+  ],
+  Array [
+    "build/render/utils/transformCustomValues.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/transformString.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/utils/transformString.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/transformString.js",
+    "object",
+  ],
+  Array [
+    "build/render/utils/transformString.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/transformTemplate.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/utils/transformTemplate.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/transformTemplate.js",
+    "object",
+  ],
+  Array [
+    "build/render/utils/transformTemplate.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/useLayoutId.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/utils/useLayoutId.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/useLayoutId.js",
+    "object",
+  ],
+  Array [
+    "build/render/utils/useLayoutId.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/useMeasureLayout.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/utils/useMeasureLayout.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/useMeasureLayout.js",
+    "object",
+  ],
+  Array [
+    "build/render/utils/useMeasureLayout.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/useWebkitFixes.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/utils/useWebkitFixes.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/utils/useWebkitFixes.js",
+    "object",
+  ],
+  Array [
+    "build/render/utils/useWebkitFixes.js.map",
+    "number",
+  ],
+  Array [
+    "build/render/WindowContext.d.ts",
+    "number",
+  ],
+  Array [
+    "build/render/WindowContext.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/render/WindowContext.js",
+    "object",
+  ],
+  Array [
+    "build/render/WindowContext.js.map",
+    "number",
+  ],
+  Array [
+    "build/useIsomorphicLayoutEffect.d.ts",
+    "number",
+  ],
+  Array [
+    "build/useIsomorphicLayoutEffect.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/useIsomorphicLayoutEffect.js",
+    "object",
+  ],
+  Array [
+    "build/useIsomorphicLayoutEffect.js.map",
+    "number",
+  ],
+  Array [
+    "build/utils/addFonts.d.ts",
+    "number",
+  ],
+  Array [
+    "build/utils/addFonts.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/utils/addFonts.js",
+    "object",
+  ],
+  Array [
+    "build/utils/addFonts.js.map",
+    "number",
+  ],
+  Array [
+    "build/utils/addPropertyControls.d.ts",
+    "number",
+  ],
+  Array [
+    "build/utils/addPropertyControls.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/utils/addPropertyControls.js",
+    "object",
+  ],
+  Array [
+    "build/utils/addPropertyControls.js.map",
+    "number",
+  ],
+  Array [
+    "build/utils/assert.d.ts",
+    "number",
+  ],
+  Array [
+    "build/utils/assert.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/utils/assert.js",
+    "object",
+  ],
+  Array [
+    "build/utils/assert.js.map",
+    "number",
+  ],
+  Array [
+    "build/utils/deprecation.d.ts",
+    "number",
+  ],
+  Array [
+    "build/utils/deprecation.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/utils/deprecation.js",
+    "object",
+  ],
+  Array [
+    "build/utils/deprecation.js.map",
+    "number",
+  ],
+  Array [
+    "build/utils/environment.d.ts",
+    "number",
+  ],
+  Array [
+    "build/utils/environment.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/utils/environment.js",
+    "object",
+  ],
+  Array [
+    "build/utils/environment.js.map",
+    "number",
+  ],
+  Array [
+    "build/utils/events.d.ts",
+    "number",
+  ],
+  Array [
+    "build/utils/events.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/utils/events.js",
+    "object",
+  ],
+  Array [
+    "build/utils/events.js.map",
+    "number",
+  ],
+  Array [
+    "build/utils/internalId.d.ts",
+    "number",
+  ],
+  Array [
+    "build/utils/internalId.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/utils/internalId.js",
+    "object",
+  ],
+  Array [
+    "build/utils/internalId.js.map",
+    "number",
+  ],
+  Array [
+    "build/utils/isPropValid.d.ts",
+    "number",
+  ],
+  Array [
+    "build/utils/isPropValid.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/utils/isPropValid.js",
+    "object",
+  ],
+  Array [
+    "build/utils/isPropValid.js.map",
+    "number",
+  ],
+  Array [
+    "build/utils/math.d.ts",
+    "number",
+  ],
+  Array [
+    "build/utils/math.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/utils/math.js",
+    "object",
+  ],
+  Array [
+    "build/utils/math.js.map",
+    "number",
+  ],
+  Array [
+    "build/utils/memoize.d.ts",
+    "number",
+  ],
+  Array [
+    "build/utils/memoize.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/utils/memoize.js",
+    "object",
+  ],
+  Array [
+    "build/utils/memoize.js.map",
+    "number",
+  ],
+  Array [
+    "build/utils/runtimeInjection.d.ts",
+    "number",
+  ],
+  Array [
+    "build/utils/runtimeInjection.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/utils/runtimeInjection.js",
+    "object",
+  ],
+  Array [
+    "build/utils/runtimeInjection.js.map",
+    "number",
+  ],
+  Array [
+    "build/utils/safeNavigator.d.ts",
+    "number",
+  ],
+  Array [
+    "build/utils/safeNavigator.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/utils/safeNavigator.js",
+    "object",
+  ],
+  Array [
+    "build/utils/safeNavigator.js.map",
+    "number",
+  ],
+  Array [
+    "build/utils/safeWindow.d.ts",
+    "number",
+  ],
+  Array [
+    "build/utils/safeWindow.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/utils/safeWindow.js",
+    "object",
+  ],
+  Array [
+    "build/utils/safeWindow.js.map",
+    "number",
+  ],
+  Array [
+    "build/utils/string.d.ts",
+    "number",
+  ],
+  Array [
+    "build/utils/string.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/utils/string.js",
+    "object",
+  ],
+  Array [
+    "build/utils/string.js.map",
+    "number",
+  ],
+  Array [
+    "build/utils/type-guards.d.ts",
+    "number",
+  ],
+  Array [
+    "build/utils/type-guards.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/utils/type-guards.js",
+    "object",
+  ],
+  Array [
+    "build/utils/type-guards.js.map",
+    "number",
+  ],
+  Array [
+    "build/utils/utils.d.ts",
+    "number",
+  ],
+  Array [
+    "build/utils/utils.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/utils/utils.js",
+    "object",
+  ],
+  Array [
+    "build/utils/utils.js.map",
+    "number",
+  ],
+  Array [
+    "build/utils/warnOnce.d.ts",
+    "number",
+  ],
+  Array [
+    "build/utils/warnOnce.d.ts.map",
+    "number",
+  ],
+  Array [
+    "build/utils/warnOnce.js",
+    "object",
+  ],
+  Array [
+    "build/utils/warnOnce.js.map",
+    "number",
+  ],
+  Array [
+    "CHANGELOG.md",
+    "number",
+  ],
+  Array [
+    "LICENSE.md",
+    "number",
+  ],
+  Array [
+    "package.json",
+    "object",
+  ],
+  Array [
+    "postinstall.cjs",
+    "number",
+  ],
+  Array [
+    "README.md",
+    "number",
+  ],
+]
+`;
+
+exports[`object-assign@4.1.1 1`] = `
+Array [
+  Array [
+    "index.js",
+    "object",
+  ],
+  Array [
+    "license",
+    "number",
+  ],
+  Array [
+    "package.json",
+    "object",
+  ],
+  Array [
+    "readme.md",
+    "number",
+  ],
+]
+`;
+
+exports[`react@18 1`] = `
+Array [
+  Array [
+    "cjs/react-jsx-dev-runtime.development.js",
+    "object",
+  ],
+  Array [
+    "cjs/react-jsx-dev-runtime.production.min.js",
+    "number",
+  ],
+  Array [
+    "cjs/react-jsx-dev-runtime.profiling.min.js",
+    "number",
+  ],
+  Array [
+    "cjs/react-jsx-runtime.development.js",
+    "object",
+  ],
+  Array [
+    "cjs/react-jsx-runtime.production.min.js",
+    "number",
+  ],
+  Array [
+    "cjs/react-jsx-runtime.profiling.min.js",
+    "number",
+  ],
+  Array [
+    "cjs/react.development.js",
+    "object",
+  ],
+  Array [
+    "cjs/react.production.min.js",
+    "number",
+  ],
+  Array [
+    "cjs/react.shared-subset.development.js",
+    "number",
+  ],
+  Array [
+    "cjs/react.shared-subset.production.min.js",
+    "number",
+  ],
+  Array [
+    "index.js",
+    "object",
+  ],
+  Array [
+    "jsx-dev-runtime.js",
+    "object",
+  ],
+  Array [
+    "jsx-runtime.js",
+    "object",
+  ],
+  Array [
+    "LICENSE",
+    "number",
+  ],
+  Array [
+    "package.json",
+    "object",
+  ],
+  Array [
+    "react.shared-subset.js",
+    "number",
+  ],
+  Array [
+    "README.md",
+    "number",
+  ],
+  Array [
+    "umd/react.development.js",
+    "number",
+  ],
+  Array [
+    "umd/react.production.min.js",
+    "number",
+  ],
+  Array [
+    "umd/react.profiling.min.js",
+    "number",
+  ],
+]
+`;
