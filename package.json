@@ -4,5 +4,8 @@
   "main": "index.js",
   "repository": "git@github.com:DeMoorJasper/sandpack-cdn.git",
   "author": "Jasper De Moor <jasperdemoor@gmail.com>",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "jest": "^28.1.0"
+  }
 }
