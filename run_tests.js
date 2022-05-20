@@ -45,14 +45,14 @@ async function run() {
   spawnedServer.on("disconnect", () => console.log("Server bus disconnected"));
   spawnedServer.on("close", () => console.log("Server closed"));
 
-  //   spawnedServer.stdout.setEncoding("utf-8");
-  //   spawnedServer.stdout.on("data", (data) => {
-  //     console.log(data);
-  //   });
-  //   spawnedServer.stderr.setEncoding("utf-8");
-  //   spawnedServer.stderr.on("data", (data) => {
-  //     console.error(data);
-  //   });
+  spawnedServer.stdout.setEncoding("utf-8");
+  spawnedServer.stdout.on("data", (data) => {
+    console.log(data);
+  });
+  spawnedServer.stderr.setEncoding("utf-8");
+  spawnedServer.stderr.on("data", (data) => {
+    console.error(data);
+  });
 
   const cdnAddress = `http://localhost:${PORT}`;
   await waitForServerStart(cdnAddress);
