@@ -59,7 +59,7 @@ async function run() {
 
   console.log("Server has responded successfully");
 
-  const spawnedTest = spawn("jest", [], {
+  const spawnedTest = spawn("jest", ["--forceExit"], {
     stdio: "inherit",
     env: {
       ...process.env,
