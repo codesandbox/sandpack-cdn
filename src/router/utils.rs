@@ -6,7 +6,7 @@ use crate::app_error::ServerError;
 
 lazy_static! {
     static ref VERSION_RE: Regex = Regex::new("^(\\d+)\\((.*)\\)$").unwrap();
-    static ref LATEST_VERSION: u64 = 3;
+    static ref LATEST_VERSION: u64 = 4;
 }
 
 pub fn decode_req_part(part: &str) -> Result<String, ServerError> {
