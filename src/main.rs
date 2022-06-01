@@ -1,16 +1,17 @@
 use cache::layered::LayeredCache;
+use dotenv::dotenv;
 use std::env;
 use std::net::SocketAddr;
+use warp::http::header::{HeaderMap, HeaderValue};
 use warp::Filter;
-use dotenv::dotenv;
 
 mod app_error;
 mod cache;
 mod package;
+mod router;
 mod setup_tracing;
 mod transform;
 mod utils;
-mod router;
 
 #[derive(Clone)]
 pub struct AppData {
@@ -21,7 +22,7 @@ pub struct AppData {
 #[tokio::main]
 async fn main() -> Result<(), std::io::Error> {
     dotenv().ok();
-    
+
     let port = match env::var("PORT") {
         Ok(var) => var,
         Err(_) => String::from("8080"),
@@ -45,13 +46,16 @@ async fn main() -> Result<(), std::io::Error> {
     // create data directory
     tokio::fs::create_dir_all(String::from(data_dir)).await?;
 
-    let cors = warp::cors()
-        .allow_any_origin()
-        .allow_methods(vec!["POST", "GET", "PUT"]);
+    // cors headers
+    let mut headers = HeaderMap::new();
+    headers.insert("Access-Control-Allow-Origin", HeaderValue::from_static("*"));
+    headers.insert("Access-Control-Allow-Headers", HeaderValue::from_static("*"));
+    headers.insert("Access-Control-Allow-Methods", HeaderValue::from_static("GET, POST, OPTIONS"));
+    let cors_headers_filter = warp::reply::with::headers(headers);
 
     let filter = router::routes::routes(app_data)
         .with(warp::trace::request())
-        .with(cors)
+        .with(cors_headers_filter)
         .with(warp::compression::gzip());
 
     let addr: SocketAddr = ([0, 0, 0, 0], port).into();
