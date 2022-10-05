@@ -10,6 +10,7 @@ flate2 = "1.0.22"
 tar = "0.4.37"
 serde = { version = "1.0.136", features = ["derive"] }
 serde_json = "1.0.79"
+serde_bytes = "0.11.7"
 reqwest = { version = "0.11.7", features = ["json", "brotli", "gzip", "deflate"] }
 reqwest-middleware = "0.1.6"
 reqwest-retry = "0.1.5"
@@ -22,7 +23,7 @@ swc_common = { version = "0.17.13", features = ["tty-emitter", "sourcemap"] }
 swc_atoms = "0.2.9"
 lazy_static = "1.4.0"
 chrono = { version = "0.4.19", features = ["serde"] }
-base64 = "0.13.0"
+base64-simd = "0.7.0"
 node-semver = "2.0.0"
 parking_lot = "0.11.2"
 regex = "1.5.4"
@@ -36,3 +37,5 @@ tonic = "0.6.2"
 warp = {version = "0.3.2", features = ["compression"]}
 dotenv = "0.15.0"
 moka = { version = "0.8.2", features = ["future"] }
+rmp = "0.8.11"
+rmp-serde = "1.1.1"

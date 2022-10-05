@@ -4,10 +4,10 @@ use std::io::Cursor;
 use std::path::Path;
 use std::path::PathBuf;
 use tar::Archive;
-use url::Url;
+use warp::hyper::body::Bytes;
 
 use crate::app_error::ServerError;
-use crate::cache::layered::LayeredCache;
+use crate::cache::Cache;
 use crate::utils::request;
 
 use super::npm_package_manifest::{download_package_manifest_cached, CachedPackageManifest};
@@ -27,52 +27,64 @@ impl std::fmt::Display for TarballType {
     }
 }
 
+#[tracing::instrument(name = "download_tarball")]
+async fn download_tarball(url: &str) -> Result<(Cursor<Bytes>, TarballType), ServerError> {
+    let tarball_type: TarballType = if url.ends_with(".tar") {
+        TarballType::Tar
+    } else {
+        TarballType::TarGzip
+    };
+
+    let client = request::get_client(120);
+    let response = client.get(url).send().await?;
+    let response_status = response.status();
+    if !response_status.is_success() {
+        return Err(ServerError::TarballDownloadError {
+            status_code: response_status.as_u16(),
+            url: String::from(url),
+        });
+    }
+
+    // save the tarball
+    return Ok((Cursor::new(response.bytes().await?), tarball_type));
+}
+
+#[tracing::instrument(name = "store_tarball", skip(data_dir, tarball_type))]
+async fn store_tarball(
+    content: Cursor<Bytes>,
+    tarball_type: TarballType,
+    package_name: &str,
+    version: &str,
+    data_dir: &str,
+) -> Result<PathBuf, ServerError> {
+    let dir_path = Path::new(data_dir).join(format!("{}-{}", package_name, version));
+
+    // Extract the tarball
+    if tarball_type == TarballType::TarGzip {
+        let tar = GzDecoder::new(content);
+        let mut archive = Archive::new(tar);
+        archive.unpack(dir_path.clone())?;
+    } else {
+        let mut archive = Archive::new(content);
+        archive.unpack(dir_path.clone())?;
+    }
+
+    // Return target folder
+    Ok(dir_path.clone().join("package"))
+}
+
 #[tracing::instrument(name = "download_package_content", skip(data_dir, cache))]
 pub async fn download_package_content(
     package_name: &str,
     version: &str,
     data_dir: &str,
-    cache: &LayeredCache,
+    cache: &Cache,
 ) -> Result<PathBuf, ServerError> {
     let manifest: CachedPackageManifest =
         download_package_manifest_cached(package_name, cache).await?;
     if let Some(tarball_url) = manifest.versions.get(version) {
-        // process the tarball url
-        let parsed_tarball_url: Url = Url::parse(tarball_url.as_str())?;
-        let tarball_url_path = String::from(parsed_tarball_url.path());
-        let tarball_type: TarballType = if tarball_url_path.as_str().ends_with(".tar") {
-            TarballType::Tar
-        } else {
-            TarballType::TarGzip
-        };
-
-        // download the tarball
-        let client = request::get_client(120);
-        let response = client.get(tarball_url.as_str()).send().await?;
-        let response_status = response.status();
-        if !response_status.is_success() {
-            return Err(ServerError::NpmPackageDownloadError {
-                status_code: response_status.as_u16(),
-                package_name: String::from(package_name),
-                package_version: String::from(version),
-            });
-        }
-
-        // save the tarball
-        let dir_path = Path::new(data_dir).join(format!("{}-{}", package_name, version));
-        let content = Cursor::new(response.bytes().await?);
-
-        // Extract the tarball
-        if tarball_type == TarballType::TarGzip {
-            let tar = GzDecoder::new(content);
-            let mut archive = Archive::new(tar);
-            archive.unpack(dir_path.clone())?;
-        } else {
-            let mut archive = Archive::new(content);
-            archive.unpack(dir_path.clone())?;
-        }
-
-        Ok(dir_path.clone().join("package"))
+        let (content, tarball_type) = download_tarball(tarball_url.as_str()).await?;
+        store_tarball(content, tarball_type, package_name, version, data_dir).await
     } else {
         Err(ServerError::PackageVersionNotFound)
     }

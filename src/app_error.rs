@@ -29,6 +29,11 @@ pub enum ServerError {
         package_name: String,
         package_version: String,
     },
+    #[error("Could not download tarball package")]
+    TarballDownloadError {
+        status_code: u16,
+        url: String,
+    },
     #[error("Could not download npm package manifest")]
     NpmManifestDownloadError {
         status_code: u16,
@@ -36,8 +41,6 @@ pub enum ServerError {
     },
     #[error("Invalid package specifier")]
     InvalidPackageSpecifier,
-    #[error("Invalid Base64 string")]
-    InvalidBase64(#[from] base64::DecodeError),
     #[error("Invalid byte buffer")]
     InvalidString(#[from] std::str::Utf8Error),
     #[error("Join error")]
@@ -48,6 +51,12 @@ pub enum ServerError {
     IntegerParse(#[from] std::num::ParseIntError),
     #[error("Invalid status code")]
     InvalidStatusCode(#[from] http::status::InvalidStatusCode),
+    #[error("Failed to serialize to msgpack")]
+    SerializeError(),
+    #[error("Failed to deserialize from msgpack")]
+    DeserializeError(),
+    #[error("Failed to decode base64 string")]
+    Base64DecodingError(),
 }
 
 impl From<ServerError> for std::io::Error {

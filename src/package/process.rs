@@ -7,8 +7,9 @@ use tracing::{error, info, span, Level};
 use transform::transformer::transform_file;
 
 use crate::app_error::ServerError;
-use crate::cache::layered::LayeredCache;
+use crate::cache::Cache;
 use crate::transform;
+use crate::utils::msgpack::{deserialize_msgpack, serialize_msgpack};
 
 use super::package_json::PackageJSON;
 use super::{npm_downloader, package_json, resolver};
@@ -291,7 +292,7 @@ pub async fn process_npm_package(
     package_name: &str,
     package_version: &str,
     data_dir: &str,
-    cache: &LayeredCache,
+    cache: &Cache,
 ) -> Result<(MinimalCachedModule, ModuleDependenciesMap), ServerError> {
     info!(
         "Started processing package: {}@{}",
@@ -321,7 +322,7 @@ pub async fn process_npm_package(
     transform_result
 }
 
-fn parse_package_specifier(package_specifier: &str) -> Result<(String, String), ServerError> {
+pub fn parse_package_specifier(package_specifier: &str) -> Result<(String, String), ServerError> {
     let mut parts: Vec<&str> = package_specifier.split('@').collect();
     let package_version_opt = parts.pop();
     if let Some(package_version) = package_version_opt {
@@ -351,28 +352,25 @@ pub async fn transform_module_and_cache(
     package_name: &str,
     package_version: &str,
     data_dir: &str,
-    cache: &mut LayeredCache,
+    cache: &mut Cache,
 ) -> Result<(MinimalCachedModule, ModuleDependenciesMap), ServerError> {
     let (transformed_module, module_dependencies) =
         process_npm_package(package_name, package_version, data_dir, cache).await?;
 
     let transform_cache_key = get_transform_cache_key(package_name, package_version);
-    let transformed_module_serialized = serde_json::to_string(&transformed_module)?;
+    let transformed_module_serialized = serialize_msgpack(&transformed_module)?;
     cache
-        .store_value(
-            transform_cache_key.as_str(),
-            transformed_module_serialized.as_str(),
-        )
-        .await?;
+        .store_value(transform_cache_key.as_str(), transformed_module_serialized)
+        .await;
 
     let dependencies_cache_key = get_dependencies_cache_key(package_name, package_version);
-    let module_dependencies_serialized = serde_json::to_string(&module_dependencies)?;
+    let module_dependencies_serialized = serialize_msgpack(&module_dependencies)?;
     cache
         .store_value(
             dependencies_cache_key.as_str(),
-            module_dependencies_serialized.as_str(),
+            module_dependencies_serialized,
         )
-        .await?;
+        .await;
 
     Ok((transformed_module, module_dependencies))
 }
@@ -380,15 +378,14 @@ pub async fn transform_module_and_cache(
 pub async fn transform_module_cached(
     package_specifier: &str,
     data_dir: &str,
-    cache: &mut LayeredCache,
+    cache: &mut Cache,
 ) -> Result<MinimalCachedModule, ServerError> {
     let (package_name, package_version) = parse_package_specifier(package_specifier)?;
 
     let transform_cache_key =
         get_transform_cache_key(package_name.as_str(), package_version.as_str());
     if let Some(cached_value) = cache.get_value(transform_cache_key.as_str()).await {
-        let deserialized: serde_json::Result<MinimalCachedModule> =
-            serde_json::from_str(cached_value.as_str());
+        let deserialized = deserialize_msgpack(&cached_value);
         if let Ok(actual_module) = deserialized {
             return Ok(actual_module);
         }
@@ -408,12 +405,11 @@ pub async fn module_dependencies_cached(
     package_name: &str,
     package_version: &str,
     data_dir: &str,
-    cache: &mut LayeredCache,
+    cache: &mut Cache,
 ) -> Result<ModuleDependenciesMap, ServerError> {
     let transform_cache_key = get_dependencies_cache_key(package_name, package_version);
     if let Some(cached_value) = cache.get_value(transform_cache_key.as_str()).await {
-        let deserialized: serde_json::Result<ModuleDependenciesMap> =
-            serde_json::from_str(cached_value.as_str());
+        let deserialized = deserialize_msgpack(&cached_value);
         if let Ok(deps) = deserialized {
             return Ok(deps);
         }
