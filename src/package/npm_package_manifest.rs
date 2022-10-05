@@ -52,7 +52,7 @@ impl CachedPackageManifest {
 }
 
 #[tracing::instrument("download_package_manifest", skip(cached_etag))]
-async fn download_package_manifest(
+pub async fn download_package_manifest(
     package_name: &str,
     cached_etag: Option<String>,
 ) -> Result<Option<(Option<String>, PackageManifest)>, ServerError> {

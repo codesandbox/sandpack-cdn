@@ -29,6 +29,11 @@ pub enum ServerError {
         package_name: String,
         package_version: String,
     },
+    #[error("Could not download tarball package")]
+    TarballDownloadError {
+        status_code: u16,
+        url: String,
+    },
     #[error("Could not download npm package manifest")]
     NpmManifestDownloadError {
         status_code: u16,
