@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use warp::{Filter, Rejection, Reply};
 
 use crate::app_error::ServerError;
-use crate::cache::layered::LayeredCache;
+use crate::cache::Cache;
 use crate::package::collect_dep_tree::{collect_dep_tree, process_dep_map, DependencyList};
 use crate::AppData;
 
@@ -15,7 +15,7 @@ use super::utils::decode_req_part;
 async fn process_dep_tree(
     raw_deps_str: &str,
     data_dir: &str,
-    cache: &LayeredCache,
+    cache: &Cache,
 ) -> Result<DependencyList, ServerError> {
     let decoded_deps_str = decode_req_part(raw_deps_str)?;
     let dep_map: HashMap<String, String> = serde_json::from_str(decoded_deps_str.as_str())?;

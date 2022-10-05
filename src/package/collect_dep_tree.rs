@@ -8,7 +8,7 @@ use std::{
 use tokio::task::JoinHandle;
 use tracing::error;
 
-use crate::{app_error::ServerError, cache::layered::LayeredCache};
+use crate::{app_error::ServerError, cache::Cache};
 
 use super::{
     npm_package_manifest::{download_package_manifest_cached, CachedPackageManifest},
@@ -114,7 +114,7 @@ type ResolveDepResult = Result<Option<(Dependency, Vec<DependencyRequest>)>, Ser
 async fn resolve_dep(
     req: DependencyRequest,
     data_dir: String,
-    cache: &mut LayeredCache,
+    cache: &mut Cache,
 ) -> ResolveDepResult {
     let manifest = download_package_manifest_cached(req.name.as_str(), cache).await?;
     if let Some(resolved_version) = req.resolve_version(&manifest) {
@@ -150,14 +150,14 @@ async fn resolve_dep(
 #[derive(Debug, Clone)]
 struct DepTreeCollector {
     data_dir: String,
-    cache: LayeredCache,
+    cache: Cache,
     dependencies: Arc<Mutex<DependencyList>>,
     futures: Arc<Mutex<VecDeque<JoinHandle<()>>>>,
     in_progress: Arc<Mutex<Vec<DependencyRequest>>>,
 }
 
 impl DepTreeCollector {
-    pub fn new(data_dir: String, cache: LayeredCache) -> Self {
+    pub fn new(data_dir: String, cache: Cache) -> Self {
         DepTreeCollector {
             data_dir,
             cache,
@@ -256,7 +256,7 @@ impl DepTreeCollector {
     pub async fn try_collect(
         dep_requests: Vec<DependencyRequest>,
         data_dir: String,
-        cache: LayeredCache,
+        cache: Cache,
     ) -> Result<DependencyList, ServerError> {
         let collector = DepTreeCollector::new(data_dir, cache);
         collector.add_dep_requests(dep_requests);
@@ -274,7 +274,7 @@ impl DepTreeCollector {
 pub async fn collect_dep_tree(
     dep_requests: Vec<DependencyRequest>,
     data_dir: &str,
-    cache: &LayeredCache,
+    cache: &Cache,
 ) -> Result<DependencyList, ServerError> {
     DepTreeCollector::try_collect(dep_requests, String::from(data_dir), cache.clone()).await
 }

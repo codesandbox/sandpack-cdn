@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use tracing::{error, info};
 
 use crate::utils::request;
-use crate::{app_error::ServerError, cache::layered::LayeredCache};
+use crate::{app_error::ServerError, cache::Cache};
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct PackageDist {
@@ -93,7 +93,7 @@ fn get_cache_key(package_name: &str) -> String {
 #[tracing::instrument("download_and_cache_manifest", skip(cache))]
 async fn download_and_cache_manifest(
     package_name: &str,
-    cache: &mut LayeredCache,
+    cache: &mut Cache,
     cached_etag: Option<String>,
 ) -> Result<Option<CachedPackageManifest>, ServerError> {
     let cache_key = get_cache_key(package_name);
@@ -103,7 +103,7 @@ async fn download_and_cache_manifest(
         let serialized = serde_json::to_string(&cached_manifest)?;
         cache
             .store_value(cache_key.as_str(), serialized.as_str())
-            .await?;
+            .await;
         Ok(Some(cached_manifest))
     } else {
         Ok(None)
@@ -112,7 +112,7 @@ async fn download_and_cache_manifest(
 
 pub async fn download_package_manifest_cached(
     package_name: &str,
-    cache: &LayeredCache,
+    cache: &Cache,
 ) -> Result<CachedPackageManifest, ServerError> {
     let cache_key = get_cache_key(package_name);
     let mut originally_cached_manifest: Option<CachedPackageManifest> = None;

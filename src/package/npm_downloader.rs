@@ -7,7 +7,7 @@ use tar::Archive;
 use url::Url;
 
 use crate::app_error::ServerError;
-use crate::cache::layered::LayeredCache;
+use crate::cache::Cache;
 use crate::utils::request;
 
 use super::npm_package_manifest::{download_package_manifest_cached, CachedPackageManifest};
@@ -32,7 +32,7 @@ pub async fn download_package_content(
     package_name: &str,
     version: &str,
     data_dir: &str,
-    cache: &LayeredCache,
+    cache: &Cache,
 ) -> Result<PathBuf, ServerError> {
     let manifest: CachedPackageManifest =
         download_package_manifest_cached(package_name, cache).await?;
