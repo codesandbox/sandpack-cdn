@@ -32,8 +32,8 @@ async fn main() -> Result<(), std::io::Error> {
 
     setup_tracing::setup_tracing();
 
-    // 1024Mb
-    let cache = Cache::new(1024 * 1024 * 1024).await;
+    // 512Mb
+    let cache = Cache::new(512 * 1024 * 1024).await;
     let data_dir_path = env::current_dir()?.join("temp_files");
     let data_dir = data_dir_path.as_os_str().to_str().unwrap();
     let app_data = AppData {
