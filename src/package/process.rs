@@ -322,7 +322,7 @@ pub async fn process_npm_package(
     transform_result
 }
 
-fn parse_package_specifier(package_specifier: &str) -> Result<(String, String), ServerError> {
+pub fn parse_package_specifier(package_specifier: &str) -> Result<(String, String), ServerError> {
     let mut parts: Vec<&str> = package_specifier.split('@').collect();
     let package_version_opt = parts.pop();
     if let Some(package_version) = package_version_opt {
