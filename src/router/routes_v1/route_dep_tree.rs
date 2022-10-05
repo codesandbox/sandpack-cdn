@@ -7,10 +7,10 @@ use crate::cache::Cache;
 use crate::package::collect_dep_tree::{collect_dep_tree, process_dep_map, DependencyList};
 use crate::AppData;
 
-use super::custom_reply::CustomReply;
-use super::error_reply::ErrorReply;
-use super::routes::with_app_data;
-use super::utils::decode_req_part;
+use super::super::custom_reply::CustomReply;
+use super::super::error_reply::ErrorReply;
+use super::super::routes::with_app_data;
+use super::super::utils::decode_req_part;
 
 async fn process_dep_tree(
     raw_deps_str: &str,

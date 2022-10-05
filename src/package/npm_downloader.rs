@@ -84,7 +84,6 @@ pub async fn download_package_content(
         download_package_manifest_cached(package_name, cache).await?;
     if let Some(tarball_url) = manifest.versions.get(version) {
         let (content, tarball_type) = download_tarball(tarball_url.as_str()).await?;
-    
         store_tarball(content, tarball_type, package_name, version, data_dir).await
     } else {
         Err(ServerError::PackageVersionNotFound)

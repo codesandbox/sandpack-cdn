@@ -4,8 +4,8 @@ use crate::AppData;
 
 use super::error_reply::ErrorReply;
 use super::health::health_route;
-use super::route_dep_tree::dep_tree_route;
-use super::route_package_data::package_data_route;
+use super::routes_v1::route_dep_tree::dep_tree_route;
+use super::routes_v1::route_package_data::package_data_route;
 
 pub fn routes(
     app_data: AppData,
