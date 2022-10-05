@@ -43,7 +43,7 @@ impl CustomReply {
         // It should really be application/msgpack but
         // this is a hack to get cloudflare to encode it
         // using gzip/brotli
-        reply.add_header("content-type", "application/wasm");
+        reply.add_header("content-type", "application/javascript");
         Ok(reply)
     }
 
