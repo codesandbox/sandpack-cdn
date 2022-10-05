@@ -1,3 +1,5 @@
+extern crate rmp_serde as rmps;
+
 use std::collections::HashMap;
 
 use serde::Serialize;
@@ -11,7 +13,7 @@ use warp::{
 use crate::app_error::ServerError;
 
 pub struct CustomReply {
-    body: String,
+    body: Vec<u8>,
     status: StatusCode,
     headers: HashMap<String, String>,
 }
@@ -22,11 +24,26 @@ impl CustomReply {
         T: Serialize,
     {
         let mut reply = CustomReply {
-            body: serde_json::to_string(value)?,
+            body: serde_json::to_vec(value)?,
             status: StatusCode::OK,
             headers: HashMap::new(),
         };
         reply.add_header("content-type", "application/json");
+        Ok(reply)
+    }
+
+    pub fn msgpack<T>(value: &T) -> Result<CustomReply, ServerError>
+    where
+        T: Serialize,
+    {
+        let mut buf = Vec::new();
+        let serialized = value.serialize(&mut rmps::Serializer::new(&mut buf)).unwrap();
+        let mut reply = CustomReply {
+            body: buf,
+            status: StatusCode::OK,
+            headers: HashMap::new(),
+        };
+        reply.add_header("content-type", "application/msgpack");
         Ok(reply)
     }
 
