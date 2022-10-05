@@ -10,7 +10,7 @@ where
     let mut buf = Vec::new();
     value
         .serialize(&mut rmps::Serializer::new(&mut buf))
-        .map_err(|e| ServerError::SerializeError())?;
+        .map_err(|_e| ServerError::SerializeError())?;
     Ok(buf)
 }
 
@@ -18,5 +18,5 @@ pub fn deserialize_msgpack<'a, T>(input: &'a [u8]) -> Result<T, ServerError>
 where
     T: Deserialize<'a>,
 {
-    rmps::from_slice(input).map_err(|e| ServerError::DeserializeError())
+    rmps::from_slice(input).map_err(|_e| ServerError::DeserializeError())
 }

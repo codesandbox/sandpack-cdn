@@ -27,6 +27,7 @@ impl std::fmt::Display for TarballType {
     }
 }
 
+#[tracing::instrument(name = "download_tarball")]
 async fn download_tarball(url: &str) -> Result<(Cursor<Bytes>, TarballType), ServerError> {
     let tarball_type: TarballType = if url.ends_with(".tar") {
         TarballType::Tar
@@ -48,6 +49,7 @@ async fn download_tarball(url: &str) -> Result<(Cursor<Bytes>, TarballType), Ser
     return Ok((Cursor::new(response.bytes().await?), tarball_type));
 }
 
+#[tracing::instrument(name = "store_tarball", skip(data_dir, tarball_type))]
 async fn store_tarball(
     content: Cursor<Bytes>,
     tarball_type: TarballType,
@@ -71,24 +73,8 @@ async fn store_tarball(
     Ok(dir_path.clone().join("package"))
 }
 
-// When this gets requested the manifest is likely already in cache
-// So this is only a theoretical performance improvement
-async fn download_package_optimistically(
-    package_name: &str,
-    version: &str,
-    data_dir: &str,
-) -> Result<PathBuf, ServerError> {
-    let url = format!(
-        "https://registry.npmjs.org/{0}/-/{0}-{1}.tgz",
-        package_name, version
-    );
-
-    let (content, tarball_type) = download_tarball(&url).await?;
-    
-    store_tarball(content, tarball_type, package_name, version, data_dir).await
-}
-
-async fn download_officially(
+#[tracing::instrument(name = "download_package_content", skip(data_dir, cache))]
+pub async fn download_package_content(
     package_name: &str,
     version: &str,
     data_dir: &str,
@@ -103,14 +89,4 @@ async fn download_officially(
     } else {
         Err(ServerError::PackageVersionNotFound)
     }
-}
-
-#[tracing::instrument(name = "download_package_content", skip(data_dir, cache))]
-pub async fn download_package_content(
-    package_name: &str,
-    version: &str,
-    data_dir: &str,
-    cache: &Cache,
-) -> Result<PathBuf, ServerError> {
-    download_officially(package_name, version, data_dir, cache).await
 }
