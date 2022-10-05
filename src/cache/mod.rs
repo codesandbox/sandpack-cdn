@@ -4,13 +4,13 @@ use tracing::info;
 
 #[derive(Clone)]
 pub struct Cache {
-    cache: MokaCache<String, Arc<String>>,
+    cache: MokaCache<String, Arc<Vec<u8>>>,
 }
 
 impl Cache {
     pub async fn new(size: u64) -> Cache {
-        let cache: MokaCache<String, Arc<String>> = MokaCache::builder()
-            .weigher(|_key, value: &Arc<String>| -> u32 {
+        let cache: MokaCache<String, Arc<Vec<u8>>> = MokaCache::builder()
+            .weigher(|_key, value: &Arc<Vec<u8>>| -> u32 {
                 value.len().try_into().unwrap_or(u32::MAX)
             })
             .max_capacity(size)
@@ -18,14 +18,12 @@ impl Cache {
         Cache { cache }
     }
 
-    pub async fn store_value(&mut self, key: &str, data: &str) {
+    pub async fn store_value(&mut self, key: &str, data: Vec<u8>) {
         info!("Writing {} to the cache", key);
-        self.cache
-            .insert(String::from(key), Arc::new(String::from(data)))
-            .await;
+        self.cache.insert(String::from(key), Arc::new(data)).await;
     }
 
-    pub async fn get_value(&self, key: &str) -> Option<Arc<String>> {
+    pub async fn get_value(&self, key: &str) -> Option<Arc<Vec<u8>>> {
         info!("Reading {} from cache", key);
         self.cache.get(&String::from(key))
     }

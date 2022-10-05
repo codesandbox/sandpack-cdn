@@ -1,5 +1,3 @@
-extern crate rmp_serde as rmps;
-
 use std::collections::HashMap;
 
 use serde::Serialize;
@@ -10,7 +8,7 @@ use warp::{
     Reply,
 };
 
-use crate::app_error::ServerError;
+use crate::{app_error::ServerError, utils::msgpack::serialize_msgpack};
 
 pub struct CustomReply {
     body: Vec<u8>,
@@ -36,8 +34,7 @@ impl CustomReply {
     where
         T: Serialize,
     {
-        let mut buf = Vec::new();
-        let serialized = value.serialize(&mut rmps::Serializer::new(&mut buf)).unwrap();
+        let buf = serialize_msgpack(value)?;
         let mut reply = CustomReply {
             body: buf,
             status: StatusCode::OK,

@@ -22,7 +22,7 @@ swc_common = { version = "0.17.13", features = ["tty-emitter", "sourcemap"] }
 swc_atoms = "0.2.9"
 lazy_static = "1.4.0"
 chrono = { version = "0.4.19", features = ["serde"] }
-base64 = "0.13.0"
+base64-simd = "0.7.0"
 node-semver = "2.0.0"
 parking_lot = "0.11.2"
 regex = "1.5.4"

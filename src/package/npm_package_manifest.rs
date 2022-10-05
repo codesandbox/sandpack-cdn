@@ -4,6 +4,7 @@ use serde::{self, Deserialize, Serialize};
 use std::collections::HashMap;
 use tracing::{error, info};
 
+use crate::utils::msgpack::{deserialize_msgpack, serialize_msgpack};
 use crate::utils::request;
 use crate::{app_error::ServerError, cache::Cache};
 
@@ -100,10 +101,8 @@ async fn download_and_cache_manifest(
     let download_manifest_result = download_package_manifest(package_name, cached_etag).await?;
     if let Some((etag, manifest)) = download_manifest_result {
         let cached_manifest = CachedPackageManifest::from_manifest(manifest, etag);
-        let serialized = serde_json::to_string(&cached_manifest)?;
-        cache
-            .store_value(cache_key.as_str(), serialized.as_str())
-            .await;
+        let serialized = serialize_msgpack(&cached_manifest)?;
+        cache.store_value(cache_key.as_str(), serialized).await;
         Ok(Some(cached_manifest))
     } else {
         Ok(None)
@@ -117,8 +116,7 @@ pub async fn download_package_manifest_cached(
     let cache_key = get_cache_key(package_name);
     let mut originally_cached_manifest: Option<CachedPackageManifest> = None;
     if let Some(cached_value) = cache.get_value(cache_key.as_str()).await {
-        let deserialized: serde_json::Result<CachedPackageManifest> =
-            serde_json::from_str(cached_value.as_str());
+        let deserialized = deserialize_msgpack::<CachedPackageManifest>(&cached_value);
         if let Ok(found_manifest) = deserialized {
             // We return instantly if manifest is less than 15 minutes old
             let time_diff = Utc::now() - found_manifest.fetched_at;

@@ -71,6 +71,8 @@ async fn store_tarball(
     Ok(dir_path.clone().join("package"))
 }
 
+// When this gets requested the manifest is likely already in cache
+// So this is only a theoretical performance improvement
 async fn download_package_optimistically(
     package_name: &str,
     version: &str,
@@ -103,7 +105,6 @@ async fn download_officially(
     }
 }
 
-// TODO: Rate-limit these requests?
 #[tracing::instrument(name = "download_package_content", skip(data_dir, cache))]
 pub async fn download_package_content(
     package_name: &str,
@@ -111,10 +112,5 @@ pub async fn download_package_content(
     data_dir: &str,
     cache: &Cache,
 ) -> Result<PathBuf, ServerError> {
-    if let Ok(path) = download_package_optimistically(package_name, version, data_dir).await {
-        Ok(path)
-    } else {
-        println!("Could not download {}@{} optimistically, looking at the manifest file", package_name, version);
-        download_officially(package_name, version, data_dir, cache).await
-    }
+    download_officially(package_name, version, data_dir, cache).await
 }

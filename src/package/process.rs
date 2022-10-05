@@ -9,6 +9,7 @@ use transform::transformer::transform_file;
 use crate::app_error::ServerError;
 use crate::cache::Cache;
 use crate::transform;
+use crate::utils::msgpack::{deserialize_msgpack, serialize_msgpack};
 
 use super::package_json::PackageJSON;
 use super::{npm_downloader, package_json, resolver};
@@ -357,20 +358,17 @@ pub async fn transform_module_and_cache(
         process_npm_package(package_name, package_version, data_dir, cache).await?;
 
     let transform_cache_key = get_transform_cache_key(package_name, package_version);
-    let transformed_module_serialized = serde_json::to_string(&transformed_module)?;
+    let transformed_module_serialized = serialize_msgpack(&transformed_module)?;
     cache
-        .store_value(
-            transform_cache_key.as_str(),
-            transformed_module_serialized.as_str(),
-        )
+        .store_value(transform_cache_key.as_str(), transformed_module_serialized)
         .await;
 
     let dependencies_cache_key = get_dependencies_cache_key(package_name, package_version);
-    let module_dependencies_serialized = serde_json::to_string(&module_dependencies)?;
+    let module_dependencies_serialized = serialize_msgpack(&module_dependencies)?;
     cache
         .store_value(
             dependencies_cache_key.as_str(),
-            module_dependencies_serialized.as_str(),
+            module_dependencies_serialized,
         )
         .await;
 
@@ -387,8 +385,7 @@ pub async fn transform_module_cached(
     let transform_cache_key =
         get_transform_cache_key(package_name.as_str(), package_version.as_str());
     if let Some(cached_value) = cache.get_value(transform_cache_key.as_str()).await {
-        let deserialized: serde_json::Result<MinimalCachedModule> =
-            serde_json::from_str(cached_value.as_str());
+        let deserialized = deserialize_msgpack(&cached_value);
         if let Ok(actual_module) = deserialized {
             return Ok(actual_module);
         }
@@ -412,8 +409,7 @@ pub async fn module_dependencies_cached(
 ) -> Result<ModuleDependenciesMap, ServerError> {
     let transform_cache_key = get_dependencies_cache_key(package_name, package_version);
     if let Some(cached_value) = cache.get_value(transform_cache_key.as_str()).await {
-        let deserialized: serde_json::Result<ModuleDependenciesMap> =
-            serde_json::from_str(cached_value.as_str());
+        let deserialized = deserialize_msgpack(&cached_value);
         if let Ok(deps) = deserialized {
             return Ok(deps);
         }
