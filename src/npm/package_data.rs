@@ -108,7 +108,7 @@ async fn get_package_data(
             Box::pin(async move {
                 let etag = last_val
                     .clone()
-                    .map(|val| val.1.etag.clone())
+                    .map(|val| val.etag.clone())
                     .unwrap_or(None);
                 let pkg_data = {
                     match fetch_package_data(&client, package_name_string.as_str(), etag).await {
@@ -116,7 +116,7 @@ async fn get_package_data(
                         Err(err) => {
                             if let Some(val) = last_val {
                                 println!("Fetch failed {:?}", err);
-                                Ok(val.1)
+                                Ok(val)
                             } else {
                                 Err(err)
                             }

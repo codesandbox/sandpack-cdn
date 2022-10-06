@@ -76,7 +76,7 @@ where
 
     pub async fn get_cached<F, E>(&self, f: F) -> Result<T, CachedError>
     where
-        F: FnOnce(LastFetched<T>) -> BoxFut<'static, Result<T, E>> + Send + 'static,
+        F: FnOnce(Option<T>) -> BoxFut<'static, Result<T, E>> + Send + 'static,
         E: std::fmt::Display + 'static,
     {
         let mut rx = {
@@ -91,6 +91,8 @@ where
                 }
             }
 
+            let last_fetched = inner.last_fetched.clone().map(|v| v.1);
+            
             if let Some(inflight) = inner.inflight.as_ref().and_then(Weak::upgrade) {
                 inflight.subscribe()
             } else {
@@ -104,9 +106,6 @@ where
 
                 // call the closure first, so we don't send _it_ across threads,
                 // just the Future it returns
-                let last_fetched = {
-                    inner.lock().last_fetched.clone()
-                };
                 let fut = f(last_fetched);
 
                 tokio::spawn(async move {
