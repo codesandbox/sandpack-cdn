@@ -1,4 +1,4 @@
-use std::{sync::Arc, time::Duration};
+use std::{collections::HashMap, sync::Arc, time::Duration};
 
 use crate::{app_error::ServerError, cached::Cached, utils::request};
 use moka::future::Cache;
@@ -6,8 +6,44 @@ use reqwest_middleware::ClientWithMiddleware;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct RawPackageDataVersionDist {
+    tarball: String,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct RawPackageDataVersion {
+    dist: RawPackageDataVersionDist,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct RawPackageData {
+    pub name: String,
+    #[serde(rename = "dist-tags")]
+    dist_tags: HashMap<String, String>,
+    versions: HashMap<String, RawPackageDataVersion>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct PackageData {
     pub name: String,
+    pub etag: Option<String>,
+    pub dist_tags: HashMap<String, String>,
+    pub versions: HashMap<String, String>,
+}
+
+impl PackageData {
+    pub fn from_raw(raw: RawPackageData, etag: Option<String>) -> PackageData {
+        let mut data = PackageData {
+            name: raw.name,
+            etag,
+            dist_tags: raw.dist_tags,
+            versions: HashMap::new(),
+        };
+        for (key, value) in raw.versions {
+            data.versions.insert(key, value.dist.tarball);
+        }
+        data
+    }
 }
 
 // TODO: Add etag logic back
@@ -26,10 +62,15 @@ async fn fetch_package_data(
         });
     }
 
-    // TODO: Convert from raw to pkg data
-    let data: PackageData = response.json().await?;
+    let mut etag: Option<String> = None;
+    if let Some(etag_header_value) = response.headers().get("etag") {
+        if let Ok(etag_header_str) = etag_header_value.to_str() {
+            etag = Some(String::from(etag_header_str))
+        }
+    }
 
-    Ok(data)
+    let raw_data: RawPackageData = response.json().await?;
+    Ok(PackageData::from_raw(raw_data, etag))
 }
 
 #[tracing::instrument(name = "get_package_data", skip(client, cached))]
