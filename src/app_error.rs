@@ -1,13 +1,15 @@
 use thiserror::Error;
 use warp::hyper::http;
 
+use crate::cached::CachedError;
+
 #[derive(Error, Debug)]
 pub enum ServerError {
     #[error("invalid semver")]
     InvalidSemver(#[from] node_semver::SemverError),
     #[error("Failed request")]
     FailedRequest(#[from] reqwest_middleware::Error),
-    #[error("Request failed")]
+    #[error(transparent)]
     RequestFailed(#[from] reqwest::Error),
     #[error("Response has a non-200 status code")]
     RequestErrorStatus { status_code: u16 },
@@ -57,6 +59,10 @@ pub enum ServerError {
     DeserializeError(),
     #[error("Failed to decode base64 string")]
     Base64DecodingError(),
+    #[error("Cached error")]
+    CachedError(#[from] CachedError),
+    #[error("Resource hasn't changed")]
+    NotChanged,
 }
 
 impl From<ServerError> for std::io::Error {

@@ -6,13 +6,14 @@ use serde_bytes::ByteBuf;
 use warp::{Filter, Rejection, Reply};
 
 use crate::app_error::ServerError;
+use crate::npm::package_data::PackageDataFetcher;
 use crate::package::npm_downloader;
 use crate::package::process::parse_package_specifier;
 use crate::AppData;
 
 use super::super::custom_reply::CustomReply;
 use super::super::error_reply::ErrorReply;
-use super::super::routes::with_app_data;
+use super::super::routes::with_data;
 use super::super::utils::decode_req_part;
 
 fn accumulate_files(
@@ -57,7 +58,11 @@ async fn get_files(pkg_output_path: PathBuf) -> Result<HashMap<String, ByteBuf>,
     Ok(files)
 }
 
-pub async fn get_mod_reply(path: String, data: AppData) -> Result<CustomReply, ServerError> {
+pub async fn get_mod_reply(
+    path: String,
+    data: AppData,
+    pkg_data_fetcher: PackageDataFetcher,
+) -> Result<CustomReply, ServerError> {
     let decoded_specifier = decode_req_part(path.as_str())?;
     let (pkg_name, pkg_version) = parse_package_specifier(&decoded_specifier)?;
     let cache = data.cache.clone();
@@ -65,7 +70,7 @@ pub async fn get_mod_reply(path: String, data: AppData) -> Result<CustomReply, S
         &pkg_name,
         &pkg_version,
         data.data_dir.as_str(),
-        &cache,
+        &pkg_data_fetcher,
     )
     .await?;
     let files = get_files(pkg_output_path).await?;
@@ -78,8 +83,8 @@ pub async fn get_mod_reply(path: String, data: AppData) -> Result<CustomReply, S
     Ok(reply)
 }
 
-pub async fn mod_route_handler(path: String, data: AppData) -> Result<impl Reply, Rejection> {
-    match get_mod_reply(path, data).await {
+pub async fn mod_route_handler(path: String, data: AppData, pkg_data_fetcher: PackageDataFetcher) -> Result<impl Reply, Rejection> {
+    match get_mod_reply(path, data, pkg_data_fetcher).await {
         Ok(reply) => Ok(reply),
         Err(err) => Ok(ErrorReply::from(err).as_reply(3600).unwrap()),
     }
@@ -87,9 +92,11 @@ pub async fn mod_route_handler(path: String, data: AppData) -> Result<impl Reply
 
 pub fn mod_route(
     app_data: AppData,
+    pkg_data_fetcher: PackageDataFetcher,
 ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
     warp::path!("v2" / "mod" / String)
         .and(warp::get())
-        .and(with_app_data(app_data))
+        .and(with_data(app_data))
+        .and(with_data(pkg_data_fetcher))
         .and_then(mod_route_handler)
 }

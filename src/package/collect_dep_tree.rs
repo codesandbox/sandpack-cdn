@@ -8,12 +8,10 @@ use std::{
 use tokio::task::JoinHandle;
 use tracing::error;
 
-use crate::{app_error::ServerError, cache::Cache};
+use crate::{app_error::ServerError, cache::Cache, npm::package_data::PackageData};
+use crate::npm::package_data::PackageDataFetcher;
 
-use super::{
-    npm_package_manifest::{download_package_manifest_cached, CachedPackageManifest},
-    process::module_dependencies_cached,
-};
+use super::process::module_dependencies_cached;
 
 #[derive(Clone, Debug)]
 pub enum VersionRange {
@@ -43,7 +41,7 @@ impl DependencyRequest {
         })
     }
 
-    pub fn resolve_version(&self, manifest: &CachedPackageManifest) -> Option<String> {
+    pub fn resolve_version(&self, manifest: &PackageData) -> Option<String> {
         match self.version_range.clone() {
             VersionRange::Alias(alias_str) => manifest.dist_tags.get(&alias_str).cloned(),
             VersionRange::Range(range) => {
@@ -110,19 +108,21 @@ pub fn process_dep_map(
 
 type ResolveDepResult = Result<Option<(Dependency, Vec<DependencyRequest>)>, ServerError>;
 
-#[tracing::instrument(name = "resolve_dep", skip(cache, data_dir))]
+#[tracing::instrument(name = "resolve_dep", skip(cache, data_dir, data_fetcher))]
 async fn resolve_dep(
     req: DependencyRequest,
     data_dir: String,
     cache: &mut Cache,
+    data_fetcher: &PackageDataFetcher,
 ) -> ResolveDepResult {
-    let manifest = download_package_manifest_cached(req.name.as_str(), cache).await?;
+    let manifest = data_fetcher.get(&req.name).await?;
     if let Some(resolved_version) = req.resolve_version(&manifest) {
         let dependencies = module_dependencies_cached(
             req.name.as_str(),
             resolved_version.as_str(),
             data_dir.as_str(),
             cache,
+            data_fetcher,
         )
         .await?;
         let mut transient_deps: Vec<DependencyRequest> = Vec::with_capacity(dependencies.len());
@@ -151,16 +151,18 @@ async fn resolve_dep(
 struct DepTreeCollector {
     data_dir: String,
     cache: Cache,
+    data_fetcher: PackageDataFetcher,
     dependencies: Arc<Mutex<DependencyList>>,
     futures: Arc<Mutex<VecDeque<JoinHandle<()>>>>,
     in_progress: Arc<Mutex<Vec<DependencyRequest>>>,
 }
 
 impl DepTreeCollector {
-    pub fn new(data_dir: String, cache: Cache) -> Self {
+    pub fn new(data_dir: String, cache: Cache, data_fetcher: PackageDataFetcher) -> Self {
         DepTreeCollector {
             data_dir,
             cache,
+            data_fetcher,
             dependencies: Arc::new(Mutex::new(Vec::new())),
             futures: Arc::new(Mutex::new(VecDeque::new())),
             in_progress: Arc::new(Mutex::new(Vec::new())),
@@ -187,7 +189,8 @@ impl DepTreeCollector {
         let future = tokio::spawn(async move {
             let mut cache = dep_collector.cache.clone();
             let data_dir = dep_collector.data_dir.clone();
-            let result = resolve_dep(dep_req, data_dir, &mut cache).await;
+            let data_fetcher = dep_collector.data_fetcher.clone();
+            let result = resolve_dep(dep_req, data_dir, &mut cache, &data_fetcher).await;
             if let Ok(Some((dependency, transient_deps))) = result {
                 dep_collector.add_dependency(dependency);
                 dep_collector.add_dep_requests(transient_deps);
@@ -257,8 +260,9 @@ impl DepTreeCollector {
         dep_requests: Vec<DependencyRequest>,
         data_dir: String,
         cache: Cache,
+        data_fetcher: PackageDataFetcher,
     ) -> Result<DependencyList, ServerError> {
-        let collector = DepTreeCollector::new(data_dir, cache);
+        let collector = DepTreeCollector::new(data_dir, cache, data_fetcher);
         collector.add_dep_requests(dep_requests);
 
         while let Some(handle) = collector.get_next_join() {
@@ -275,6 +279,7 @@ pub async fn collect_dep_tree(
     dep_requests: Vec<DependencyRequest>,
     data_dir: &str,
     cache: &Cache,
+    data_fetcher: &PackageDataFetcher,
 ) -> Result<DependencyList, ServerError> {
-    DepTreeCollector::try_collect(dep_requests, String::from(data_dir), cache.clone()).await
+    DepTreeCollector::try_collect(dep_requests, String::from(data_dir), cache.clone(), data_fetcher.clone()).await
 }
