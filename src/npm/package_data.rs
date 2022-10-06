@@ -5,6 +5,7 @@ use moka::future::Cache;
 use reqwest::StatusCode;
 use reqwest_middleware::ClientWithMiddleware;
 use serde::{Deserialize, Serialize};
+use tracing::error;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct RawPackageDataVersionDist {
@@ -106,16 +107,13 @@ async fn get_package_data(
     let res = cached
         .get_cached(|last_val| {
             Box::pin(async move {
-                let etag = last_val
-                    .clone()
-                    .map(|val| val.etag.clone())
-                    .unwrap_or(None);
+                let etag = last_val.clone().map(|val| val.etag.clone()).unwrap_or(None);
                 let pkg_data = {
                     match fetch_package_data(&client, package_name_string.as_str(), etag).await {
                         Ok(res) => Ok(Arc::new(res)),
                         Err(err) => {
                             if let Some(val) = last_val {
-                                println!("Fetch failed {:?}", err);
+                                error!("Fetch failed {:?}", err);
                                 Ok(val)
                             } else {
                                 Err(err)

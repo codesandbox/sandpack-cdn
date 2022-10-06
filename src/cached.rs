@@ -8,7 +8,7 @@ use std::{
     time::{Duration, Instant},
 };
 use tokio::sync::broadcast;
-use tracing::debug;
+use tracing::info;
 
 pub type BoxFut<'a, O> = Pin<Box<dyn Future<Output = O> + Send + 'a>>;
 
@@ -87,13 +87,17 @@ where
                 if fetched_at.elapsed() < self.refresh_interval {
                     return Ok(value.clone());
                 } else {
-                    debug!("stale, let's refresh");
+                    info!("stale, let's refresh");
                 }
             }
 
             let last_fetched = inner.last_fetched.clone().map(|v| v.1);
-            
             if let Some(inflight) = inner.inflight.as_ref().and_then(Weak::upgrade) {
+                if let Some(val) = last_fetched {
+                    info!("Returning stale data");
+                    return Ok(val);
+                }
+
                 inflight.subscribe()
             } else {
                 // there isn't, let's fetch
@@ -106,7 +110,7 @@ where
 
                 // call the closure first, so we don't send _it_ across threads,
                 // just the Future it returns
-                let fut = f(last_fetched);
+                let fut = f(last_fetched.clone());
 
                 tokio::spawn(async move {
                     let res = fut.await;
@@ -129,6 +133,12 @@ where
                         };
                     }
                 });
+
+                if let Some(val) = last_fetched {
+                    info!("Returning stale data");
+                    return Ok(val);
+                }
+
                 rx
             }
         };
