@@ -13,6 +13,7 @@ pub struct RawPackageDataVersionDist {
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct RawPackageDataVersion {
     dist: RawPackageDataVersionDist,
+    #[serde(default)]
     dependencies: HashMap<String, String>,
 }
 

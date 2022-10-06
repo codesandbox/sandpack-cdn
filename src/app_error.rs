@@ -9,7 +9,7 @@ pub enum ServerError {
     InvalidSemver(#[from] node_semver::SemverError),
     #[error("Failed request")]
     FailedRequest(#[from] reqwest_middleware::Error),
-    #[error("Request failed")]
+    #[error(transparent)]
     RequestFailed(#[from] reqwest::Error),
     #[error("Response has a non-200 status code")]
     RequestErrorStatus { status_code: u16 },
