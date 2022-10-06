@@ -6,7 +6,7 @@ use crate::AppData;
 
 use super::super::custom_reply::CustomReply;
 use super::super::error_reply::ErrorReply;
-use super::super::routes::with_app_data;
+use super::super::routes::with_data;
 use super::super::utils::decode_req_part;
 
 pub async fn get_package_data_reply(
@@ -41,6 +41,6 @@ pub fn package_data_route(
 ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
     warp::path!("package" / String)
         .and(warp::get())
-        .and(with_app_data(app_data))
+        .and(with_data(app_data))
         .and_then(package_data_handler)
 }

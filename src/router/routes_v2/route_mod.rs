@@ -12,7 +12,7 @@ use crate::AppData;
 
 use super::super::custom_reply::CustomReply;
 use super::super::error_reply::ErrorReply;
-use super::super::routes::with_app_data;
+use super::super::routes::with_data;
 use super::super::utils::decode_req_part;
 
 fn accumulate_files(
@@ -90,6 +90,6 @@ pub fn mod_route(
 ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
     warp::path!("v2" / "mod" / String)
         .and(warp::get())
-        .and(with_app_data(app_data))
+        .and(with_data(app_data))
         .and_then(mod_route_handler)
 }

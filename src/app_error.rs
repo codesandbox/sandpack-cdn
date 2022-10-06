@@ -1,6 +1,8 @@
 use thiserror::Error;
 use warp::hyper::http;
 
+use crate::cached::CachedError;
+
 #[derive(Error, Debug)]
 pub enum ServerError {
     #[error("invalid semver")]
@@ -57,6 +59,8 @@ pub enum ServerError {
     DeserializeError(),
     #[error("Failed to decode base64 string")]
     Base64DecodingError(),
+    #[error("Cached error")]
+    CachedError(#[from] CachedError),
 }
 
 impl From<ServerError> for std::io::Error {

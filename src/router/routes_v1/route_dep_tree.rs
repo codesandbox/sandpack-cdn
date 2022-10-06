@@ -5,11 +5,11 @@ use warp::{Filter, Rejection, Reply};
 use crate::app_error::ServerError;
 use crate::cache::Cache;
 use crate::package::collect_dep_tree::{collect_dep_tree, process_dep_map, DependencyList};
+use crate::router::routes::with_data;
 use crate::AppData;
 
 use super::super::custom_reply::CustomReply;
 use super::super::error_reply::ErrorReply;
-use super::super::routes::with_app_data;
 use super::super::utils::decode_req_part;
 
 async fn process_dep_tree(
@@ -46,6 +46,6 @@ pub fn dep_tree_route(
 ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
     warp::path!("dep_tree" / String)
         .and(warp::get())
-        .and(with_app_data(app_data))
+        .and(with_data(app_data))
         .and_then(dep_tree_route_handler)
 }

@@ -12,6 +12,8 @@ mod router;
 mod setup_tracing;
 mod transform;
 mod utils;
+mod cached;
+mod npm;
 
 #[derive(Clone)]
 pub struct AppData {
