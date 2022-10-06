@@ -49,7 +49,7 @@ async fn download_tarball(url: &str) -> Result<(Cursor<Bytes>, TarballType), Ser
     return Ok((Cursor::new(response.bytes().await?), tarball_type));
 }
 
-#[tracing::instrument(name = "store_tarball", skip(data_dir, tarball_type))]
+#[tracing::instrument(name = "store_tarball", skip(content, data_dir, tarball_type))]
 async fn store_tarball(
     content: Cursor<Bytes>,
     tarball_type: TarballType,

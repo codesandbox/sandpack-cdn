@@ -46,10 +46,21 @@ fn accumulate_files(
     Ok(collected)
 }
 
+#[tracing::instrument(name = "get_files")]
+async fn get_files(pkg_output_path: PathBuf) -> Result<HashMap<String, ByteBuf>, ServerError> {
+    let files = tokio::task::spawn_blocking(move || {
+        let dir_path = pkg_output_path.as_path();
+        accumulate_files(dir_path, String::new(), HashMap::new())
+    })
+    .await??;
+
+    Ok(files)
+}
+
 pub async fn get_mod_reply(path: String, data: AppData) -> Result<CustomReply, ServerError> {
     let decoded_specifier = decode_req_part(path.as_str())?;
-    let cache = data.cache.clone();
     let (pkg_name, pkg_version) = parse_package_specifier(&decoded_specifier)?;
+    let cache = data.cache.clone();
     let pkg_output_path: PathBuf = npm_downloader::download_package_content(
         &pkg_name,
         &pkg_version,
@@ -57,16 +68,13 @@ pub async fn get_mod_reply(path: String, data: AppData) -> Result<CustomReply, S
         &cache,
     )
     .await?;
-    let files = tokio::task::spawn_blocking(move || {
-        let dir_path = pkg_output_path.as_path();
-        accumulate_files(dir_path, String::new(), HashMap::new())
-    })
-    .await??;
+    let files = get_files(pkg_output_path).await?;
     let mut reply = CustomReply::msgpack(&files)?;
     reply.add_header(
         "cache-control",
         format!("public, max-age={}", 365 * 24 * 3600).as_str(),
     );
+
     Ok(reply)
 }
 
