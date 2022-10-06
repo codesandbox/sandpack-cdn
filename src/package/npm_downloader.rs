@@ -3,14 +3,14 @@ use std::fmt;
 use std::io::Cursor;
 use std::path::Path;
 use std::path::PathBuf;
+use std::sync::Arc;
 use tar::Archive;
 use warp::hyper::body::Bytes;
 
 use crate::app_error::ServerError;
-use crate::cache::Cache;
+use crate::npm::package_data::PackageData;
+use crate::npm::package_data::PackageDataFetcher;
 use crate::utils::request;
-
-use super::npm_package_manifest::{download_package_manifest_cached, CachedPackageManifest};
 
 #[derive(PartialEq, Eq)]
 pub enum TarballType {
@@ -73,17 +73,16 @@ async fn store_tarball(
     Ok(dir_path.clone().join("package"))
 }
 
-#[tracing::instrument(name = "download_package_content", skip(data_dir, cache))]
+#[tracing::instrument(name = "download_package_content", skip(data_dir, data_fetcher))]
 pub async fn download_package_content(
     package_name: &str,
     version: &str,
     data_dir: &str,
-    cache: &Cache,
+    data_fetcher: &PackageDataFetcher,
 ) -> Result<PathBuf, ServerError> {
-    let manifest: CachedPackageManifest =
-        download_package_manifest_cached(package_name, cache).await?;
-    if let Some(tarball_url) = manifest.versions.get(version) {
-        let (content, tarball_type) = download_tarball(tarball_url.as_str()).await?;
+    let manifest: Arc<PackageData> = data_fetcher.get(package_name).await?;
+    if let Some(version_data) = manifest.versions.get(version) {
+        let (content, tarball_type) = download_tarball(version_data.tarball.as_str()).await?;
         store_tarball(content, tarball_type, package_name, version, data_dir).await
     } else {
         Err(ServerError::PackageVersionNotFound)

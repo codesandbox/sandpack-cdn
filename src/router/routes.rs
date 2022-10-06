@@ -18,9 +18,9 @@ pub fn routes(
     let pkg_data_fetcher =
         PackageDataFetcher::new(Duration::from_secs(900), Duration::from_secs(86400), 250);
 
-    package_data_route(app_data.clone())
-        .or(dep_tree_route(app_data.clone()))
-        .or(mod_route(app_data.clone()))
+    package_data_route(app_data.clone(), pkg_data_fetcher.clone())
+        .or(dep_tree_route(app_data.clone(), pkg_data_fetcher.clone()))
+        .or(mod_route(app_data.clone(), pkg_data_fetcher.clone()))
         .or(deps_route(pkg_data_fetcher.clone()))
         .or(health_route())
         .or(not_found_route())

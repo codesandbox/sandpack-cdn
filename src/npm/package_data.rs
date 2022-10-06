@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::Arc, time::Duration};
+use std::{collections::HashMap, sync::Arc, time::Duration, fmt};
 
 use crate::{app_error::ServerError, cached::Cached, utils::request};
 use moka::future::Cache;
@@ -158,5 +158,11 @@ impl PackageDataFetcher {
             self.cache.insert(key, cached.clone()).await;
             return get_package_data(name, self.client.clone(), cached).await;
         }
+    }
+}
+
+impl fmt::Debug for PackageDataFetcher {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("PackageDataFetcher")
     }
 }
