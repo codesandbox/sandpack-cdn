@@ -137,10 +137,13 @@ pub struct PackageDataFetcher {
 }
 
 impl PackageDataFetcher {
-    pub fn new(refresh_interval: Duration, max_capacity: u64) -> PackageDataFetcher {
+    pub fn new(refresh_interval: Duration, ttl: Duration, max_capacity: u64) -> PackageDataFetcher {
         PackageDataFetcher {
             client: Arc::new(request::get_client(30)),
-            cache: Cache::new(max_capacity),
+            cache: Cache::builder()
+                .max_capacity(max_capacity)
+                .time_to_idle(ttl)
+                .build(),
             refresh_interval,
         }
     }

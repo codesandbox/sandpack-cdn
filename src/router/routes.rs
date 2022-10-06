@@ -14,8 +14,9 @@ use super::routes_v2::route_mod::mod_route;
 pub fn routes(
     app_data: AppData,
 ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
-    // 15 minutes ttl
-    let pkg_data_fetcher = PackageDataFetcher::new(Duration::from_secs(5), 250);
+    // 15 minutes refresh interval and 1 day ttl
+    let pkg_data_fetcher =
+        PackageDataFetcher::new(Duration::from_secs(900), Duration::from_secs(86400), 250);
 
     package_data_route(app_data.clone())
         .or(dep_tree_route(app_data.clone()))
