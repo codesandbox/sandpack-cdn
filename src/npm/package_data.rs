@@ -2,6 +2,7 @@ use std::{collections::HashMap, sync::Arc, time::Duration};
 
 use crate::{app_error::ServerError, cached::Cached, utils::request};
 use moka::future::Cache;
+use reqwest::StatusCode;
 use reqwest_middleware::ClientWithMiddleware;
 use serde::{Deserialize, Serialize};
 
@@ -65,9 +66,17 @@ impl PackageData {
 async fn fetch_package_data(
     client: &ClientWithMiddleware,
     package_name: &str,
+    previous_etag: Option<String>,
 ) -> Result<PackageData, ServerError> {
     let mut request = client.get(format!("https://registry.npmjs.org/{}", package_name));
+    if let Some(prev_etag_value) = previous_etag {
+        request = request.header("If-None-Match", prev_etag_value.as_str());
+    }
+
     let response = request.send().await?;
+    if StatusCode::NOT_MODIFIED.eq(&response.status()) {
+        return Err(ServerError::NotChanged);
+    }
 
     if !response.status().is_success() {
         return Err(ServerError::NpmManifestDownloadError {
@@ -91,13 +100,29 @@ async fn fetch_package_data(
 async fn get_package_data(
     package_name: &str,
     client: Arc<ClientWithMiddleware>,
-    cached: Cached<PackageData>,
-) -> Result<PackageData, ServerError> {
+    cached: Cached<Arc<PackageData>>,
+) -> Result<Arc<PackageData>, ServerError> {
     let package_name_string = String::from(package_name);
     let res = cached
-        .get_cached(|| {
+        .get_cached(|last_val| {
             Box::pin(async move {
-                let pkg_data = fetch_package_data(&client, package_name_string.as_str()).await?;
+                let etag = last_val
+                    .clone()
+                    .map(|val| val.1.etag.clone())
+                    .unwrap_or(None);
+                let pkg_data = {
+                    match fetch_package_data(&client, package_name_string.as_str(), etag).await {
+                        Ok(res) => Ok(Arc::new(res)),
+                        Err(err) => {
+                            if let Some(val) = last_val {
+                                println!("Fetch failed {:?}", err);
+                                Ok(val.1)
+                            } else {
+                                Err(err)
+                            }
+                        }
+                    }
+                }?;
                 Ok::<_, ServerError>(pkg_data)
             })
         })
@@ -109,7 +134,7 @@ async fn get_package_data(
 #[derive(Clone)]
 pub struct PackageDataFetcher {
     client: Arc<ClientWithMiddleware>,
-    cache: Cache<String, Cached<PackageData>>,
+    cache: Cache<String, Cached<Arc<PackageData>>>,
     refresh_interval: Duration,
 }
 
@@ -123,12 +148,12 @@ impl PackageDataFetcher {
     }
 
     #[tracing::instrument(name = "pkg_data_get", skip(self))]
-    pub async fn get(&self, name: &str) -> Result<PackageData, ServerError> {
+    pub async fn get(&self, name: &str) -> Result<Arc<PackageData>, ServerError> {
         let key = String::from(name);
         if let Some(found_value) = self.cache.get(&key) {
             return get_package_data(name, self.client.clone(), found_value).await;
         } else {
-            let cached: Cached<PackageData> = Cached::new(self.refresh_interval);
+            let cached: Cached<Arc<PackageData>> = Cached::new(self.refresh_interval);
             self.cache.insert(key, cached.clone()).await;
             return get_package_data(name, self.client.clone(), cached).await;
         }

@@ -14,7 +14,7 @@ pub async fn get_deps_reply(
 ) -> Result<CustomReply, ServerError> {
     let decoded_specifier = decode_req_part(path.as_str())?;
     let pkg_data = pkg_fetcher.get(&decoded_specifier).await?;
-    let reply = CustomReply::msgpack(&pkg_data)?;
+    let reply = CustomReply::msgpack(pkg_data.as_ref())?;
     Ok(reply)
 }
 

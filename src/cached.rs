@@ -41,11 +41,13 @@ where
     refresh_interval: Duration,
 }
 
+type LastFetched<T> = Option<(Instant, T)>;
+
 struct CachedInner<T>
 where
     T: Clone + Send + Sync + 'static,
 {
-    last_fetched: Option<(Instant, T)>,
+    last_fetched: LastFetched<T>,
     inflight: Option<Weak<broadcast::Sender<Result<T, CachedError>>>>,
 }
 
@@ -74,7 +76,7 @@ where
 
     pub async fn get_cached<F, E>(&self, f: F) -> Result<T, CachedError>
     where
-        F: FnOnce() -> BoxFut<'static, Result<T, E>> + Send + 'static,
+        F: FnOnce(LastFetched<T>) -> BoxFut<'static, Result<T, E>> + Send + 'static,
         E: std::fmt::Display + 'static,
     {
         let mut rx = {
@@ -102,7 +104,10 @@ where
 
                 // call the closure first, so we don't send _it_ across threads,
                 // just the Future it returns
-                let fut = f();
+                let last_fetched = {
+                    inner.lock().last_fetched.clone()
+                };
+                let fut = f(last_fetched);
 
                 tokio::spawn(async move {
                     let res = fut.await;

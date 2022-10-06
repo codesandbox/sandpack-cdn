@@ -61,6 +61,8 @@ pub enum ServerError {
     Base64DecodingError(),
     #[error("Cached error")]
     CachedError(#[from] CachedError),
+    #[error("Resource hasn't changed")]
+    NotChanged,
 }
 
 impl From<ServerError> for std::io::Error {
