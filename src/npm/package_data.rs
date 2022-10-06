@@ -13,6 +13,7 @@ pub struct RawPackageDataVersionDist {
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct RawPackageDataVersion {
     dist: RawPackageDataVersionDist,
+    dependencies: HashMap<String, String>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -24,11 +25,17 @@ pub struct RawPackageData {
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct PackageVersionData {
+    pub tarball: String,
+    pub dependencies: HashMap<String, String>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct PackageData {
     pub name: String,
     pub etag: Option<String>,
     pub dist_tags: HashMap<String, String>,
-    pub versions: HashMap<String, String>,
+    pub versions: HashMap<String, PackageVersionData>,
 }
 
 impl PackageData {
@@ -40,7 +47,13 @@ impl PackageData {
             versions: HashMap::new(),
         };
         for (key, value) in raw.versions {
-            data.versions.insert(key, value.dist.tarball);
+            data.versions.insert(
+                key,
+                PackageVersionData {
+                    tarball: value.dist.tarball,
+                    dependencies: value.dependencies,
+                },
+            );
         }
         data
     }
