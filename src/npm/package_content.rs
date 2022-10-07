@@ -6,6 +6,8 @@ use moka::future::Cache;
 use reqwest_middleware::ClientWithMiddleware;
 use warp::hyper::body::Bytes;
 
+use super::package_data::{PackageData, PackageDataFetcher};
+
 pub type Content = Arc<Cursor<Bytes>>;
 
 #[derive(PartialEq, Eq)]
@@ -45,7 +47,7 @@ async fn download_tarball(
     Ok(Arc::new(content))
 }
 
-#[tracing::instrument(name = "get_package_data", skip(client, cached))]
+#[tracing::instrument(name = "get_tarball", skip(client, cached))]
 async fn get_tarball(
     url: &str,
     client: Arc<ClientWithMiddleware>,
@@ -103,5 +105,21 @@ impl PackageContentFetcher {
 impl fmt::Debug for PackageContentFetcher {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str("PackageContentFetcher")
+    }
+}
+
+#[tracing::instrument(name = "download_package_content", skip(data_fetcher, content_fetcher))]
+pub async fn download_package_content(
+    package_name: &str,
+    version: &str,
+    data_fetcher: &PackageDataFetcher,
+    content_fetcher: &PackageContentFetcher,
+) -> Result<Content, ServerError> {
+    let manifest: Arc<PackageData> = data_fetcher.get(package_name).await?;
+    if let Some(version_data) = manifest.versions.get(version) {
+        let content = content_fetcher.get(version_data.tarball.as_str()).await?;
+        Ok(content)
+    } else {
+        Err(ServerError::PackageVersionNotFound)
     }
 }
