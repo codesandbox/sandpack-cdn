@@ -1,6 +1,7 @@
 use std::time::Duration;
 use warp::{Filter, Rejection, Reply};
 
+use crate::npm::package_content::PackageContentFetcher;
 use crate::npm::package_data::PackageDataFetcher;
 use crate::AppData;
 
@@ -17,6 +18,8 @@ pub fn routes(
     // 15 minutes refresh interval and 1 day ttl
     let pkg_data_fetcher =
         PackageDataFetcher::new(Duration::from_secs(900), Duration::from_secs(86400), 250);
+    let pkg_content_fetcher =
+        PackageContentFetcher::new(Duration::from_secs(604800), Duration::from_secs(86400), 50);
 
     package_data_route(app_data.clone(), pkg_data_fetcher.clone())
         .or(dep_tree_route(app_data.clone(), pkg_data_fetcher.clone()))
