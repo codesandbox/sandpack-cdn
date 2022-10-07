@@ -1,3 +1,4 @@
+use nanoid::nanoid;
 use node_semver::Version;
 use serde::{self, Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -310,10 +311,13 @@ pub async fn process_npm_package(
         &content_fetcher,
     )
     .await?;
-    let pkg_output_path = Path::new(temp_dir)
+    let mut pkg_output_path = Path::new(temp_dir)
         .join("v1_process")
+        .join(nanoid!())
         .join(format!("{}-{}", package_name, package_version));
-    let pkg_output_path = tar::store_tarball(tarball_content.as_ref().clone(), pkg_output_path).await?;
+    tar::store_tarball(tarball_content.as_ref().clone(), pkg_output_path.as_path()).await?;
+
+    pkg_output_path = pkg_output_path.join("package");
 
     // Transform module in new thread
     let package_name_string = String::from(package_name);
@@ -329,7 +333,7 @@ pub async fn process_npm_package(
     let transform_result = task.await?;
 
     // Cleanup package directory
-    tokio::fs::remove_dir_all(pkg_output_path).await?;
+    tokio::fs::remove_dir_all(pkg_output_path.as_path()).await?;
 
     transform_result
 }
@@ -372,8 +376,14 @@ pub async fn transform_module_and_cache(
     data_fetcher: &PackageDataFetcher,
     content_fetcher: &PackageContentFetcher,
 ) -> Result<(MinimalCachedModule, ModuleDependenciesMap), ServerError> {
-    let (transformed_module, module_dependencies) =
-        process_npm_package(package_name, package_version, temp_dir, data_fetcher, content_fetcher).await?;
+    let (transformed_module, module_dependencies) = process_npm_package(
+        package_name,
+        package_version,
+        temp_dir,
+        data_fetcher,
+        content_fetcher,
+    )
+    .await?;
 
     let transform_cache_key = get_transform_cache_key(package_name, package_version);
     let transformed_module_serialized = serialize_msgpack(&transformed_module)?;
@@ -439,8 +449,14 @@ pub async fn module_dependencies_cached(
         }
     }
 
-    let (_, deps) =
-        transform_module_and_cache(package_name, package_version, temp_dir, cache, data_fetcher, content_fetcher)
-            .await?;
+    let (_, deps) = transform_module_and_cache(
+        package_name,
+        package_version,
+        temp_dir,
+        cache,
+        data_fetcher,
+        content_fetcher,
+    )
+    .await?;
     Ok(deps)
 }

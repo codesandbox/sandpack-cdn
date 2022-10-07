@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::fs::{self, remove_dir_all};
 use std::path::{Path, PathBuf};
 
+use nanoid::nanoid;
 use serde_bytes::ByteBuf;
 use warp::{Filter, Rejection, Reply};
 
@@ -85,15 +86,19 @@ pub async fn get_mod_reply(
         &pkg_content_fetcher,
     )
     .await?;
-    let output_dir = Path::new(&config.temp_dir)
+    let mut output_dir = Path::new(&config.temp_dir)
         .join("v2_mod")
+        .join(nanoid!())
         .join(format!("{}-{}", pkg_name, pkg_version));
-    let output_dir = tar::store_tarball(tarball_content.as_ref().clone(), output_dir).await?;
+
+    // TODO: Don't store anything, just loop over the archive contents
+    tar::store_tarball(tarball_content.as_ref().clone(), output_dir.as_path()).await?;
+
+    output_dir = output_dir.join("package");
+
     let response = create_reply(output_dir.clone()).await;
 
-    remove_dir_all(output_dir)
-        .map_err(|e| println!("Could not remove temporary module directory: {}", e))
-        .unwrap_or(());
+    remove_dir_all(output_dir.as_path())?;
 
     response
 }
