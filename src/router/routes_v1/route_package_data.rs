@@ -16,7 +16,7 @@ pub async fn get_package_data_reply(
     let decoded_specifier = decode_req_part(path.as_str())?;
     let (pkg_name, pkg_version) = parse_package_specifier(&decoded_specifier)?;
     let package_content = pkg_processor.get(&pkg_name, &pkg_version).await?;
-    let mut reply = CustomReply::json(package_content.as_ref())?;
+    let mut reply = CustomReply::json(&package_content.0)?;
     reply.add_header(
         "cache-control",
         format!("public, max-age={}", 365 * 24 * 3600).as_str(),
