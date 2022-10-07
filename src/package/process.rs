@@ -8,11 +8,9 @@ use tracing::{error, info, span, Level};
 use transform::transformer::transform_file;
 
 use crate::app_error::ServerError;
-use crate::cache::Cache;
 use crate::npm::package_content::{download_package_content, PackageContentFetcher};
 use crate::npm::package_data::PackageDataFetcher;
 use crate::transform;
-use crate::utils::msgpack::{deserialize_msgpack, serialize_msgpack};
 use crate::utils::tar;
 
 use super::package_json::PackageJSON;
@@ -312,10 +310,9 @@ pub async fn process_npm_package(
     )
     .await?;
     let mut pkg_output_path = Path::new(temp_dir)
-        .join("v1_process")
         .join(nanoid!())
         .join(format!("{}-{}", package_name, package_version));
-    tar::store_tarball(tarball_content.as_ref().clone(), pkg_output_path.as_path()).await?;
+    tar::store_tarball(tarball_content.as_ref().clone(), pkg_output_path.as_path())?;
 
     pkg_output_path = pkg_output_path.join("package");
 
@@ -357,106 +354,4 @@ pub fn parse_package_specifier(package_specifier: &str) -> Result<(String, Strin
     } else {
         Err(ServerError::InvalidPackageSpecifier)
     }
-}
-
-fn get_transform_cache_key(package_name: &str, package_version: &str) -> String {
-    format!("v1::transform::{}@{}", package_name, package_version)
-}
-
-fn get_dependencies_cache_key(package_name: &str, package_version: &str) -> String {
-    format!("v1::dependencies::{}@{}", package_name, package_version)
-}
-
-#[tracing::instrument(name = "transform_module_and_cache", skip(temp_dir, cache))]
-pub async fn transform_module_and_cache(
-    package_name: &str,
-    package_version: &str,
-    temp_dir: &str,
-    cache: &mut Cache,
-    data_fetcher: &PackageDataFetcher,
-    content_fetcher: &PackageContentFetcher,
-) -> Result<(MinimalCachedModule, ModuleDependenciesMap), ServerError> {
-    let (transformed_module, module_dependencies) = process_npm_package(
-        package_name,
-        package_version,
-        temp_dir,
-        data_fetcher,
-        content_fetcher,
-    )
-    .await?;
-
-    let transform_cache_key = get_transform_cache_key(package_name, package_version);
-    let transformed_module_serialized = serialize_msgpack(&transformed_module)?;
-    cache
-        .store_value(transform_cache_key.as_str(), transformed_module_serialized)
-        .await;
-
-    let dependencies_cache_key = get_dependencies_cache_key(package_name, package_version);
-    let module_dependencies_serialized = serialize_msgpack(&module_dependencies)?;
-    cache
-        .store_value(
-            dependencies_cache_key.as_str(),
-            module_dependencies_serialized,
-        )
-        .await;
-
-    Ok((transformed_module, module_dependencies))
-}
-
-pub async fn transform_module_cached(
-    package_specifier: &str,
-    temp_dir: &str,
-    cache: &mut Cache,
-    data_fetcher: &PackageDataFetcher,
-    content_fetcher: &PackageContentFetcher,
-) -> Result<MinimalCachedModule, ServerError> {
-    let (package_name, package_version) = parse_package_specifier(package_specifier)?;
-
-    let transform_cache_key =
-        get_transform_cache_key(package_name.as_str(), package_version.as_str());
-    if let Some(cached_value) = cache.get_value(transform_cache_key.as_str()).await {
-        let deserialized = deserialize_msgpack(&cached_value);
-        if let Ok(actual_module) = deserialized {
-            return Ok(actual_module);
-        }
-    }
-
-    let (transformation_result, _) = transform_module_and_cache(
-        package_name.as_str(),
-        package_version.as_str(),
-        temp_dir,
-        cache,
-        data_fetcher,
-        content_fetcher,
-    )
-    .await?;
-    Ok(transformation_result)
-}
-
-pub async fn module_dependencies_cached(
-    package_name: &str,
-    package_version: &str,
-    temp_dir: &str,
-    cache: &mut Cache,
-    data_fetcher: &PackageDataFetcher,
-    content_fetcher: &PackageContentFetcher,
-) -> Result<ModuleDependenciesMap, ServerError> {
-    let transform_cache_key = get_dependencies_cache_key(package_name, package_version);
-    if let Some(cached_value) = cache.get_value(transform_cache_key.as_str()).await {
-        let deserialized = deserialize_msgpack(&cached_value);
-        if let Ok(deps) = deserialized {
-            return Ok(deps);
-        }
-    }
-
-    let (_, deps) = transform_module_and_cache(
-        package_name,
-        package_version,
-        temp_dir,
-        cache,
-        data_fetcher,
-        content_fetcher,
-    )
-    .await?;
-    Ok(deps)
 }

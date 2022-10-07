@@ -9,13 +9,9 @@ use tokio::task::JoinHandle;
 use tracing::error;
 
 use crate::npm::package_data::PackageDataFetcher;
-use crate::{
-    app_error::ServerError,
-    cache::Cache,
-    npm::{package_content::PackageContentFetcher, package_data::PackageData},
-};
+use crate::{app_error::ServerError, npm::package_data::PackageData};
 
-use super::process::module_dependencies_cached;
+use super::cached::CachedPackageProcessor;
 
 #[derive(Clone, Debug)]
 pub enum VersionRange {
@@ -112,27 +108,19 @@ pub fn process_dep_map(
 
 type ResolveDepResult = Result<Option<(Dependency, Vec<DependencyRequest>)>, ServerError>;
 
-#[tracing::instrument(name = "resolve_dep", skip(cache, temp_dir, data_fetcher))]
+#[tracing::instrument(name = "resolve_dep", skip(pkg_processor, data_fetcher))]
 async fn resolve_dep(
     req: DependencyRequest,
-    temp_dir: String,
-    cache: &mut Cache,
     data_fetcher: &PackageDataFetcher,
-    content_fetcher: &PackageContentFetcher,
+    pkg_processor: &CachedPackageProcessor,
 ) -> ResolveDepResult {
     let manifest = data_fetcher.get(&req.name).await?;
     if let Some(resolved_version) = req.resolve_version(&manifest) {
-        let dependencies = module_dependencies_cached(
-            req.name.as_str(),
-            resolved_version.as_str(),
-            temp_dir.as_str(),
-            cache,
-            data_fetcher,
-            content_fetcher,
-        )
-        .await?;
-        let mut transient_deps: Vec<DependencyRequest> = Vec::with_capacity(dependencies.len());
-        for (dep_name, dep_meta) in dependencies {
+        let dependencies = pkg_processor
+            .get(req.name.as_str(), resolved_version.as_str())
+            .await?;
+        let mut transient_deps: Vec<DependencyRequest> = Vec::with_capacity(dependencies.1.len());
+        for (dep_name, dep_meta) in dependencies.1.iter() {
             if dep_meta.is_used {
                 let dep_req_res = DependencyRequest::new(
                     dep_name.as_str(),
@@ -155,27 +143,18 @@ async fn resolve_dep(
 
 #[derive(Debug, Clone)]
 struct DepTreeCollector {
-    temp_dir: String,
-    cache: Cache,
     data_fetcher: PackageDataFetcher,
-    content_fetcher: PackageContentFetcher,
     dependencies: Arc<Mutex<DependencyList>>,
     futures: Arc<Mutex<VecDeque<JoinHandle<()>>>>,
     in_progress: Arc<Mutex<Vec<DependencyRequest>>>,
+    pkg_processor: CachedPackageProcessor,
 }
 
 impl DepTreeCollector {
-    pub fn new(
-        temp_dir: String,
-        cache: Cache,
-        data_fetcher: PackageDataFetcher,
-        content_fetcher: PackageContentFetcher,
-    ) -> Self {
+    pub fn new(data_fetcher: PackageDataFetcher, pkg_processor: CachedPackageProcessor) -> Self {
         DepTreeCollector {
-            temp_dir,
-            cache,
             data_fetcher,
-            content_fetcher,
+            pkg_processor,
             dependencies: Arc::new(Mutex::new(Vec::new())),
             futures: Arc::new(Mutex::new(VecDeque::new())),
             in_progress: Arc::new(Mutex::new(Vec::new())),
@@ -199,19 +178,10 @@ impl DepTreeCollector {
 
     fn add_future(&self, dep_req: DependencyRequest) {
         let dep_collector = self.clone();
+        let pkg_processor = self.pkg_processor.clone();
         let future = tokio::spawn(async move {
-            let mut cache = dep_collector.cache.clone();
-            let temp_dir = dep_collector.temp_dir.clone();
             let data_fetcher = dep_collector.data_fetcher.clone();
-            let content_fetcher = dep_collector.content_fetcher.clone();
-            let result = resolve_dep(
-                dep_req,
-                temp_dir,
-                &mut cache,
-                &data_fetcher,
-                &content_fetcher,
-            )
-            .await;
+            let result = resolve_dep(dep_req, &data_fetcher, &pkg_processor).await;
             if let Ok(Some((dependency, transient_deps))) = result {
                 dep_collector.add_dependency(dependency);
                 dep_collector.add_dep_requests(transient_deps);
@@ -279,12 +249,10 @@ impl DepTreeCollector {
 
     pub async fn try_collect(
         dep_requests: Vec<DependencyRequest>,
-        temp_dir: String,
-        cache: Cache,
         data_fetcher: PackageDataFetcher,
-        content_fetcher: PackageContentFetcher,
+        pkg_processor: CachedPackageProcessor,
     ) -> Result<DependencyList, ServerError> {
-        let collector = DepTreeCollector::new(temp_dir, cache, data_fetcher, content_fetcher);
+        let collector = DepTreeCollector::new(data_fetcher, pkg_processor);
         collector.add_dep_requests(dep_requests);
 
         while let Some(handle) = collector.get_next_join() {
@@ -299,17 +267,8 @@ impl DepTreeCollector {
 
 pub async fn collect_dep_tree(
     dep_requests: Vec<DependencyRequest>,
-    temp_dir: &str,
-    cache: &Cache,
     data_fetcher: &PackageDataFetcher,
-    content_fetcher: &PackageContentFetcher,
+    pkg_processor: &CachedPackageProcessor,
 ) -> Result<DependencyList, ServerError> {
-    DepTreeCollector::try_collect(
-        dep_requests,
-        String::from(temp_dir),
-        cache.clone(),
-        data_fetcher.clone(),
-        content_fetcher.clone(),
-    )
-    .await
+    DepTreeCollector::try_collect(dep_requests, data_fetcher.clone(), pkg_processor.clone()).await
 }
