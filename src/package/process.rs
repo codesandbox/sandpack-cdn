@@ -315,7 +315,7 @@ pub async fn process_npm_package(
         .join("v1_process")
         .join(nanoid!())
         .join(format!("{}-{}", package_name, package_version));
-    tar::store_tarball(tarball_content.as_ref().clone(), pkg_output_path.as_path()).await?;
+    tar::store_tarball(tarball_content.as_ref().clone(), pkg_output_path.as_path())?;
 
     pkg_output_path = pkg_output_path.join("package");
 

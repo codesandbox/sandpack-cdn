@@ -21,12 +21,23 @@ pub fn routes(
     let pkg_content_fetcher =
         PackageContentFetcher::new(Duration::from_secs(604800), Duration::from_secs(86400), 50);
 
-    package_data_route(app_data.clone(), pkg_data_fetcher.clone(), pkg_content_fetcher.clone())
-        .or(dep_tree_route(app_data.clone(), pkg_data_fetcher.clone(), pkg_content_fetcher.clone()))
-        .or(mod_route(app_data.clone(), pkg_data_fetcher.clone(), pkg_content_fetcher.clone()))
-        .or(deps_route(pkg_data_fetcher.clone()))
-        .or(health_route())
-        .or(not_found_route())
+    package_data_route(
+        app_data.clone(),
+        pkg_data_fetcher.clone(),
+        pkg_content_fetcher.clone(),
+    )
+    .or(dep_tree_route(
+        app_data.clone(),
+        pkg_data_fetcher.clone(),
+        pkg_content_fetcher.clone(),
+    ))
+    .or(mod_route(
+        pkg_data_fetcher.clone(),
+        pkg_content_fetcher.clone(),
+    ))
+    .or(deps_route(pkg_data_fetcher.clone()))
+    .or(health_route())
+    .or(not_found_route())
 }
 
 pub fn with_data<T>(
