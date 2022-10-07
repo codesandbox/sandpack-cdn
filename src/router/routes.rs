@@ -1,8 +1,8 @@
-use std::time::Duration;
 use warp::{Filter, Rejection, Reply};
 
 use crate::npm::package_content::PackageContentFetcher;
 use crate::npm::package_data::PackageDataFetcher;
+use crate::package::cached::CachedPackageProcessor;
 use crate::AppConfig;
 
 use super::error_reply::ErrorReply;
@@ -16,28 +16,26 @@ pub fn routes(
     app_data: AppConfig,
 ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
     // 15 minutes refresh interval and 1 day ttl
-    let pkg_data_fetcher =
-        PackageDataFetcher::new(Duration::from_secs(900), Duration::from_secs(86400), 250);
-    let pkg_content_fetcher =
-        PackageContentFetcher::new(Duration::from_secs(604800), Duration::from_secs(86400), 50);
+    let pkg_data_fetcher = PackageDataFetcher::new();
+    let pkg_content_fetcher = PackageContentFetcher::new();
+    let pkg_processor = CachedPackageProcessor::new(
+        pkg_data_fetcher.clone(),
+        pkg_content_fetcher.clone(),
+        &app_data.temp_dir,
+    );
 
-    package_data_route(
-        app_data.clone(),
-        pkg_data_fetcher.clone(),
-        pkg_content_fetcher.clone(),
-    )
-    .or(dep_tree_route(
-        app_data.clone(),
-        pkg_data_fetcher.clone(),
-        pkg_content_fetcher.clone(),
-    ))
-    .or(mod_route(
-        pkg_data_fetcher.clone(),
-        pkg_content_fetcher.clone(),
-    ))
-    .or(deps_route(pkg_data_fetcher.clone()))
-    .or(health_route())
-    .or(not_found_route())
+    package_data_route(pkg_processor.clone())
+        .or(dep_tree_route(
+            pkg_data_fetcher.clone(),
+            pkg_processor.clone(),
+        ))
+        .or(mod_route(
+            pkg_data_fetcher.clone(),
+            pkg_content_fetcher.clone(),
+        ))
+        .or(deps_route(pkg_data_fetcher.clone()))
+        .or(health_route())
+        .or(not_found_route())
 }
 
 pub fn with_data<T>(
