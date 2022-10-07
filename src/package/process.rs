@@ -1,3 +1,4 @@
+use nanoid::nanoid;
 use node_semver::Version;
 use serde::{self, Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -8,12 +9,14 @@ use transform::transformer::transform_file;
 
 use crate::app_error::ServerError;
 use crate::cache::Cache;
+use crate::npm::package_content::{download_package_content, PackageContentFetcher};
 use crate::npm::package_data::PackageDataFetcher;
 use crate::transform;
 use crate::utils::msgpack::{deserialize_msgpack, serialize_msgpack};
+use crate::utils::tar;
 
 use super::package_json::PackageJSON;
-use super::{npm_downloader, package_json, resolver};
+use super::{package_json, resolver};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
@@ -288,25 +291,33 @@ fn transform_package(
     Ok((module_spec, dependencies))
 }
 
-#[tracing::instrument(name = "process_npm_package", skip(data_dir, data_fetcher))]
+#[tracing::instrument(name = "process_npm_package", skip(temp_dir, data_fetcher))]
 pub async fn process_npm_package(
     package_name: &str,
     package_version: &str,
-    data_dir: &str,
+    temp_dir: &str,
     data_fetcher: &PackageDataFetcher,
+    content_fetcher: &PackageContentFetcher,
 ) -> Result<(MinimalCachedModule, ModuleDependenciesMap), ServerError> {
     info!(
         "Started processing package: {}@{}",
         package_name, package_version
     );
 
-    let pkg_output_path: PathBuf = npm_downloader::download_package_content(
+    let tarball_content = download_package_content(
         package_name,
         package_version,
-        data_dir,
-        data_fetcher,
+        &data_fetcher,
+        &content_fetcher,
     )
     .await?;
+    let mut pkg_output_path = Path::new(temp_dir)
+        .join("v1_process")
+        .join(nanoid!())
+        .join(format!("{}-{}", package_name, package_version));
+    tar::store_tarball(tarball_content.as_ref().clone(), pkg_output_path.as_path()).await?;
+
+    pkg_output_path = pkg_output_path.join("package");
 
     // Transform module in new thread
     let package_name_string = String::from(package_name);
@@ -322,7 +333,7 @@ pub async fn process_npm_package(
     let transform_result = task.await?;
 
     // Cleanup package directory
-    tokio::fs::remove_dir_all(pkg_output_path).await?;
+    tokio::fs::remove_dir_all(pkg_output_path.as_path()).await?;
 
     transform_result
 }
@@ -356,16 +367,23 @@ fn get_dependencies_cache_key(package_name: &str, package_version: &str) -> Stri
     format!("v1::dependencies::{}@{}", package_name, package_version)
 }
 
-#[tracing::instrument(name = "transform_module_and_cache", skip(data_dir, cache))]
+#[tracing::instrument(name = "transform_module_and_cache", skip(temp_dir, cache))]
 pub async fn transform_module_and_cache(
     package_name: &str,
     package_version: &str,
-    data_dir: &str,
+    temp_dir: &str,
     cache: &mut Cache,
     data_fetcher: &PackageDataFetcher,
+    content_fetcher: &PackageContentFetcher,
 ) -> Result<(MinimalCachedModule, ModuleDependenciesMap), ServerError> {
-    let (transformed_module, module_dependencies) =
-        process_npm_package(package_name, package_version, data_dir, data_fetcher).await?;
+    let (transformed_module, module_dependencies) = process_npm_package(
+        package_name,
+        package_version,
+        temp_dir,
+        data_fetcher,
+        content_fetcher,
+    )
+    .await?;
 
     let transform_cache_key = get_transform_cache_key(package_name, package_version);
     let transformed_module_serialized = serialize_msgpack(&transformed_module)?;
@@ -387,9 +405,10 @@ pub async fn transform_module_and_cache(
 
 pub async fn transform_module_cached(
     package_specifier: &str,
-    data_dir: &str,
+    temp_dir: &str,
     cache: &mut Cache,
     data_fetcher: &PackageDataFetcher,
+    content_fetcher: &PackageContentFetcher,
 ) -> Result<MinimalCachedModule, ServerError> {
     let (package_name, package_version) = parse_package_specifier(package_specifier)?;
 
@@ -405,9 +424,10 @@ pub async fn transform_module_cached(
     let (transformation_result, _) = transform_module_and_cache(
         package_name.as_str(),
         package_version.as_str(),
-        data_dir,
+        temp_dir,
         cache,
         data_fetcher,
+        content_fetcher,
     )
     .await?;
     Ok(transformation_result)
@@ -416,9 +436,10 @@ pub async fn transform_module_cached(
 pub async fn module_dependencies_cached(
     package_name: &str,
     package_version: &str,
-    data_dir: &str,
+    temp_dir: &str,
     cache: &mut Cache,
     data_fetcher: &PackageDataFetcher,
+    content_fetcher: &PackageContentFetcher,
 ) -> Result<ModuleDependenciesMap, ServerError> {
     let transform_cache_key = get_dependencies_cache_key(package_name, package_version);
     if let Some(cached_value) = cache.get_value(transform_cache_key.as_str()).await {
@@ -428,8 +449,14 @@ pub async fn module_dependencies_cached(
         }
     }
 
-    let (_, deps) =
-        transform_module_and_cache(package_name, package_version, data_dir, cache, data_fetcher)
-            .await?;
+    let (_, deps) = transform_module_and_cache(
+        package_name,
+        package_version,
+        temp_dir,
+        cache,
+        data_fetcher,
+        content_fetcher,
+    )
+    .await?;
     Ok(deps)
 }

@@ -40,3 +40,4 @@ moka = { version = "0.8.2", features = ["future"] }
 rmp = "0.8.11"
 rmp-serde = "1.1.1"
 tracing-tree = "0.2.1"
+nanoid = "0.4.0"
