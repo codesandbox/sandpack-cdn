@@ -61,6 +61,18 @@ impl DepTreeBuilder {
         false
     }
 
+    fn prefetch_module(&self, name: String) {
+        let fetcher = self.data_fetcher.clone();
+        tokio::spawn(async move {
+            match fetcher.get(&name).await {
+                Err(err) => {
+                    println!("Failed to fetch pkg {:?}", err);
+                }
+                _ => {}
+            };
+        });
+    }
+
     async fn process(
         &mut self,
         deps: HashSet<DepRequest>,
@@ -71,15 +83,7 @@ impl DepTreeBuilder {
         // Without overcomplicating the mostly synchronous logic in this function
         let deps_to_fetch: Vec<String> = deps.iter().map(|v| v.name.clone()).collect();
         for pkg_name in deps_to_fetch {
-            let fetcher = self.data_fetcher.clone();
-            tokio::spawn(async move {
-                match fetcher.get(&pkg_name).await {
-                    Err(err) => {
-                        println!("Failed to fetch pkg {:?}", err);
-                    }
-                    _ => {}
-                };
-            });
+            self.prefetch_module(pkg_name);
         }
 
         for request in deps {
@@ -106,6 +110,7 @@ impl DepTreeBuilder {
                 let data = data.versions.get(&resolved_version.to_string());
                 if let Some(data) = data {
                     for (name, range) in data.dependencies.iter() {
+                        self.prefetch_module(name.clone());
                         transient_deps.insert(DepRequest::new(name.clone(), Range::parse(range)?));
                     }
                 }
