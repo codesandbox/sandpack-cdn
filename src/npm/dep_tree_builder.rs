@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 
 use node_semver::{Range, Version};
 
@@ -19,7 +19,7 @@ impl DepRequest {
 }
 
 pub struct DepTreeBuilder {
-    pub resolutions: HashMap<String, Version>,
+    pub resolutions: BTreeMap<String, Version>,
     packages: HashMap<String, HashSet<Version>>,
     data_fetcher: PackageDataFetcher,
 }
@@ -27,7 +27,7 @@ pub struct DepTreeBuilder {
 impl DepTreeBuilder {
     pub fn new(data_fetcher: PackageDataFetcher) -> DepTreeBuilder {
         DepTreeBuilder {
-            resolutions: HashMap::new(),
+            resolutions: BTreeMap::new(),
             packages: HashMap::new(),
             data_fetcher,
         }
@@ -67,6 +67,21 @@ impl DepTreeBuilder {
     ) -> Result<HashSet<DepRequest>, ServerError> {
         let mut transient_deps: HashSet<DepRequest> = HashSet::new();
 
+        // Prefetch in background, this ensures the requests below are a bit faster, relying on the data_fetcher cache
+        // Without overcomplicating the mostly synchronous logic in this function
+        let deps_to_fetch: Vec<String> = deps.iter().map(|v| v.name.clone()).collect();
+        for pkg_name in deps_to_fetch {
+            let fetcher = self.data_fetcher.clone();
+            tokio::spawn(async move {
+                match fetcher.get(&pkg_name).await {
+                    Err(err) => {
+                        println!("Failed to fetch pkg {:?}", err);
+                    }
+                    _ => {}
+                };
+            });
+        }
+
         for request in deps {
             if self.has_dependency(&request.name, &request.range) {
                 println!(
@@ -76,7 +91,6 @@ impl DepTreeBuilder {
                 continue;
             }
 
-            // TODO: Add transient deps for fetching...
             let data = self.data_fetcher.get(&request.name).await?;
             let mut highest_version: Option<Version> = None;
             for (version, _data) in data.versions.iter() {
