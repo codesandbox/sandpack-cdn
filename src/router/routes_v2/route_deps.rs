@@ -33,7 +33,7 @@ pub async fn get_deps_reply(
 
     let mut tree_builder = DepTreeBuilder::new(pkg_fetcher);
     tree_builder.push(dep_requests).await?;
-    let reply = CustomReply::json(&tree_builder.resolutions)?;
+    let reply = CustomReply::msgpack(&tree_builder.resolutions)?;
     Ok(reply)
 }
 
