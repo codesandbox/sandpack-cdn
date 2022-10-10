@@ -5,7 +5,7 @@ use crate::app_error::ServerError;
 
 lazy_static! {
     static ref VERSION_RE: Regex = Regex::new("^(\\d+)\\((.*)\\)$").unwrap();
-    static ref LATEST_VERSION: u64 = 4;
+    static ref LATEST_VERSION: u64 = 5;
 }
 
 pub fn decode_base64(part: &str) -> Result<String, ServerError> {
@@ -17,7 +17,7 @@ pub fn decode_base64(part: &str) -> Result<String, ServerError> {
     Ok(val)
 }
 
-pub fn decode_req_part(part: &str) -> Result<String, ServerError> {
+pub fn decode_req_part(part: &str) -> Result<(u64, String), ServerError> {
     let decoded = decode_base64(part)?;
 
     if let Some(parts) = VERSION_RE.captures(&decoded) {
@@ -26,13 +26,13 @@ pub fn decode_req_part(part: &str) -> Result<String, ServerError> {
             if version > *LATEST_VERSION {
                 return Err(ServerError::InvalidCDNVersion);
             }
-        }
 
-        if let Some(content_match) = parts.get(2) {
-            return Ok(String::from(content_match.as_str()));
+            if let Some(content_match) = parts.get(2) {
+                return Ok((version, String::from(content_match.as_str())));
+            }
         }
     }
 
     // Fallback to no version
-    Ok(String::from(decoded))
+    Ok((1, String::from(decoded)))
 }

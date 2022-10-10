@@ -28,7 +28,7 @@ pub async fn get_deps_reply(
     path: String,
     pkg_fetcher: PackageDataFetcher,
 ) -> Result<CustomReply, ServerError> {
-    let decoded_query = decode_req_part(path.as_str())?;
+    let (_version, decoded_query) = decode_req_part(path.as_str())?;
     let dep_requests = parse_query(decoded_query)?;
 
     let mut tree_builder = DepTreeBuilder::new(pkg_fetcher);

@@ -13,12 +13,11 @@ use super::super::error_reply::ErrorReply;
 use super::super::utils::decode_req_part;
 
 async fn process_dep_tree(
-    raw_deps_str: &str,
+    decoded_deps_str: &str,
     pkg_data_fetcher: &PackageDataFetcher,
     pkg_processor: &CachedPackageProcessor,
 ) -> Result<DependencyList, ServerError> {
-    let decoded_deps_str = decode_req_part(raw_deps_str)?;
-    let dep_map: HashMap<String, String> = serde_json::from_str(decoded_deps_str.as_str())?;
+    let dep_map: HashMap<String, String> = serde_json::from_str(decoded_deps_str)?;
     let dep_requests = process_dep_map(dep_map, 0)?;
     return collect_dep_tree(dep_requests, pkg_data_fetcher, pkg_processor).await;
 }
@@ -28,14 +27,14 @@ pub async fn get_dep_tree_reply(
     pkg_data_fetcher: PackageDataFetcher,
     pkg_processor: CachedPackageProcessor,
 ) -> Result<CustomReply, ServerError> {
-    let tree = process_dep_tree(
-        path.as_str(),
-        &pkg_data_fetcher,
-        &pkg_processor,
-    )
-    .await?;
+    let (version, decoded_deps_str) = decode_req_part(&path)?;
 
-    let mut reply = CustomReply::json(&tree)?;
+    let tree = process_dep_tree(&decoded_deps_str, &pkg_data_fetcher, &pkg_processor).await?;
+
+    let mut reply = match version {
+        0..=4 => CustomReply::json(&tree),
+        _ => CustomReply::msgpack(&tree),
+    }?;
     reply.add_header(
         "cache-control",
         format!("public, max-age={}", 15 * 60).as_str(),
