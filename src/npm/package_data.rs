@@ -1,4 +1,9 @@
-use std::{collections::HashMap, sync::Arc, time::Duration, fmt};
+use std::{
+    collections::{BTreeMap, HashMap},
+    fmt,
+    sync::Arc,
+    time::Duration,
+};
 
 use crate::{app_error::ServerError, cached::Cached, utils::request};
 use moka::future::Cache;
@@ -17,6 +22,8 @@ pub struct RawPackageDataVersion {
     dist: RawPackageDataVersionDist,
     #[serde(default)]
     dependencies: HashMap<String, String>,
+    #[serde(default, rename = "optionalDependencies")]
+    optional_dependencies: HashMap<String, String>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -38,7 +45,7 @@ pub struct PackageData {
     pub name: String,
     pub etag: Option<String>,
     pub dist_tags: HashMap<String, String>,
-    pub versions: HashMap<String, PackageVersionData>,
+    pub versions: BTreeMap<String, PackageVersionData>,
 }
 
 impl PackageData {
@@ -47,14 +54,18 @@ impl PackageData {
             name: raw.name,
             etag,
             dist_tags: raw.dist_tags,
-            versions: HashMap::new(),
+            versions: BTreeMap::new(),
         };
         for (key, value) in raw.versions {
+            let mut dependencies = value.dependencies;
+            for (name, _version) in value.optional_dependencies {
+                dependencies.remove(&name);
+            }
             data.versions.insert(
                 key,
                 PackageVersionData {
                     tarball: value.dist.tarball,
-                    dependencies: value.dependencies,
+                    dependencies,
                 },
             );
         }

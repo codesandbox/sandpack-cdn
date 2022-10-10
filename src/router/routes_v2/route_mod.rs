@@ -64,7 +64,7 @@ pub async fn get_mod_reply(
     pkg_data_fetcher: PackageDataFetcher,
     pkg_content_fetcher: PackageContentFetcher,
 ) -> Result<CustomReply, ServerError> {
-    let decoded_specifier = decode_req_part(path.as_str())?;
+    let (_version, decoded_specifier) = decode_req_part(path.as_str())?;
     let (pkg_name, pkg_version) = parse_package_specifier(&decoded_specifier)?;
 
     let content = download_package_content(
