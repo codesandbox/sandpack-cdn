@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::Arc, time::Duration, fmt};
+use std::{collections::{HashMap, BTreeMap}, sync::Arc, time::Duration, fmt};
 
 use crate::{app_error::ServerError, cached::Cached, utils::request};
 use moka::future::Cache;
@@ -38,7 +38,7 @@ pub struct PackageData {
     pub name: String,
     pub etag: Option<String>,
     pub dist_tags: HashMap<String, String>,
-    pub versions: HashMap<String, PackageVersionData>,
+    pub versions: BTreeMap<String, PackageVersionData>,
 }
 
 impl PackageData {
@@ -47,7 +47,7 @@ impl PackageData {
             name: raw.name,
             etag,
             dist_tags: raw.dist_tags,
-            versions: HashMap::new(),
+            versions: BTreeMap::new(),
         };
         for (key, value) in raw.versions {
             data.versions.insert(

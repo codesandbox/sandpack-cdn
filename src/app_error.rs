@@ -19,8 +19,8 @@ pub enum ServerError {
     UrlParseError(#[from] url::ParseError),
     #[error("Could not parse json string")]
     JSONParseError(#[from] serde_json::Error),
-    #[error("Package version not found")]
-    PackageVersionNotFound,
+    #[error("Package version not found {0}@{1}")]
+    PackageVersionNotFound(String, String),
     #[error("Infallible error")]
     Infallible(#[from] std::convert::Infallible),
     #[error("Could not parse module")]
@@ -63,6 +63,8 @@ pub enum ServerError {
     CachedError(#[from] CachedError),
     #[error("Resource hasn't changed")]
     NotChanged,
+    #[error("Invalid query")]
+    InvalidQuery,
 }
 
 impl From<ServerError> for std::io::Error {

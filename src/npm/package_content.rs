@@ -119,6 +119,6 @@ pub async fn download_package_content(
         let content = content_fetcher.get(version_data.tarball.as_str()).await?;
         Ok(content)
     } else {
-        Err(ServerError::PackageVersionNotFound)
+        Err(ServerError::PackageVersionNotFound(String::from(package_name), String::from(version)))
     }
 }
