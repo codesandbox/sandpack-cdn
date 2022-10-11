@@ -1,5 +1,5 @@
 use thiserror::Error;
-use warp::hyper::http;
+use warp::{hyper::http, reject};
 
 use crate::cached::CachedError;
 
@@ -72,3 +72,5 @@ impl From<ServerError> for std::io::Error {
         std::io::Error::new(std::io::ErrorKind::Other, format!("{:?}", err))
     }
 }
+
+impl reject::Reject for ServerError {}

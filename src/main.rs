@@ -30,8 +30,7 @@ async fn main() -> Result<(), std::io::Error> {
     .unwrap();
 
     setup_tracing::setup_tracing();
-
-    // 512Mb
+    
     let temp_dir_path = env::current_dir()?.join("temp_files");
     let temp_dir = temp_dir_path.as_os_str().to_str().unwrap();
     let app_data = AppConfig {

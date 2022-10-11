@@ -10,12 +10,12 @@ use crate::app_error::ServerError;
 use crate::npm::package_content::{download_package_content, PackageContentFetcher};
 use crate::npm::package_data::PackageDataFetcher;
 use crate::package::process::parse_package_specifier;
+use crate::router::utils::decode_base64;
 use crate::utils::tar;
 
 use super::super::custom_reply::CustomReply;
 use super::super::error_reply::ErrorReply;
 use super::super::routes::with_data;
-use super::super::utils::decode_req_part;
 
 type TarContent = Arc<Cursor<Bytes>>;
 
@@ -64,7 +64,7 @@ pub async fn get_mod_reply(
     pkg_data_fetcher: PackageDataFetcher,
     pkg_content_fetcher: PackageContentFetcher,
 ) -> Result<CustomReply, ServerError> {
-    let (_version, decoded_specifier) = decode_req_part(path.as_str())?;
+    let decoded_specifier = decode_base64(&path)?;
     let (pkg_name, pkg_version) = parse_package_specifier(&decoded_specifier)?;
 
     let content = download_package_content(

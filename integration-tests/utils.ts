@@ -9,6 +9,10 @@ export function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+export function encodeBase64(payload) {
+  return Buffer.from(payload).toString("base64");
+}
+
 export function encodePayload(payload) {
   return Buffer.from(`${CDN_VERSION}(${payload})`).toString("base64");
 }
@@ -75,7 +79,7 @@ export async function fetchV2Module(
   version: string
 ): Promise<V2Module> {
   const specifier = `${name}@${version}`;
-  const encoded_specifier = encodePayload(specifier);
+  const encoded_specifier = encodeBase64(specifier);
   const result = await retryFetch(
     urlJoin(CDN_ROOT, `/v2/mod/${encoded_specifier}`),
     { maxRetries: 5 }
@@ -91,7 +95,7 @@ export async function fetchV2Deps(
   deps: Array<{name: string, range: string}>
 ): Promise<V2Deps> {
   const specifier = deps.map(v => `${v.name}@${v.range}`).join(';');
-  const encoded_specifier = encodePayload(specifier);
+  const encoded_specifier = encodeBase64(specifier);
   const url = urlJoin(CDN_ROOT, `/v2/deps/${encoded_specifier}`);
   const result = await retryFetch(
     url,

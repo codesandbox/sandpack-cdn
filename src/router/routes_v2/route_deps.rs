@@ -6,11 +6,11 @@ use warp::{Filter, Rejection, Reply};
 use crate::app_error::ServerError;
 use crate::npm::dep_tree_builder::{DepRequest, DepTreeBuilder};
 use crate::package::process::parse_package_specifier_no_validation;
+use crate::router::utils::decode_base64;
 
 use super::super::custom_reply::CustomReply;
 use super::super::error_reply::ErrorReply;
 use super::super::routes::with_data;
-use super::super::utils::decode_req_part;
 use crate::npm::package_data::PackageDataFetcher;
 
 fn parse_query(query: String) -> Result<HashSet<DepRequest>, ServerError> {
@@ -24,34 +24,55 @@ fn parse_query(query: String) -> Result<HashSet<DepRequest>, ServerError> {
     Ok(dep_requests)
 }
 
-pub async fn get_deps_reply(
+async fn get_reply(
     path: String,
     pkg_fetcher: PackageDataFetcher,
+    is_json: bool,
 ) -> Result<CustomReply, ServerError> {
-    let (_version, decoded_query) = decode_req_part(path.as_str())?;
+    let decoded_query = decode_base64(&path)?;
     let dep_requests = parse_query(decoded_query)?;
-
     let mut tree_builder = DepTreeBuilder::new(pkg_fetcher);
     tree_builder.push(dep_requests).await?;
-    let reply = CustomReply::msgpack(&tree_builder.resolutions)?;
+    let reply = match is_json {
+        true => CustomReply::json(&tree_builder.resolutions)?,
+        false => CustomReply::msgpack(&tree_builder.resolutions)?,
+    };
     Ok(reply)
 }
 
-pub async fn deps_route_handler(
+async fn deps_route_handler(
     path: String,
     pkg_fetcher: PackageDataFetcher,
+    is_json: bool,
 ) -> Result<impl Reply, Rejection> {
-    match get_deps_reply(path, pkg_fetcher).await {
+    match get_reply(path, pkg_fetcher, is_json).await {
         Ok(reply) => Ok(reply),
         Err(err) => Ok(ErrorReply::from(err).as_reply(3600).unwrap()),
     }
 }
 
-pub fn deps_route(
+fn json_route(
+    pkg_fetcher: PackageDataFetcher,
+) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+    warp::path!("v2" / "json" / "deps" / String)
+        .and(warp::get())
+        .and(with_data(pkg_fetcher))
+        .and(with_data(true))
+        .and_then(deps_route_handler)
+}
+
+fn msgpack_route(
     pkg_fetcher: PackageDataFetcher,
 ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
     warp::path!("v2" / "deps" / String)
         .and(warp::get())
         .and(with_data(pkg_fetcher))
+        .and(with_data(false))
         .and_then(deps_route_handler)
+}
+
+pub fn deps_route(
+    pkg_fetcher: PackageDataFetcher,
+) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+    json_route(pkg_fetcher.clone()).or(msgpack_route(pkg_fetcher))
 }
