@@ -3,6 +3,7 @@ use std::io::{Cursor, Read};
 use std::sync::Arc;
 
 use serde_bytes::ByteBuf;
+use ::tar::EntryType;
 use warp::hyper::body::Bytes;
 use warp::{Filter, Rejection, Reply};
 
@@ -25,6 +26,10 @@ fn accumulate_files(tarball_content: TarContent) -> Result<HashMap<String, ByteB
     for file in archive.entries()? {
         // Make sure there wasn't an I/O error
         let mut file = file?;
+
+        if !EntryType::is_file(&file.header().entry_type()) {
+            continue;
+        }
 
         // Read file content
         let mut buf: Vec<u8> = Vec::new();
