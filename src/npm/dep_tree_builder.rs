@@ -1,4 +1,7 @@
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::{
+    collections::{BTreeMap, HashMap, HashSet},
+    fmt,
+};
 
 use node_semver::{Range, Version};
 
@@ -6,14 +9,46 @@ use crate::app_error::ServerError;
 
 use super::package_data::PackageDataFetcher;
 
+#[derive(Eq, Hash, PartialEq, Debug)]
+pub enum DepRange {
+    Range(Range),
+    Tag(String),
+}
+
+impl DepRange {
+    pub fn parse(value: String) -> DepRange {
+        if value == String::from("*") || value == String::from("") {
+            DepRange::Range(Range::any())
+        } else {
+            match Range::parse(&value) {
+                Ok(value) => DepRange::Range(value),
+                Err(_err) => DepRange::Tag(value),
+            }
+        }
+    }
+}
+
+impl fmt::Display for DepRange {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            DepRange::Range(range) => {
+                write!(f, "{}", range)
+            }
+            DepRange::Tag(tag) => {
+                write!(f, "{}", tag)
+            }
+        }
+    }
+}
+
 #[derive(Eq, Hash, PartialEq)]
 pub struct DepRequest {
     name: String,
-    range: Range,
+    range: DepRange,
 }
 
 impl DepRequest {
-    pub fn new(name: String, range: Range) -> DepRequest {
+    pub fn new(name: String, range: DepRange) -> DepRequest {
         DepRequest { name, range }
     }
 }
@@ -87,7 +122,22 @@ impl DepTreeBuilder {
         }
 
         for request in deps {
-            if self.has_dependency(&request.name, &request.range) {
+            let data = self.data_fetcher.get(&request.name).await?;
+            let mut range = Range::any();
+            if let DepRange::Tag(tag) = &request.range {
+                match data.dist_tags.get(tag) {
+                    Some(found_version) => {
+                        range = Range::parse(found_version)?;
+                    }
+                    None => {
+                        return Err(ServerError::InvalidPackageSpecifier);
+                    }
+                }
+            } else if let DepRange::Range(original_range) = &request.range {
+                range = original_range.clone();
+            }
+
+            if self.has_dependency(&request.name, &range) {
                 println!(
                     "{}@{} is already resolved, skipping",
                     &request.name, &request.range
@@ -95,12 +145,12 @@ impl DepTreeBuilder {
                 continue;
             }
 
-            let data = self.data_fetcher.get(&request.name).await?;
             let mut highest_version: Option<Version> = None;
-            for (version, _data) in data.versions.iter() {
+            for (version, _data) in data.versions.iter().rev() {
                 let parsed_version = Version::parse(version)?;
-                if request.range.satisfies(&parsed_version) {
+                if range.satisfies(&parsed_version) {
                     highest_version = Some(parsed_version);
+                    break;
                 }
             }
 
@@ -111,7 +161,10 @@ impl DepTreeBuilder {
                 if let Some(data) = data {
                     for (name, range) in data.dependencies.iter() {
                         self.prefetch_module(name.clone());
-                        transient_deps.insert(DepRequest::new(name.clone(), Range::parse(range)?));
+                        transient_deps.insert(DepRequest::new(
+                            name.clone(),
+                            DepRange::parse(range.clone()),
+                        ));
                     }
                 }
             } else {

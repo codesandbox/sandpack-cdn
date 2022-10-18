@@ -1,10 +1,9 @@
 use std::collections::HashSet;
 
-use node_semver::Range;
 use warp::{Filter, Rejection, Reply};
 
 use crate::app_error::ServerError;
-use crate::npm::dep_tree_builder::{DepRequest, DepTreeBuilder};
+use crate::npm::dep_tree_builder::{DepRange, DepRequest, DepTreeBuilder};
 use crate::package::process::parse_package_specifier_no_validation;
 use crate::router::utils::decode_base64;
 
@@ -18,7 +17,7 @@ fn parse_query(query: String) -> Result<HashSet<DepRequest>, ServerError> {
     let mut dep_requests: HashSet<DepRequest> = HashSet::new();
     for part in parts {
         let (name, version) = parse_package_specifier_no_validation(part)?;
-        let parsed_range = Range::parse(version)?;
+        let parsed_range = DepRange::parse(version);
         dep_requests.insert(DepRequest::new(name, parsed_range));
     }
     Ok(dep_requests)
