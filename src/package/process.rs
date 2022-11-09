@@ -314,6 +314,8 @@ pub async fn process_npm_package(
         .join(format!("{}-{}", package_name, package_version));
     tar::store_tarball(tarball_content.as_ref().clone(), pkg_output_path.as_path())?;
 
+    // TODO: Go to first folder, folder is not always named `package`
+    // for @types, it's the name of the package, like `acorn`, `react`, ...
     pkg_output_path = pkg_output_path.join("package");
 
     // Transform module in new thread
@@ -335,11 +337,13 @@ pub async fn process_npm_package(
     transform_result
 }
 
-pub fn parse_package_specifier_no_validation(package_specifier: &str) -> Result<(String, String), ServerError> {
+pub fn parse_package_specifier_no_validation(
+    package_specifier: &str,
+) -> Result<(String, String), ServerError> {
     if package_specifier.contains(char::is_whitespace) {
         return Err(ServerError::InvalidPackageSpecifier);
     }
-    
+
     let mut parts: Vec<&str> = package_specifier.split('@').collect();
     let package_version_opt = parts.pop();
     if let Some(package_version) = package_version_opt {
