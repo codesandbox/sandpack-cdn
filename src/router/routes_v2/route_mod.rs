@@ -2,8 +2,8 @@ use std::collections::HashMap;
 use std::io::{Cursor, Read};
 use std::sync::Arc;
 
-use serde_bytes::ByteBuf;
 use ::tar::EntryType;
+use serde_bytes::ByteBuf;
 use warp::hyper::body::Bytes;
 use warp::{Filter, Rejection, Reply};
 
@@ -38,7 +38,8 @@ fn accumulate_files(tarball_content: TarContent) -> Result<HashMap<String, ByteB
         // Read file path
         let header_path = file.header().path()?;
         let filepath_str = header_path.to_str().unwrap_or("package/unknown");
-        let filepath = String::from(&filepath_str[7..]);
+        let first_slash_position = filepath_str.rfind('/').unwrap_or(0);
+        let filepath = String::from(&filepath_str[first_slash_position..]);
 
         // Insert into collection
         collected.insert(filepath, ByteBuf::from(buf));

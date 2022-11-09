@@ -32,10 +32,14 @@ async fn get_reply(
     let dep_requests = parse_query(decoded_query)?;
     let mut tree_builder = DepTreeBuilder::new(pkg_fetcher);
     tree_builder.push(dep_requests).await?;
-    let reply = match is_json {
+    let mut reply = match is_json {
         true => CustomReply::json(&tree_builder.resolutions)?,
         false => CustomReply::msgpack(&tree_builder.resolutions)?,
     };
+    reply.add_header(
+        "cache-control",
+        format!("public, max-age={}", 3600).as_str(),
+    );
     Ok(reply)
 }
 
