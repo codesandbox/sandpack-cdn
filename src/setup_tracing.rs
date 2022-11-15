@@ -26,15 +26,17 @@ fn init_opentelemetry() -> Option<sdktrace::Tracer> {
             (header_name, value)
         })
     {
+        println!("Found tracing metadata env variable: {}", key);
         metadata.insert(MetadataKey::from_str(&key).unwrap(), value.parse().unwrap());
     }
 
-    if !metadata.contains_key(String::from("otlp-endpoint")) {
+    if let Err(_err) = env::var("OTEL_EXPORTER_OTLP_ENDPOINT") {
         println!("env variable OTEL_EXPORTER_OTLP_ENDPOINT has not been set");
         return None;
     }
 
     if let Err(_err) = env::var("OTEL_SERVICE_NAME") {
+        println!("env variable OTEL_SERVICE_NAME has not been set, falling back to sandpack-cdn as the service name");
         env::set_var("OTEL_SERVICE_NAME", "sandpack-cdn");
     }
 
