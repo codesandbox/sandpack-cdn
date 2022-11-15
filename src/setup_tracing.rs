@@ -33,7 +33,10 @@ fn init_opentelemetry() -> Option<sdktrace::Tracer> {
         return None;
     }
 
-    env::set_var("OTEL_SERVICE_NAME", "sandpack-cdn");
+    if let Err(_err) = env::var("OTEL_SERVICE_NAME") {
+        env::set_var("OTEL_SERVICE_NAME", "sandpack-cdn");
+    }
+
     let exporter = opentelemetry_otlp::new_exporter()
         .tonic()
         .with_env()
