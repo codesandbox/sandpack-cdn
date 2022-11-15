@@ -20,9 +20,14 @@ pub async fn get_package_data_reply(
         0..=4 => CustomReply::json(&package_content.0),
         _ => CustomReply::msgpack(&package_content.0),
     }?;
+    let cache_ttl = 365 * 24 * 3600;
     reply.add_header(
-        "cache-control",
-        format!("public, max-age={}", 365 * 24 * 3600).as_str(),
+        "Cache-Control",
+        format!("public, max-age={}", cache_ttl).as_str(),
+    );
+    reply.add_header(
+        "CDN-Cache-Control",
+        format!("max-age={}", cache_ttl).as_str(),
     );
     Ok(reply)
 }

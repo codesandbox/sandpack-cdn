@@ -35,9 +35,14 @@ pub async fn get_dep_tree_reply(
         0..=4 => CustomReply::json(&tree),
         _ => CustomReply::msgpack(&tree),
     }?;
+    let cache_ttl = 15 * 60;
     reply.add_header(
-        "cache-control",
-        format!("public, max-age={}", 15 * 60).as_str(),
+        "Cache-Control",
+        format!("public, max-age={}", cache_ttl).as_str(),
+    );
+    reply.add_header(
+        "CDN-Cache-Control",
+        format!("max-age={}", cache_ttl).as_str(),
     );
     Ok(reply)
 }

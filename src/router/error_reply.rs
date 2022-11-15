@@ -25,8 +25,12 @@ impl ErrorReply {
         let mut reply = CustomReply::json(self)?;
         reply.set_status(StatusCode::from_u16(self.status)?);
         reply.add_header(
-            "cache-control",
+            "Cache-Control",
             format!("public, max-age={}", cache_ttl).as_str(),
+        );
+        reply.add_header(
+            "CDN-Cache-Control",
+            format!("max-age={}", cache_ttl).as_str(),
         );
         Ok(reply)
     }

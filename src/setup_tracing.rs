@@ -30,6 +30,7 @@ fn init_opentelemetry() -> Option<sdktrace::Tracer> {
     }
 
     if !metadata.contains_key(String::from("otlp-endpoint")) {
+        println!("env variable OTEL_EXPORTER_OTLP_ENDPOINT has not been set");
         return None;
     }
 
@@ -42,12 +43,17 @@ fn init_opentelemetry() -> Option<sdktrace::Tracer> {
         .with_env()
         .with_metadata(dbg!(metadata));
 
-    opentelemetry_otlp::new_pipeline()
+    match opentelemetry_otlp::new_pipeline()
         .tracing()
         .with_exporter(exporter)
         .install_batch(opentelemetry::runtime::Tokio)
-        .map(|v| Some(v))
-        .unwrap_or(None)
+    {
+        Ok(v) => Some(v),
+        Err(err) => {
+            println!("Failed to setup tracing {:?}", err);
+            None
+        }
+    }
 }
 
 pub fn setup_tracing() {

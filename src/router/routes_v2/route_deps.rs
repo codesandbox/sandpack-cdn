@@ -36,9 +36,14 @@ async fn get_reply(
         true => CustomReply::json(&tree_builder.resolutions)?,
         false => CustomReply::msgpack(&tree_builder.resolutions)?,
     };
+    let cache_ttl = 3600;
     reply.add_header(
-        "cache-control",
-        format!("public, max-age={}", 3600).as_str(),
+        "Cache-Control",
+        format!("public, max-age={}", cache_ttl).as_str(),
+    );
+    reply.add_header(
+        "CDN-Cache-Control",
+        format!("max-age={}", cache_ttl).as_str(),
     );
     Ok(reply)
 }

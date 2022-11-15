@@ -58,9 +58,14 @@ async fn get_files(content: TarContent) -> Result<HashMap<String, ByteBuf>, Serv
 async fn create_reply(content: TarContent) -> Result<CustomReply, ServerError> {
     let files = get_files(content).await?;
     let mut reply = CustomReply::msgpack(&files)?;
+    let cache_ttl = 365 * 24 * 3600;
     reply.add_header(
-        "cache-control",
-        format!("public, max-age={}", 365 * 24 * 3600).as_str(),
+        "Cache-Control",
+        format!("public, max-age={}", cache_ttl).as_str(),
+    );
+    reply.add_header(
+        "CDN-Cache-Control",
+        format!("max-age={}", cache_ttl).as_str(),
     );
     Ok(reply)
 }
