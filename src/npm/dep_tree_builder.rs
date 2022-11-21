@@ -72,8 +72,13 @@ impl DepTreeBuilder {
         let mut key = String::from(name);
         key.push('@');
         key.push_str(&version.major.to_string());
-        if self.resolutions.contains_key(&key) {
-            return;
+        if let Some(value) = self.resolutions.get(&key) {
+            // If value is larger than version we continue
+            // otherwise we need to add this version to prevent infinite recursion
+            // We also make the highest version win
+            if value >= version {
+                return;
+            }
         }
         self.resolutions.insert(key, version.clone());
         if let Some(versions) = self.packages.get_mut(name) {
@@ -180,9 +185,14 @@ impl DepTreeBuilder {
 
     pub async fn push(&mut self, deps: HashSet<DepRequest>) -> Result<(), ServerError> {
         let mut deps = deps;
-        while deps.len() > 0 {
+        let mut count = 0;
+        while deps.len() > 0 && count < 200 {
             deps = self.process(deps).await?;
+            count += 1;
         }
+
+        println!("Finished resolving in {} ticks", count);
+
         Ok(())
     }
 }

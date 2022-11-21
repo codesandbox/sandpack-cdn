@@ -148,8 +148,9 @@ pub struct PackageDataFetcher {
 }
 
 impl PackageDataFetcher {
+    // Add some persisted storage? Something like sqlite?
     pub fn new() -> PackageDataFetcher {
-        let max_capacity = 500;
+        let max_capacity = 1000;
         PackageDataFetcher {
             client: Arc::new(request::get_client(30)),
             cache: Cache::builder().max_capacity(max_capacity).build(),
