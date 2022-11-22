@@ -27,7 +27,7 @@ test("react and next", async () => {
 test("next@latest", async () => {
   const deps = await fetchV2Deps([{ name: "next", range: "latest" }]);
   validateContract(deps);
-  expect(typeof deps["next@12"]).toBe("string");
+  expect(typeof deps["next@13"]).toBe("string");
 });
 
 test("react@*", async () => {
