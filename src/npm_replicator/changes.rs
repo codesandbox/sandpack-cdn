@@ -15,14 +15,14 @@ const COUCH_MAX_TIMEOUT: usize = 60000;
 ///
 /// This is returned from [Database::changes].
 pub struct ChangesStream {
-    last_seq: Option<serde_json::Value>,
+    last_seq: serde_json::Value,
     client: Arc<Client>,
     params: HashMap<String, String>,
 }
 
 impl ChangesStream {
     /// Create a new changes stream.
-    pub fn new(last_seq: Option<serde_json::Value>) -> Self {
+    pub fn new(last_seq: serde_json::Value) -> Self {
         let client = Arc::new(Client::new());
         let mut params = HashMap::new();
         params.insert("feed".to_string(), "longpoll".to_string());
@@ -38,13 +38,12 @@ impl ChangesStream {
 
     pub async fn fetch_next(&mut self) -> ChangeStreamResult<ChangesPage> {
         let mut params = self.params.clone();
-        if let Some(seq) = &self.last_seq {
-            params.insert("since".to_string(), seq.to_string());
-        }
+        params.insert("since".to_string(), self.last_seq.to_string());
         let request = self
             .client
             .request(Method::GET, "https://replicate.npmjs.com/registry/_changes")
             .query(&params);
+        // println!("{:?}", request);
         let res = request.send().await?;
         if !res.status().is_success() {
             return Err(ChangeStreamError::new(
@@ -53,7 +52,7 @@ impl ChangesStream {
             ));
         }
         let page: ChangesPage = res.json().await?;
-        self.last_seq = Some(page.last_seq.into());
+        self.last_seq = page.last_seq.into();
         Ok(page)
     }
 }
