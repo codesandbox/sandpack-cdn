@@ -2230,8 +2230,6 @@ dependencies = [
  "chrono",
  "dotenv",
  "flate2",
- "futures-core",
- "futures-util",
  "glob",
  "lazy_static",
  "moka",
