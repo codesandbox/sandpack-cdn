@@ -12,6 +12,7 @@ mod transform;
 mod utils;
 mod cached;
 mod npm;
+mod npm_replicator;
 
 #[derive(Clone)]
 pub struct AppConfig {

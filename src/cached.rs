@@ -10,27 +10,9 @@ use std::{
 use tokio::sync::broadcast;
 use tracing::info;
 
+use crate::app_error::SendableError;
+
 pub type BoxFut<'a, O> = Pin<Box<dyn Future<Output = O> + Send + 'a>>;
-
-#[derive(Debug, Clone, thiserror::Error)]
-#[error("stringified error: {inner}")]
-pub struct CachedError {
-    inner: String,
-}
-
-impl CachedError {
-    pub fn new<E: std::fmt::Display>(e: E) -> Self {
-        Self {
-            inner: e.to_string(),
-        }
-    }
-}
-
-impl From<broadcast::error::RecvError> for CachedError {
-    fn from(e: broadcast::error::RecvError) -> Self {
-        CachedError::new(e)
-    }
-}
 
 #[derive(Clone)]
 pub struct Cached<T>
@@ -48,7 +30,7 @@ where
     T: Clone + Send + Sync + 'static,
 {
     last_fetched: LastFetched<T>,
-    inflight: Option<Weak<broadcast::Sender<Result<T, CachedError>>>>,
+    inflight: Option<Weak<broadcast::Sender<Result<T, SendableError>>>>,
 }
 
 impl<T> Default for CachedInner<T>
@@ -74,7 +56,7 @@ where
         }
     }
 
-    pub async fn get_cached<F, E>(&self, f: F) -> Result<T, CachedError>
+    pub async fn get_cached<F, E>(&self, f: F) -> Result<T, SendableError>
     where
         F: FnOnce(Option<T>) -> BoxFut<'static, Result<T, E>> + Send + 'static,
         E: std::fmt::Display + 'static,
@@ -101,7 +83,7 @@ where
                 inflight.subscribe()
             } else {
                 // there isn't, let's fetch
-                let (tx, rx) = broadcast::channel::<Result<T, CachedError>>(1);
+                let (tx, rx) = broadcast::channel::<Result<T, SendableError>>(1);
                 // let's reference-count a single `Sender`:
                 let tx = Arc::new(tx);
                 // and only store a weak reference in our state:
@@ -126,7 +108,7 @@ where
                                 let _ = tx.send(Ok(value));
                             }
                             Err(e) => {
-                                let _ = tx.send(Err(CachedError {
+                                let _ = tx.send(Err(SendableError {
                                     inner: e.to_string(),
                                 }));
                             }

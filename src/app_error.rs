@@ -1,7 +1,8 @@
 use thiserror::Error;
+use tokio::sync::broadcast;
 use warp::{hyper::http, reject};
 
-use crate::cached::CachedError;
+pub type AppResult<T> = Result<T, ServerError>;
 
 #[derive(Error, Debug)]
 pub enum ServerError {
@@ -32,10 +33,7 @@ pub enum ServerError {
         package_version: String,
     },
     #[error("Could not download tarball package")]
-    TarballDownloadError {
-        status_code: u16,
-        url: String,
-    },
+    TarballDownloadError { status_code: u16, url: String },
     #[error("Could not download npm package manifest")]
     NpmManifestDownloadError {
         status_code: u16,
@@ -59,12 +57,14 @@ pub enum ServerError {
     DeserializeError(),
     #[error("Failed to decode base64 string")]
     Base64DecodingError(),
-    #[error("Cached error")]
-    CachedError(#[from] CachedError),
+    #[error("Sendable error")]
+    SendableError(#[from] SendableError),
     #[error("Resource hasn't changed")]
     NotChanged,
     #[error("Invalid query")]
     InvalidQuery,
+    #[error("SQLite Error")]
+    SQLiteError(#[from] rusqlite::Error),
 }
 
 impl From<ServerError> for std::io::Error {
@@ -74,3 +74,31 @@ impl From<ServerError> for std::io::Error {
 }
 
 impl reject::Reject for ServerError {}
+
+#[derive(Debug, Clone, thiserror::Error)]
+#[error("stringified error: {inner}")]
+pub struct SendableError {
+    inner: String,
+}
+
+impl SendableError {
+    pub fn new<E: std::fmt::Display>(e: E) -> Self {
+        Self {
+            inner: e.to_string(),
+        }
+    }
+}
+
+impl From<broadcast::error::RecvError> for SendableError {
+    fn from(e: broadcast::error::RecvError) -> Self {
+        SendableError::new(e)
+    }
+}
+
+impl From<ServerError> for SendableError {
+    fn from(e: ServerError) -> Self {
+        SendableError::new(e)
+    }
+}
+
+pub type SendableResult<T> = Result<T, SendableError>;
