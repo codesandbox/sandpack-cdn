@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use serde_with::{serde_as, DefaultOnError};
 
 use super::document::RegistryDocument;
 
@@ -9,6 +10,7 @@ pub enum Event {
     Finished(FinishedEvent),
 }
 
+#[serde_as]
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
 pub struct ChangeEvent {
     pub seq: serde_json::Value,
@@ -19,6 +21,7 @@ pub struct ChangeEvent {
     pub deleted: bool,
 
     #[serde(default)]
+    #[serde_as(deserialize_as = "DefaultOnError")]
     pub doc: Option<RegistryDocument>,
 }
 

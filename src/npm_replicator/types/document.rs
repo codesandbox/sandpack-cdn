@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use serde_with::{serde_as, DefaultOnError};
 use std::collections::{BTreeMap, HashMap};
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
@@ -6,10 +7,14 @@ pub struct DocumentPackageDist {
     pub tarball: String,
 }
 
+#[serde_as]
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
 pub struct DocumentPackageVersion {
+    #[serde(default)]
+    #[serde_as(deserialize_as = "DefaultOnError")]
     pub dependencies: Option<HashMap<String, String>>,
-    #[serde(rename = "optionalDependencies")]
+    #[serde(default, rename = "optionalDependencies")]
+    #[serde_as(deserialize_as = "DefaultOnError")]
     pub optional_dependencies: Option<HashMap<String, String>>,
     pub dist: DocumentPackageDist,
 }
