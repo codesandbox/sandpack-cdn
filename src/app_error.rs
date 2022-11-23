@@ -22,16 +22,12 @@ pub enum ServerError {
     JSONParseError(#[from] serde_json::Error),
     #[error("Package version not found {0}@{1}")]
     PackageVersionNotFound(String, String),
+    #[error("Package {0} not found")]
+    PackageNotFound(String),
     #[error("Infallible error")]
     Infallible(#[from] std::convert::Infallible),
     #[error("Could not parse module")]
     SWCParseError { message: String },
-    #[error("Could not download npm package")]
-    NpmPackageDownloadError {
-        status_code: u16,
-        package_name: String,
-        package_version: String,
-    },
     #[error("Could not download tarball package")]
     TarballDownloadError { status_code: u16, url: String },
     #[error("Could not download npm package manifest")]
@@ -63,8 +59,10 @@ pub enum ServerError {
     NotChanged,
     #[error("Invalid query")]
     InvalidQuery,
+    #[error("DB Pool Error")]
+    DBPoolError(#[from] r2d2::Error),
     #[error("SQLite Error")]
-    SQLiteError(#[from] rusqlite::Error),
+    SQLiteError(#[from] r2d2_sqlite::rusqlite::Error),
 }
 
 impl From<ServerError> for std::io::Error {

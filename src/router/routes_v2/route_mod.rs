@@ -9,7 +9,7 @@ use warp::{Filter, Rejection, Reply};
 
 use crate::app_error::ServerError;
 use crate::npm::package_content::{download_package_content, PackageContentFetcher};
-use crate::npm::package_data::PackageDataFetcher;
+use crate::npm_replicator::database::NpmDatabase;
 use crate::package::process::parse_package_specifier;
 use crate::router::utils::decode_base64;
 use crate::utils::tar;
@@ -72,7 +72,7 @@ async fn create_reply(content: TarContent) -> Result<CustomReply, ServerError> {
 
 pub async fn get_mod_reply(
     path: String,
-    pkg_data_fetcher: PackageDataFetcher,
+    npm_db: NpmDatabase,
     pkg_content_fetcher: PackageContentFetcher,
 ) -> Result<CustomReply, ServerError> {
     let decoded_specifier = decode_base64(&path)?;
@@ -81,7 +81,7 @@ pub async fn get_mod_reply(
     let content = download_package_content(
         &pkg_name,
         &pkg_version,
-        &pkg_data_fetcher,
+        &npm_db,
         &pkg_content_fetcher,
     )
     .await?;
@@ -93,22 +93,22 @@ pub async fn get_mod_reply(
 
 pub async fn mod_route_handler(
     path: String,
-    pkg_data_fetcher: PackageDataFetcher,
+    npm_db: NpmDatabase,
     pkg_content_fetcher: PackageContentFetcher,
 ) -> Result<impl Reply, Rejection> {
-    match get_mod_reply(path, pkg_data_fetcher, pkg_content_fetcher).await {
+    match get_mod_reply(path, npm_db, pkg_content_fetcher).await {
         Ok(reply) => Ok(reply),
         Err(err) => Ok(ErrorReply::from(err).as_reply(3600).unwrap()),
     }
 }
 
 pub fn mod_route(
-    pkg_data_fetcher: PackageDataFetcher,
+    npm_db: NpmDatabase,
     pkg_content_fetcher: PackageContentFetcher,
 ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
     warp::path!("v2" / "mod" / String)
         .and(warp::get())
-        .and(with_data(pkg_data_fetcher))
+        .and(with_data(npm_db))
         .and(with_data(pkg_content_fetcher))
         .and_then(mod_route_handler)
 }

@@ -45,9 +45,9 @@ async fn main() -> Result<(), std::io::Error> {
     tokio::fs::create_dir_all(String::from(temp_dir)).await?;
 
     // Setup npm registry replicator
-    let db = NpmDatabase::new(&npm_db_path).unwrap();
-    db.init().unwrap();
-    replication_task::spawn_sync_thread(npm_db_path);
+    let npm_db = NpmDatabase::new(&npm_db_path).unwrap();
+    npm_db.init().unwrap();
+    replication_task::spawn_sync_thread(npm_db.clone());
 
     // cors headers
     let mut headers = HeaderMap::new();
@@ -62,7 +62,7 @@ async fn main() -> Result<(), std::io::Error> {
     );
     let cors_headers_filter = warp::reply::with::headers(headers);
 
-    let filter = router::routes::routes(app_data)
+    let filter = router::routes::routes(npm_db, app_data)
         .with(warp::trace::request())
         .with(cors_headers_filter)
         .with(warp::compression::gzip());

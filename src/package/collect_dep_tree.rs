@@ -8,8 +8,10 @@ use std::{
 use tokio::task::JoinHandle;
 use tracing::error;
 
-use crate::npm::package_data::PackageDataFetcher;
-use crate::{app_error::ServerError, npm::package_data::PackageData};
+use crate::{
+    app_error::ServerError,
+    npm_replicator::{database::NpmDatabase, types::document::MinimalPackageData},
+};
 
 use super::cached::CachedPackageProcessor;
 
@@ -41,7 +43,7 @@ impl DependencyRequest {
         })
     }
 
-    pub fn resolve_version(&self, manifest: &PackageData) -> Option<String> {
+    pub fn resolve_version(&self, manifest: &MinimalPackageData) -> Option<String> {
         match self.version_range.clone() {
             VersionRange::Alias(alias_str) => manifest.dist_tags.get(&alias_str).cloned(),
             VersionRange::Range(range) => {
@@ -108,13 +110,13 @@ pub fn process_dep_map(
 
 type ResolveDepResult = Result<Option<(Dependency, Vec<DependencyRequest>)>, ServerError>;
 
-#[tracing::instrument(name = "resolve_dep", skip(pkg_processor, data_fetcher))]
+#[tracing::instrument(name = "resolve_dep", skip(pkg_processor, npm_db))]
 async fn resolve_dep(
     req: DependencyRequest,
-    data_fetcher: &PackageDataFetcher,
+    npm_db: &NpmDatabase,
     pkg_processor: &CachedPackageProcessor,
 ) -> ResolveDepResult {
-    let manifest = data_fetcher.get(&req.name).await?;
+    let manifest = npm_db.get_package(&req.name)?;
     if let Some(resolved_version) = req.resolve_version(&manifest) {
         let dependencies = pkg_processor
             .get(req.name.as_str(), resolved_version.as_str())
@@ -143,7 +145,7 @@ async fn resolve_dep(
 
 #[derive(Debug, Clone)]
 struct DepTreeCollector {
-    data_fetcher: PackageDataFetcher,
+    npm_db: NpmDatabase,
     dependencies: Arc<Mutex<DependencyList>>,
     futures: Arc<Mutex<VecDeque<JoinHandle<()>>>>,
     in_progress: Arc<Mutex<Vec<DependencyRequest>>>,
@@ -151,9 +153,9 @@ struct DepTreeCollector {
 }
 
 impl DepTreeCollector {
-    pub fn new(data_fetcher: PackageDataFetcher, pkg_processor: CachedPackageProcessor) -> Self {
+    pub fn new(npm_db: NpmDatabase, pkg_processor: CachedPackageProcessor) -> Self {
         DepTreeCollector {
-            data_fetcher,
+            npm_db,
             pkg_processor,
             dependencies: Arc::new(Mutex::new(Vec::new())),
             futures: Arc::new(Mutex::new(VecDeque::new())),
@@ -180,8 +182,8 @@ impl DepTreeCollector {
         let dep_collector = self.clone();
         let pkg_processor = self.pkg_processor.clone();
         let future = tokio::spawn(async move {
-            let data_fetcher = dep_collector.data_fetcher.clone();
-            let result = resolve_dep(dep_req, &data_fetcher, &pkg_processor).await;
+            let npm_db = dep_collector.npm_db.clone();
+            let result = resolve_dep(dep_req, &npm_db, &pkg_processor).await;
             if let Ok(Some((dependency, transient_deps))) = result {
                 dep_collector.add_dependency(dependency);
                 dep_collector.add_dep_requests(transient_deps);
@@ -249,10 +251,10 @@ impl DepTreeCollector {
 
     pub async fn try_collect(
         dep_requests: Vec<DependencyRequest>,
-        data_fetcher: PackageDataFetcher,
+        npm_db: NpmDatabase,
         pkg_processor: CachedPackageProcessor,
     ) -> Result<DependencyList, ServerError> {
-        let collector = DepTreeCollector::new(data_fetcher, pkg_processor);
+        let collector = DepTreeCollector::new(npm_db, pkg_processor);
         collector.add_dep_requests(dep_requests);
 
         while let Some(handle) = collector.get_next_join() {
@@ -267,8 +269,8 @@ impl DepTreeCollector {
 
 pub async fn collect_dep_tree(
     dep_requests: Vec<DependencyRequest>,
-    data_fetcher: &PackageDataFetcher,
+    npm_db: &NpmDatabase,
     pkg_processor: &CachedPackageProcessor,
 ) -> Result<DependencyList, ServerError> {
-    DepTreeCollector::try_collect(dep_requests, data_fetcher.clone(), pkg_processor.clone()).await
+    DepTreeCollector::try_collect(dep_requests, npm_db.clone(), pkg_processor.clone()).await
 }

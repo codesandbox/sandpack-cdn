@@ -1,26 +1,37 @@
-use rusqlite::{named_params, Connection, OptionalExtension};
+use std::sync::Arc;
+
+use r2d2::Pool;
+use r2d2_sqlite::{
+    rusqlite::{named_params, OptionalExtension},
+    SqliteConnectionManager,
+};
 
 use crate::app_error::AppResult;
 
 use super::types::document::MinimalPackageData;
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct NpmDatabase {
     pub db_path: String,
-    connection: Connection,
+    pool: Arc<Pool<SqliteConnectionManager>>,
 }
 
 impl NpmDatabase {
     pub fn new(db_path: &str) -> AppResult<Self> {
-        let connection = Connection::open(db_path)?;
+        let sqlite_connection_manager = SqliteConnectionManager::file(db_path);
+        let sqlite_pool = r2d2::Pool::new(sqlite_connection_manager)
+            .expect("Failed to create r2d2 SQLite connection pool");
+        let pool_arc = Arc::new(sqlite_pool);
         Ok(Self {
             db_path: String::from(db_path),
-            connection,
+            pool: pool_arc,
         })
     }
 
     pub fn init(&self) -> AppResult<()> {
-        self.connection.execute(
+        let connection = self.pool.get()?;
+
+        connection.execute(
             "CREATE TABLE IF NOT EXISTS package (
                 id    TEXT PRIMARY KEY,
                 content  TEXT NOT NULL
@@ -28,7 +39,7 @@ impl NpmDatabase {
             (),
         )?;
 
-        self.connection.execute(
+        connection.execute(
             "CREATE TABLE IF NOT EXISTS last_sync (
                 id    TEXT PRIMARY KEY,
                 seq   INTEGER NOT NULL
@@ -40,9 +51,10 @@ impl NpmDatabase {
     }
 
     pub fn get_last_seq(&self) -> AppResult<i64> {
-        let mut prepared_statement = self
-            .connection
-            .prepare("SELECT id, seq FROM last_sync WHERE id = (:id)")?;
+        let connection = self.pool.get()?;
+
+        let mut prepared_statement =
+            connection.prepare("SELECT id, seq FROM last_sync WHERE id = (:id)")?;
 
         let res = prepared_statement
             .query_row(named_params! { ":id": "_last" }, |row| {
@@ -56,17 +68,16 @@ impl NpmDatabase {
     }
 
     pub fn update_last_seq(&self, next_seq: i64) -> AppResult<usize> {
-        let mut prepared_statement = self
-            .connection
-            .prepare("INSERT OR REPLACE INTO last_sync (id, seq) VALUES (:id, :seq)")?;
+        let connection = self.pool.get()?;
+        let mut prepared_statement =
+            connection.prepare("INSERT OR REPLACE INTO last_sync (id, seq) VALUES (:id, :seq)")?;
         let res = prepared_statement.execute(named_params! { ":id": "_last", ":seq": next_seq })?;
         Ok(res)
     }
 
     pub fn delete_package(&self, name: &str) -> AppResult<usize> {
-        let mut prepared_statement = self
-            .connection
-            .prepare("DELETE FROM package WHERE id = (:id)")?;
+        let connection = self.pool.get()?;
+        let mut prepared_statement = connection.prepare("DELETE FROM package WHERE id = (:id)")?;
         let res = prepared_statement.execute(named_params! { ":id": name })?;
         Ok(res)
     }
@@ -77,8 +88,8 @@ impl NpmDatabase {
             return self.delete_package(&pkg.name);
         }
 
-        let mut prepared_statement = self
-            .connection
+        let connection = self.pool.get()?;
+        let mut prepared_statement = connection
             .prepare("INSERT OR REPLACE INTO package (id, content) VALUES (:id, :content)")?;
         let res = prepared_statement.execute(
             named_params! { ":id": pkg.name, ":content": serde_json::to_string(&pkg).unwrap() },
@@ -86,10 +97,10 @@ impl NpmDatabase {
         Ok(res)
     }
 
-    pub fn get_package(&self, name: &str) -> AppResult<Option<MinimalPackageData>> {
-        let mut prepared_statement = self
-            .connection
-            .prepare("SELECT content FROM package where id = (:id)")?;
+    pub fn get_package(&self, name: &str) -> AppResult<MinimalPackageData> {
+        let connection = self.pool.get()?;
+        let mut prepared_statement =
+            connection.prepare("SELECT content FROM package where id = (:id)")?;
 
         let res = prepared_statement
             .query_row(named_params! { ":id": name }, |row| {
@@ -97,6 +108,13 @@ impl NpmDatabase {
                 Ok(serde_json::from_str(&content_val).unwrap())
             })
             .optional()?;
-        Ok(res)
+
+        if let Some(found_pkg) = res {
+            Ok(found_pkg)
+        } else {
+            Err(crate::app_error::ServerError::PackageNotFound(
+                name.to_string(),
+            ))
+        }
     }
 }

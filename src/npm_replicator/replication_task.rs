@@ -7,8 +7,7 @@ use crate::npm_replicator::types::document::MinimalPackageData;
 use std::time::Duration;
 use tokio::time::sleep;
 
-async fn sync(db_path: String) -> AppResult<()> {
-    let db: NpmDatabase = NpmDatabase::new(&db_path)?;
+async fn sync(db: NpmDatabase) -> AppResult<()> {
     let last_seq: i64 = db.get_last_seq()?;
     println!("[NPM-Replication] Last synced sequence {}", last_seq);
     let mut stream = ChangesStream::new(last_seq.into());
@@ -38,12 +37,12 @@ async fn sync(db_path: String) -> AppResult<()> {
     }
 }
 
-pub fn spawn_sync_thread(db_path: String) {
+pub fn spawn_sync_thread(db: NpmDatabase) {
     println!("[NPM-Replication] Spawning npm sync worker...");
     tokio::spawn(async move {
         loop {
             println!("[NPM-Replication] Starting npm sync worker...");
-            if let Err(err) = sync(db_path.clone()).await {
+            if let Err(err) = sync(db.clone()).await {
                 println!("[NPM-Replication] SYNC WORKER CRASHED {:?}", err);
                 sleep(Duration::from_millis(500)).await;
             }

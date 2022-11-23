@@ -9,7 +9,7 @@ use transform::transformer::transform_file;
 
 use crate::app_error::ServerError;
 use crate::npm::package_content::{download_package_content, PackageContentFetcher};
-use crate::npm::package_data::PackageDataFetcher;
+use crate::npm_replicator::database::NpmDatabase;
 use crate::transform;
 use crate::utils::tar;
 
@@ -289,12 +289,12 @@ fn transform_package(
     Ok((module_spec, dependencies))
 }
 
-#[tracing::instrument(name = "process_npm_package", skip(temp_dir, data_fetcher))]
+#[tracing::instrument(name = "process_npm_package", skip(temp_dir, npm_db))]
 pub async fn process_npm_package(
     package_name: &str,
     package_version: &str,
     temp_dir: &str,
-    data_fetcher: &PackageDataFetcher,
+    npm_db: &NpmDatabase,
     content_fetcher: &PackageContentFetcher,
 ) -> Result<(MinimalCachedModule, ModuleDependenciesMap), ServerError> {
     info!(
@@ -302,13 +302,8 @@ pub async fn process_npm_package(
         package_name, package_version
     );
 
-    let tarball_content = download_package_content(
-        package_name,
-        package_version,
-        &data_fetcher,
-        &content_fetcher,
-    )
-    .await?;
+    let tarball_content =
+        download_package_content(package_name, package_version, &npm_db, &content_fetcher).await?;
     let mut pkg_output_path = Path::new(temp_dir)
         .join(nanoid!())
         .join(format!("{}-{}", package_name, package_version));
