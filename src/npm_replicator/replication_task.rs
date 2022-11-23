@@ -21,14 +21,7 @@ async fn sync(db_path: String) -> AppResult<()> {
                             db.delete_package(&evt.id)?;
                             println!("Deleted package {}", evt.id);
                         } else if let Some(doc) = evt.doc {
-                            // Skip empty packages
-                            if let Some(versions) = &doc.versions {
-                                if versions.len() <= 0 {
-                                    continue;
-                                }
-                            }
-
-                            db.write_package(MinimalPackageData::from_doc(doc.clone()))?;
+                            db.write_package(MinimalPackageData::from_doc(doc))?;
                             println!("Wrote package {} to db", evt.id);
                         }
                     }
