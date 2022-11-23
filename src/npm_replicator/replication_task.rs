@@ -38,8 +38,10 @@ async fn sync(db_path: String) -> AppResult<()> {
 }
 
 pub fn spawn_sync_thread(db_path: String) {
+    println!("Spawning npm sync worker...");
     tokio::spawn(async move {
         loop {
+            println!("Starting npm sync worker...");
             if let Err(err) = sync(db_path.clone()).await {
                 println!("NPM SYNC WORKER CRASHED {:?}", err);
                 sleep(Duration::from_millis(500)).await;
