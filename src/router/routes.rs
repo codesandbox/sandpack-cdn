@@ -11,6 +11,7 @@ use super::routes_v1::route_dep_tree::dep_tree_route;
 use super::routes_v1::route_package_data::package_data_route;
 use super::routes_v2::route_deps::deps_route;
 use super::routes_v2::route_mod::mod_route;
+use super::routes_v2::route_npm_status::npm_sync_status_route;
 
 pub fn routes(
     npm_db: NpmDatabase,
@@ -25,15 +26,10 @@ pub fn routes(
     );
 
     package_data_route(pkg_processor.clone())
-        .or(dep_tree_route(
-            npm_db.clone(),
-            pkg_processor.clone(),
-        ))
-        .or(mod_route(
-            npm_db.clone(),
-            pkg_content_fetcher.clone(),
-        ))
+        .or(dep_tree_route(npm_db.clone(), pkg_processor.clone()))
+        .or(mod_route(npm_db.clone(), pkg_content_fetcher.clone()))
         .or(deps_route(npm_db.clone()))
+        .or(npm_sync_status_route(npm_db.clone()))
         .or(health_route())
         .or(not_found_route())
 }
