@@ -5,6 +5,7 @@ processes = []
 
 [env]
 PORT = "8080"
+NPM_SQLITE_DB = "/npm_db/registry.db3"
 
 [[services]]
 internal_port = 8080
