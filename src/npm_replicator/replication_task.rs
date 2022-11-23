@@ -1,50 +1,49 @@
 use super::database::NpmDatabase;
 use crate::app_error::AppResult;
 use crate::npm_replicator::changes::ChangesStream;
-use crate::npm_replicator::types::document::{MinimalPackageData, RegistryDocument};
+use crate::npm_replicator::types::changes::Event::Change;
+use crate::npm_replicator::types::document::MinimalPackageData;
 
-use tokio_stream::StreamExt;
+use std::time::Duration;
+use tokio::time::sleep;
 
 async fn sync(db_path: String) -> AppResult<()> {
-    // let db: NpmDatabase = NpmDatabase::new(&db_path)?;
-    // let last_seq: i64 = db.get_last_seq()?;
-    // println!("Last synced sequence {}", last_seq);
-    // let mut stream = ChangesStream::new(Some(last_seq.into()));
-    // while let Some(val) = stream.next().await {
-    //     if let Ok(change) = val {
-    //         if let Some(doc) = change.doc {
-    //             let parsed: RegistryDocument = serde_json::from_value(doc)?;
-
-    //             if parsed.deleted {
-    //                 db.delete_package(&parsed.id)?;
-    //                 println!("Deleted package {}", parsed.id);
-    //             } else {
-    //                 db.write_package(MinimalPackageData::from_doc(parsed.clone()))?;
-    //                 println!("Wrote package {} to db", parsed.id);
-    //             }
-    //         }
-
-    //         let last_seq: i64 = serde_json::from_value(change.seq)?;
-    //         db.update_last_seq(last_seq)?;
-    //     }
-    // }
-
+    let db: NpmDatabase = NpmDatabase::new(&db_path)?;
+    let last_seq: i64 = db.get_last_seq()?;
+    println!("Last synced sequence {}", last_seq);
     let mut stream = ChangesStream::new(None);
-    while let Some(val) = stream.next().await {
-        // do nothing really
-    }
+    loop {
+        match stream.fetch_next().await {
+            Ok(page) => {
+                for entry in page.results {
+                    if let Change(evt) = entry {
+                        if evt.deleted {
+                            db.delete_package(&evt.id)?;
+                            println!("Deleted package {}", evt.id);
+                        } else if let Some(doc) = evt.doc {
+                            db.write_package(MinimalPackageData::from_doc(doc.clone()))?;
+                            println!("Wrote package {} to db", evt.id);
+                        }
+                    }
+                }
 
-    Ok(())
+                db.update_last_seq(page.last_seq)?;
+            }
+            Err(err) => {
+                println!("NPM Registry sync error {:?}", err);
+                sleep(Duration::from_millis(250)).await;
+            }
+        }
+    }
 }
 
-async fn spawn_sync_thread(db_path: String) -> AppResult<()> {
+pub fn spawn_sync_thread(db_path: String) {
     tokio::spawn(async move {
-        if let Err(err) = sync(db_path.clone()).await {
-            println!("Sync script stopped with the following error: {:?}", err);
-        } else {
-            println!("Sync script stopped unexpectedly without an error");
+        loop {
+            if let Err(err) = sync(db_path.clone()).await {
+                println!("NPM SYNC WORKER CRASHED {:?}", err);
+                sleep(Duration::from_millis(500)).await;
+            }
         }
     });
-
-    Ok(())
 }

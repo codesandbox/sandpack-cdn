@@ -78,7 +78,7 @@ impl reject::Reject for ServerError {}
 #[derive(Debug, Clone, thiserror::Error)]
 #[error("stringified error: {inner}")]
 pub struct SendableError {
-    inner: String,
+    pub inner: String,
 }
 
 impl SendableError {
@@ -100,5 +100,3 @@ impl From<ServerError> for SendableError {
         SendableError::new(e)
     }
 }
-
-pub type SendableResult<T> = Result<T, SendableError>;
