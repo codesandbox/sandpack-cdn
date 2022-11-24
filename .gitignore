@@ -1,6 +1,7 @@
 target
 temp_files
 .env
+.DS_Store
 node_modules
 *.sqlite
 *.db3

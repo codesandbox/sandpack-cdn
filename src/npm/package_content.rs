@@ -1,11 +1,10 @@
 use std::{fmt, io::Cursor, sync::Arc, time::Duration};
 
-use crate::{
-    app_error::ServerError, cached::Cached, npm_replicator::database::NpmDatabase, utils::request,
-};
+use crate::{app_error::ServerError, cached::Cached, npm_replicator::database::NpmDatabase};
 use flate2::{bufread::GzEncoder, Compression};
 use moka::future::Cache;
-use reqwest_middleware::ClientWithMiddleware;
+use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
+use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
 use warp::hyper::body::Bytes;
 
 pub type Content = Arc<Cursor<Bytes>>;
@@ -50,7 +49,7 @@ async fn download_tarball(
 #[tracing::instrument(name = "get_tarball", skip(client, cached))]
 async fn get_tarball(
     url: &str,
-    client: Arc<ClientWithMiddleware>,
+    client: ClientWithMiddleware,
     cached: Cached<Content>,
 ) -> Result<Content, ServerError> {
     let url_string = String::from(url);
@@ -68,7 +67,6 @@ async fn get_tarball(
 
 #[derive(Clone)]
 pub struct PackageContentFetcher {
-    client: Arc<ClientWithMiddleware>,
     cache: Cache<String, Cached<Content>>,
     refresh_interval: Duration,
 }
@@ -78,7 +76,6 @@ impl PackageContentFetcher {
         let ttl = Duration::from_secs(86400);
         let max_capacity = 50;
         PackageContentFetcher {
-            client: Arc::new(request::get_client(120)),
             cache: Cache::builder()
                 .max_capacity(max_capacity)
                 .time_to_idle(ttl)
@@ -87,15 +84,33 @@ impl PackageContentFetcher {
         }
     }
 
+    pub fn get_client(&self) -> ClientWithMiddleware {
+        let retry_policy = ExponentialBackoff::builder().build_with_max_retries(3);
+
+        let client_builder = reqwest::ClientBuilder::new()
+            .timeout(Duration::new(120, 0))
+            .deflate(true)
+            .gzip(true)
+            .brotli(true);
+        let base_client = client_builder
+            .build()
+            .expect("reqwest::ClientBuilder::build()");
+
+        ClientBuilder::new(base_client)
+            .with(RetryTransientMiddleware::new_with_policy(retry_policy))
+            .build()
+    }
+
     #[tracing::instrument(name = "pkg_content_get", skip(self))]
     pub async fn get(&self, url: &str) -> Result<Content, ServerError> {
         let key = String::from(url);
+        let client = self.get_client();
         if let Some(found_value) = self.cache.get(&key) {
-            get_tarball(url, self.client.clone(), found_value).await
+            get_tarball(url, client, found_value).await
         } else {
             let cached: Cached<Content> = Cached::new(self.refresh_interval);
             self.cache.insert(key, cached.clone()).await;
-            get_tarball(url, self.client.clone(), cached).await
+            get_tarball(url, client, cached).await
         }
     }
 }

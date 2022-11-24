@@ -3,7 +3,7 @@ use super::{
     types::changes::ChangesPage,
 };
 use reqwest::{Client, Method};
-use std::{collections::HashMap, sync::Arc};
+use std::collections::HashMap;
 
 /// The max timeout value for longpoll/continous HTTP requests
 /// that CouchDB supports (see [1]).
@@ -16,33 +16,40 @@ const COUCH_MAX_TIMEOUT: usize = 60000;
 /// This is returned from [Database::changes].
 pub struct ChangesStream {
     last_seq: serde_json::Value,
-    client: Arc<Client>,
     params: HashMap<String, String>,
+    pub limit: usize,
 }
 
 impl ChangesStream {
     /// Create a new changes stream.
-    pub fn new(last_seq: serde_json::Value) -> Self {
-        let client = Arc::new(Client::new());
+    pub fn new(limit: usize, last_seq: serde_json::Value) -> Self {
         let mut params = HashMap::new();
         params.insert("feed".to_string(), "longpoll".to_string());
         params.insert("include_docs".to_string(), "true".to_string());
         params.insert("timeout".to_string(), COUCH_MAX_TIMEOUT.to_string());
-        params.insert("limit".to_string(), 50.to_string());
+        params.insert("limit".to_string(), limit.to_string());
         Self {
-            client,
             params,
             last_seq,
+            limit,
         }
     }
 
+    pub fn get_client(&self) -> Client {
+        Client::new()
+    }
+
+    pub fn should_wait(&self, last_result_count: usize) -> bool {
+        last_result_count < (self.limit / 2)
+    }
+
     pub async fn fetch_next(&mut self) -> ChangeStreamResult<ChangesPage> {
-        let mut params = self.params.clone();
-        params.insert("since".to_string(), self.last_seq.to_string());
-        let request = self
-            .client
+        let client = self.get_client();
+        self.params
+            .insert("since".to_string(), self.last_seq.to_string());
+        let request = client
             .request(Method::GET, "https://replicate.npmjs.com/registry/_changes")
-            .query(&params);
+            .query(&self.params);
         // println!("{:?}", request);
         let res = request.send().await?;
         if !res.status().is_success() {

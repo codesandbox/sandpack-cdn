@@ -10,10 +10,11 @@ use tokio::time::sleep;
 async fn sync(db: NpmDatabase) -> AppResult<()> {
     let last_seq: i64 = db.get_last_seq()?;
     println!("[NPM-Replication] Last synced sequence {}", last_seq);
-    let mut stream = ChangesStream::new(last_seq.into());
+    let mut stream = ChangesStream::new(50, last_seq.into());
     loop {
         match stream.fetch_next().await {
             Ok(page) => {
+                let result_count = { page.results.len() };
                 for entry in page.results {
                     if let Change(evt) = entry {
                         if evt.deleted {
@@ -28,10 +29,14 @@ async fn sync(db: NpmDatabase) -> AppResult<()> {
 
                 println!("[NPM-Replication] Updated last seq to {}", page.last_seq);
                 db.update_last_seq(page.last_seq)?;
+
+                if stream.should_wait(result_count) {
+                    sleep(Duration::from_millis(1000)).await;
+                }
             }
             Err(err) => {
                 println!("NPM Registry sync error {:?}", err);
-                sleep(Duration::from_millis(250)).await;
+                sleep(Duration::from_millis(1000)).await;
             }
         }
     }
