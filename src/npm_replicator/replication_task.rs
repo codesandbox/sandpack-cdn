@@ -4,17 +4,17 @@ use crate::npm_replicator::changes::ChangesStream;
 use crate::npm_replicator::types::changes::Event::Change;
 use crate::npm_replicator::types::document::MinimalPackageData;
 
-use std::thread::sleep;
 use std::time::Duration;
+use tokio::time::sleep;
 
 const FINISHED_DEBOUNCE: u64 = 60000;
 
-fn sync(db: NpmDatabase) -> AppResult<()> {
+async fn sync(db: NpmDatabase) -> AppResult<()> {
     let last_seq: i64 = db.get_last_seq()?;
     println!("[NPM-Replication] Last synced sequence {}", last_seq);
     let mut stream = ChangesStream::new(50, last_seq.into());
     loop {
-        match stream.fetch_next() {
+        match stream.fetch_next().await {
             Ok(page) => {
                 let result_count = { page.results.len() };
                 for entry in page.results {
@@ -33,12 +33,12 @@ fn sync(db: NpmDatabase) -> AppResult<()> {
                 db.update_last_seq(page.last_seq)?;
 
                 if stream.should_wait(result_count) {
-                    sleep(Duration::from_millis(FINISHED_DEBOUNCE));
+                    sleep(Duration::from_millis(FINISHED_DEBOUNCE)).await;
                 }
             }
             Err(err) => {
                 println!("NPM Registry sync error {:?}", err);
-                sleep(Duration::from_millis(FINISHED_DEBOUNCE));
+                sleep(Duration::from_millis(FINISHED_DEBOUNCE)).await;
             }
         }
     }
@@ -46,11 +46,11 @@ fn sync(db: NpmDatabase) -> AppResult<()> {
 
 pub fn spawn_sync_thread(db: NpmDatabase) {
     println!("[NPM-Replication] Spawning npm sync worker...");
-    tokio::task::spawn_blocking(move || loop {
+    tokio::task::spawn(async move {
         println!("[NPM-Replication] Starting npm sync worker...");
-        if let Err(err) = sync(db.clone()) {
+        if let Err(err) = sync(db.clone()).await {
             println!("[NPM-Replication] SYNC WORKER CRASHED {:?}", err);
-            sleep(Duration::from_millis(500));
+            sleep(Duration::from_millis(500)).await;
         }
     });
 }
