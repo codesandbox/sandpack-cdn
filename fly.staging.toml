@@ -27,12 +27,12 @@ handlers = ["tls", "http"]
 port = 443
 
 [[services.http_checks]]
-interval = "10s"
-grace_period = "5s"
+interval = "5s"
+grace_period = "2s"
 method = "get"
 path = "/health"
 protocol = "http"
-restart_limit = 3
+restart_limit = 6
 timeout = "2s"
 tls_skip_verify = true
 
