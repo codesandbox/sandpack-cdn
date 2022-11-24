@@ -39,3 +39,6 @@ tls_skip_verify = true
 [mounts]
 source="npm_db"
 destination="/npm_db"
+
+[deploy]
+strategy = "bluegreen"
