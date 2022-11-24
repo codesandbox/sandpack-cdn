@@ -51,8 +51,10 @@ impl DepRequest {
     }
 }
 
+pub type ResolutionsMap = BTreeMap<String, Version>;
+
 pub struct DepTreeBuilder {
-    pub resolutions: BTreeMap<String, Version>,
+    pub resolutions: ResolutionsMap,
     packages: HashMap<String, HashSet<Version>>,
     npm_db: NpmDatabase,
 }
@@ -160,7 +162,7 @@ impl DepTreeBuilder {
         Ok(transient_deps)
     }
 
-    pub fn push(&mut self, deps: HashSet<DepRequest>) -> Result<(), ServerError> {
+    pub fn resolve_tree(&mut self, deps: HashSet<DepRequest>) -> Result<(), ServerError> {
         let mut deps = deps;
         let mut count = 0;
         while deps.len() > 0 && count < 200 {

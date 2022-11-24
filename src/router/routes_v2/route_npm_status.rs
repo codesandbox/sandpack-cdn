@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use warp::{Filter, Rejection, Reply};
 
-use crate::app_error::ServerError;
+use crate::app_error::{AppResult, ServerError};
 use crate::npm_replicator::database::NpmDatabase;
 
 use super::super::custom_reply::CustomReply;
@@ -15,15 +15,20 @@ struct NpmSyncStatus {
 }
 
 async fn get_reply(npm_db: NpmDatabase) -> Result<CustomReply, ServerError> {
-    let last_seq = npm_db.get_last_seq()?;
-    let doc_count = npm_db.get_package_count()?;
+    let result: AppResult<NpmSyncStatus> = tokio::task::spawn_blocking(move || {
+        let last_seq = npm_db.get_last_seq()?;
+        let doc_count = npm_db.get_package_count()?;
 
-    let status = NpmSyncStatus {
-        last_seq,
-        doc_count,
-    };
+        let status = NpmSyncStatus {
+            last_seq,
+            doc_count,
+        };
 
-    let mut reply = CustomReply::json(&status)?;
+        Ok(status)
+    })
+    .await?;
+
+    let mut reply = CustomReply::json(&result?)?;
     let cache_ttl = 300;
     reply.add_header(
         "Cache-Control",

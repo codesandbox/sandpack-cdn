@@ -2,8 +2,8 @@ use std::collections::HashSet;
 
 use warp::{Filter, Rejection, Reply};
 
-use crate::app_error::ServerError;
-use crate::npm::dep_tree_builder::{DepRange, DepRequest, DepTreeBuilder};
+use crate::app_error::{AppResult, ServerError};
+use crate::npm::dep_tree_builder::{DepRange, DepRequest, DepTreeBuilder, ResolutionsMap};
 use crate::npm_replicator::database::NpmDatabase;
 use crate::package::process::parse_package_specifier_no_validation;
 use crate::router::utils::decode_base64;
@@ -30,11 +30,17 @@ async fn get_reply(
 ) -> Result<CustomReply, ServerError> {
     let decoded_query = decode_base64(&path)?;
     let dep_requests = parse_query(decoded_query)?;
-    let mut tree_builder = DepTreeBuilder::new(npm_db);
-    tree_builder.push(dep_requests)?;
+
+    let result: AppResult<ResolutionsMap> = tokio::task::spawn_blocking(move || {
+        let mut tree_builder = DepTreeBuilder::new(npm_db.clone());
+        tree_builder.resolve_tree(dep_requests)?;
+        Ok(tree_builder.resolutions)
+    })
+    .await?;
+
     let mut reply = match is_json {
-        true => CustomReply::json(&tree_builder.resolutions)?,
-        false => CustomReply::msgpack(&tree_builder.resolutions)?,
+        true => CustomReply::json(&result?)?,
+        false => CustomReply::msgpack(&result?)?,
     };
     let cache_ttl = 3600;
     reply.add_header(
