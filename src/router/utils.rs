@@ -34,5 +34,5 @@ pub fn decode_req_part(part: &str) -> Result<(u64, String), ServerError> {
     }
 
     // Fallback to no version
-    Ok((1, String::from(decoded)))
+    Ok((1, decoded))
 }

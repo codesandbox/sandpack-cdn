@@ -19,7 +19,7 @@ async fn process_dep_tree(
 ) -> Result<DependencyList, ServerError> {
     let dep_map: HashMap<String, String> = serde_json::from_str(decoded_deps_str)?;
     let dep_requests = process_dep_map(dep_map, 0)?;
-    return collect_dep_tree(dep_requests, npm_db, pkg_processor).await;
+    collect_dep_tree(dep_requests, npm_db, pkg_processor).await
 }
 
 pub async fn get_dep_tree_reply(

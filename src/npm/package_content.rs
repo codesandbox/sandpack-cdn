@@ -91,11 +91,11 @@ impl PackageContentFetcher {
     pub async fn get(&self, url: &str) -> Result<Content, ServerError> {
         let key = String::from(url);
         if let Some(found_value) = self.cache.get(&key) {
-            return get_tarball(url, self.client.clone(), found_value).await;
+            get_tarball(url, self.client.clone(), found_value).await
         } else {
             let cached: Cached<Content> = Cached::new(self.refresh_interval);
             self.cache.insert(key, cached.clone()).await;
-            return get_tarball(url, self.client.clone(), cached).await;
+            get_tarball(url, self.client.clone(), cached).await
         }
     }
 }

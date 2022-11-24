@@ -86,9 +86,7 @@ pub async fn get_mod_reply(
     )
     .await?;
 
-    let response = create_reply(content).await;
-
-    response
+    create_reply(content).await
 }
 
 pub async fn mod_route_handler(

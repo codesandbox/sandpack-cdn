@@ -81,9 +81,9 @@ impl CachedPackageProcessor {
         package_name: &str,
         package_version: &str,
     ) -> Result<Content, ServerError> {
-        let key = String::from(format!("{}@{}", package_name, package_version));
+        let key = format!("{}@{}", package_name, package_version);
         if let Some(found_value) = self.cache.get(&key) {
-            return get_processed_pkg(
+            get_processed_pkg(
                 package_name,
                 package_version,
                 &self.temp_dir,
@@ -91,11 +91,11 @@ impl CachedPackageProcessor {
                 self.npm_db.clone(),
                 self.content_fetcher.clone(),
             )
-            .await;
+            .await
         } else {
             let cached: Cached<Content> = Cached::new(self.refresh_interval);
             self.cache.insert(key, cached.clone()).await;
-            return get_processed_pkg(
+            get_processed_pkg(
                 package_name,
                 package_version,
                 &self.temp_dir,
@@ -103,7 +103,7 @@ impl CachedPackageProcessor {
                 self.npm_db.clone(),
                 self.content_fetcher.clone(),
             )
-            .await;
+            .await
         }
     }
 }

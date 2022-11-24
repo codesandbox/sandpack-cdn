@@ -48,7 +48,7 @@ impl ChangesStream {
         if !res.status().is_success() {
             return Err(ChangeStreamError::new(
                 res.status().into(),
-                Some(res.text().await.unwrap_or(String::from(""))),
+                Some(res.text().await.unwrap_or_else(|_| String::from(""))),
             ));
         }
         let page: ChangesPage = res.json().await?;
