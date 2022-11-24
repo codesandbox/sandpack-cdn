@@ -7,6 +7,8 @@ use crate::npm_replicator::types::document::MinimalPackageData;
 use std::time::Duration;
 use tokio::time::sleep;
 
+const FINISHED_DEBOUNCE: u64 = 60000;
+
 async fn sync(db: NpmDatabase) -> AppResult<()> {
     let last_seq: i64 = db.get_last_seq()?;
     println!("[NPM-Replication] Last synced sequence {}", last_seq);
@@ -31,12 +33,12 @@ async fn sync(db: NpmDatabase) -> AppResult<()> {
                 db.update_last_seq(page.last_seq)?;
 
                 if stream.should_wait(result_count) {
-                    sleep(Duration::from_millis(1000)).await;
+                    sleep(Duration::from_millis(FINISHED_DEBOUNCE)).await;
                 }
             }
             Err(err) => {
                 println!("NPM Registry sync error {:?}", err);
-                sleep(Duration::from_millis(1000)).await;
+                sleep(Duration::from_millis(FINISHED_DEBOUNCE)).await;
             }
         }
     }
