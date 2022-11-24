@@ -1,9 +1,8 @@
 use std::{fmt, sync::Arc, time::Duration};
 
 use crate::{
-    app_error::ServerError,
-    cached::Cached,
-    npm::{package_content::PackageContentFetcher, package_data::PackageDataFetcher},
+    app_error::ServerError, cached::Cached, npm::package_content::PackageContentFetcher,
+    npm_replicator::database::NpmDatabase,
 };
 use moka::future::Cache;
 
@@ -13,27 +12,29 @@ pub type Content = Arc<(MinimalCachedModule, ModuleDependenciesMap)>;
 
 #[tracing::instrument(
     name = "get_processed_pkg",
-    skip(temp_dir, cached, data_fetcher, content_fetcher)
+    skip(temp_dir, cached, npm_db, content_fetcher)
 )]
 async fn get_processed_pkg(
     package_name: &str,
     package_version: &str,
     temp_dir: &str,
     cached: Cached<Content>,
-    data_fetcher: PackageDataFetcher,
+    npm_db: NpmDatabase,
     content_fetcher: PackageContentFetcher,
 ) -> Result<Content, ServerError> {
     let package_name = String::from(package_name);
     let package_version = String::from(package_version);
     let temp_dir = String::from(temp_dir);
+    let npm_db_path = npm_db.db_path.clone();
     let res = cached
         .get_cached(|_last_val| {
             Box::pin(async move {
+                let npm_db: Arc<NpmDatabase> = Arc::new(NpmDatabase::new(&npm_db_path)?);
                 let content = process_npm_package(
                     &package_name,
                     &package_version,
                     &temp_dir,
-                    &data_fetcher,
+                    &npm_db,
                     &content_fetcher,
                 )
                 .await?;
@@ -49,14 +50,14 @@ async fn get_processed_pkg(
 pub struct CachedPackageProcessor {
     cache: Cache<String, Cached<Content>>,
     refresh_interval: Duration,
-    data_fetcher: PackageDataFetcher,
+    npm_db: NpmDatabase,
     content_fetcher: PackageContentFetcher,
     temp_dir: String,
 }
 
 impl CachedPackageProcessor {
     pub fn new(
-        data_fetcher: PackageDataFetcher,
+        npm_db: NpmDatabase,
         content_fetcher: PackageContentFetcher,
         temp_dir: &str,
     ) -> CachedPackageProcessor {
@@ -68,7 +69,7 @@ impl CachedPackageProcessor {
                 .time_to_idle(ttl)
                 .build(),
             refresh_interval: Duration::from_secs(604800),
-            data_fetcher,
+            npm_db,
             content_fetcher,
             temp_dir: String::from(temp_dir),
         }
@@ -87,7 +88,7 @@ impl CachedPackageProcessor {
                 package_version,
                 &self.temp_dir,
                 found_value,
-                self.data_fetcher.clone(),
+                self.npm_db.clone(),
                 self.content_fetcher.clone(),
             )
             .await;
@@ -99,7 +100,7 @@ impl CachedPackageProcessor {
                 package_version,
                 &self.temp_dir,
                 cached,
-                self.data_fetcher.clone(),
+                self.npm_db.clone(),
                 self.content_fetcher.clone(),
             )
             .await;

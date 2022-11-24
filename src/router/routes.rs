@@ -1,7 +1,7 @@
 use warp::{Filter, Rejection, Reply};
 
 use crate::npm::package_content::PackageContentFetcher;
-use crate::npm::package_data::PackageDataFetcher;
+use crate::npm_replicator::database::NpmDatabase;
 use crate::package::cached::CachedPackageProcessor;
 use crate::AppConfig;
 
@@ -11,29 +11,25 @@ use super::routes_v1::route_dep_tree::dep_tree_route;
 use super::routes_v1::route_package_data::package_data_route;
 use super::routes_v2::route_deps::deps_route;
 use super::routes_v2::route_mod::mod_route;
+use super::routes_v2::route_npm_status::npm_sync_status_route;
 
 pub fn routes(
+    npm_db: NpmDatabase,
     app_data: AppConfig,
 ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
     // 15 minutes refresh interval and 1 day ttl
-    let pkg_data_fetcher = PackageDataFetcher::new();
     let pkg_content_fetcher = PackageContentFetcher::new();
     let pkg_processor = CachedPackageProcessor::new(
-        pkg_data_fetcher.clone(),
+        npm_db.clone(),
         pkg_content_fetcher.clone(),
         &app_data.temp_dir,
     );
 
     package_data_route(pkg_processor.clone())
-        .or(dep_tree_route(
-            pkg_data_fetcher.clone(),
-            pkg_processor.clone(),
-        ))
-        .or(mod_route(
-            pkg_data_fetcher.clone(),
-            pkg_content_fetcher.clone(),
-        ))
-        .or(deps_route(pkg_data_fetcher.clone()))
+        .or(dep_tree_route(npm_db.clone(), pkg_processor.clone()))
+        .or(mod_route(npm_db.clone(), pkg_content_fetcher.clone()))
+        .or(deps_route(npm_db.clone()))
+        .or(npm_sync_status_route(npm_db.clone()))
         .or(health_route())
         .or(not_found_route())
 }

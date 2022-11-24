@@ -2,3 +2,5 @@ target
 temp_files
 .env
 node_modules
+*.sqlite
+*.db3

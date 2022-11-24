@@ -2,15 +2,15 @@ use std::collections::HashSet;
 
 use warp::{Filter, Rejection, Reply};
 
-use crate::app_error::ServerError;
-use crate::npm::dep_tree_builder::{DepRange, DepRequest, DepTreeBuilder};
+use crate::app_error::{AppResult, ServerError};
+use crate::npm::dep_tree_builder::{DepRange, DepRequest, DepTreeBuilder, ResolutionsMap};
+use crate::npm_replicator::database::NpmDatabase;
 use crate::package::process::parse_package_specifier_no_validation;
 use crate::router::utils::decode_base64;
 
 use super::super::custom_reply::CustomReply;
 use super::super::error_reply::ErrorReply;
 use super::super::routes::with_data;
-use crate::npm::package_data::PackageDataFetcher;
 
 fn parse_query(query: String) -> Result<HashSet<DepRequest>, ServerError> {
     let parts = query.split(";");
@@ -25,16 +25,22 @@ fn parse_query(query: String) -> Result<HashSet<DepRequest>, ServerError> {
 
 async fn get_reply(
     path: String,
-    pkg_fetcher: PackageDataFetcher,
+    npm_db: NpmDatabase,
     is_json: bool,
 ) -> Result<CustomReply, ServerError> {
     let decoded_query = decode_base64(&path)?;
     let dep_requests = parse_query(decoded_query)?;
-    let mut tree_builder = DepTreeBuilder::new(pkg_fetcher);
-    tree_builder.push(dep_requests).await?;
+
+    let result: AppResult<ResolutionsMap> = tokio::task::spawn_blocking(move || {
+        let mut tree_builder = DepTreeBuilder::new(npm_db.clone());
+        tree_builder.resolve_tree(dep_requests)?;
+        Ok(tree_builder.resolutions)
+    })
+    .await?;
+
     let mut reply = match is_json {
-        true => CustomReply::json(&tree_builder.resolutions)?,
-        false => CustomReply::msgpack(&tree_builder.resolutions)?,
+        true => CustomReply::json(&result?)?,
+        false => CustomReply::msgpack(&result?)?,
     };
     let cache_ttl = 3600;
     reply.add_header(
@@ -50,37 +56,37 @@ async fn get_reply(
 
 async fn deps_route_handler(
     path: String,
-    pkg_fetcher: PackageDataFetcher,
+    npm_db: NpmDatabase,
     is_json: bool,
 ) -> Result<impl Reply, Rejection> {
-    match get_reply(path, pkg_fetcher, is_json).await {
+    match get_reply(path, npm_db, is_json).await {
         Ok(reply) => Ok(reply),
         Err(err) => Ok(ErrorReply::from(err).as_reply(3600).unwrap()),
     }
 }
 
 fn json_route(
-    pkg_fetcher: PackageDataFetcher,
+    npm_db: NpmDatabase,
 ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
     warp::path!("v2" / "json" / "deps" / String)
         .and(warp::get())
-        .and(with_data(pkg_fetcher))
+        .and(with_data(npm_db))
         .and(with_data(true))
         .and_then(deps_route_handler)
 }
 
 fn msgpack_route(
-    pkg_fetcher: PackageDataFetcher,
+    npm_db: NpmDatabase,
 ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
     warp::path!("v2" / "deps" / String)
         .and(warp::get())
-        .and(with_data(pkg_fetcher))
+        .and(with_data(npm_db))
         .and(with_data(false))
         .and_then(deps_route_handler)
 }
 
 pub fn deps_route(
-    pkg_fetcher: PackageDataFetcher,
+    npm_db: NpmDatabase,
 ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
-    json_route(pkg_fetcher.clone()).or(msgpack_route(pkg_fetcher))
+    json_route(npm_db.clone()).or(msgpack_route(npm_db))
 }

@@ -5,9 +5,7 @@ use std::{
 
 use node_semver::{Range, Version};
 
-use crate::app_error::ServerError;
-
-use super::package_data::PackageDataFetcher;
+use crate::{app_error::ServerError, npm_replicator::database::NpmDatabase};
 
 #[derive(Eq, Hash, PartialEq, Debug)]
 pub enum DepRange {
@@ -53,18 +51,20 @@ impl DepRequest {
     }
 }
 
+pub type ResolutionsMap = BTreeMap<String, Version>;
+
 pub struct DepTreeBuilder {
-    pub resolutions: BTreeMap<String, Version>,
+    pub resolutions: ResolutionsMap,
     packages: HashMap<String, HashSet<Version>>,
-    data_fetcher: PackageDataFetcher,
+    npm_db: NpmDatabase,
 }
 
 impl DepTreeBuilder {
-    pub fn new(data_fetcher: PackageDataFetcher) -> DepTreeBuilder {
+    pub fn new(npm_db: NpmDatabase) -> DepTreeBuilder {
         DepTreeBuilder {
             resolutions: BTreeMap::new(),
             packages: HashMap::new(),
-            data_fetcher,
+            npm_db,
         }
     }
 
@@ -101,33 +101,13 @@ impl DepTreeBuilder {
         false
     }
 
-    fn prefetch_module(&self, name: String) {
-        let fetcher = self.data_fetcher.clone();
-        tokio::spawn(async move {
-            match fetcher.get(&name).await {
-                Err(err) => {
-                    println!("Failed to fetch pkg {:?}", err);
-                }
-                _ => {}
-            };
-        });
-    }
-
-    async fn process(
-        &mut self,
-        deps: HashSet<DepRequest>,
-    ) -> Result<HashSet<DepRequest>, ServerError> {
+    fn process(&mut self, deps: HashSet<DepRequest>) -> Result<HashSet<DepRequest>, ServerError> {
         let mut transient_deps: HashSet<DepRequest> = HashSet::new();
 
         // Prefetch in background, this ensures the requests below are a bit faster, relying on the data_fetcher cache
         // Without overcomplicating the mostly synchronous logic in this function
-        let deps_to_fetch: Vec<String> = deps.iter().map(|v| v.name.clone()).collect();
-        for pkg_name in deps_to_fetch {
-            self.prefetch_module(pkg_name);
-        }
-
         for request in deps {
-            let data = self.data_fetcher.get(&request.name).await?;
+            let data = self.npm_db.get_package(&request.name)?;
             let mut range = Range::any();
             if let DepRange::Tag(tag) = &request.range {
                 match data.dist_tags.get(tag) {
@@ -165,7 +145,6 @@ impl DepTreeBuilder {
                 let data = data.versions.get(&resolved_version.to_string());
                 if let Some(data) = data {
                     for (name, range) in data.dependencies.iter() {
-                        self.prefetch_module(name.clone());
                         transient_deps.insert(DepRequest::new(
                             name.clone(),
                             DepRange::parse(range.clone()),
@@ -183,11 +162,11 @@ impl DepTreeBuilder {
         Ok(transient_deps)
     }
 
-    pub async fn push(&mut self, deps: HashSet<DepRequest>) -> Result<(), ServerError> {
+    pub fn resolve_tree(&mut self, deps: HashSet<DepRequest>) -> Result<(), ServerError> {
         let mut deps = deps;
         let mut count = 0;
         while deps.len() > 0 && count < 200 {
-            deps = self.process(deps).await?;
+            deps = self.process(deps)?;
             count += 1;
         }
 

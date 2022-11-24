@@ -1,12 +1,12 @@
 use std::{fmt, io::Cursor, sync::Arc, time::Duration};
 
-use crate::{app_error::ServerError, cached::Cached, utils::request};
+use crate::{
+    app_error::ServerError, cached::Cached, npm_replicator::database::NpmDatabase, utils::request,
+};
 use flate2::{bufread::GzEncoder, Compression};
 use moka::future::Cache;
 use reqwest_middleware::ClientWithMiddleware;
 use warp::hyper::body::Bytes;
-
-use super::package_data::{PackageData, PackageDataFetcher};
 
 pub type Content = Arc<Cursor<Bytes>>;
 
@@ -74,8 +74,7 @@ pub struct PackageContentFetcher {
 }
 
 impl PackageContentFetcher {
-    pub fn new(
-    ) -> PackageContentFetcher {
+    pub fn new() -> PackageContentFetcher {
         let ttl = Duration::from_secs(86400);
         let max_capacity = 50;
         PackageContentFetcher {
@@ -107,18 +106,21 @@ impl fmt::Debug for PackageContentFetcher {
     }
 }
 
-#[tracing::instrument(name = "download_package_content", skip(data_fetcher, content_fetcher))]
+#[tracing::instrument(name = "download_package_content", skip(npm_db, content_fetcher))]
 pub async fn download_package_content(
     package_name: &str,
     version: &str,
-    data_fetcher: &PackageDataFetcher,
+    npm_db: &NpmDatabase,
     content_fetcher: &PackageContentFetcher,
 ) -> Result<Content, ServerError> {
-    let manifest: Arc<PackageData> = data_fetcher.get(package_name).await?;
+    let manifest = npm_db.get_package(package_name)?;
     if let Some(version_data) = manifest.versions.get(version) {
         let content = content_fetcher.get(version_data.tarball.as_str()).await?;
         Ok(content)
     } else {
-        Err(ServerError::PackageVersionNotFound(String::from(package_name), String::from(version)))
+        Err(ServerError::PackageVersionNotFound(
+            String::from(package_name),
+            String::from(version),
+        ))
     }
 }
