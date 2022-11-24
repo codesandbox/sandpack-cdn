@@ -46,9 +46,10 @@ async fn sync(db: NpmDatabase) -> AppResult<()> {
 
 pub fn spawn_sync_thread(db: NpmDatabase) {
     println!("[NPM-Replication] Spawning npm sync worker...");
+    let npm_db_clone = NpmDatabase::new(&db.db_path).unwrap();
     tokio::task::spawn(async move {
         println!("[NPM-Replication] Starting npm sync worker...");
-        if let Err(err) = sync(db.clone()).await {
+        if let Err(err) = sync(npm_db_clone).await {
             println!("[NPM-Replication] SYNC WORKER CRASHED {:?}", err);
             sleep(Duration::from_millis(500)).await;
         }
