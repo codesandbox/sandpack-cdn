@@ -93,7 +93,7 @@ pub fn collect_files(
     }
 
     // fallback to empty vector, in this case we won't do anything
-    return vec![];
+    vec![]
 }
 
 #[cfg(test)]

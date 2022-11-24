@@ -15,7 +15,7 @@ pub enum DepRange {
 
 impl DepRange {
     pub fn parse(value: String) -> DepRange {
-        if value == String::from("*") || value == String::from("") {
+        if value == *"*" || value == *"" {
             DepRange::Range(Range::any())
         } else {
             match Range::parse(&value) {
@@ -165,7 +165,7 @@ impl DepTreeBuilder {
     pub fn resolve_tree(&mut self, deps: HashSet<DepRequest>) -> Result<(), ServerError> {
         let mut deps = deps;
         let mut count = 0;
-        while deps.len() > 0 && count < 200 {
+        while !deps.is_empty() && count < 200 {
             deps = self.process(deps)?;
             count += 1;
         }

@@ -13,7 +13,7 @@ use super::super::error_reply::ErrorReply;
 use super::super::routes::with_data;
 
 fn parse_query(query: String) -> Result<HashSet<DepRequest>, ServerError> {
-    let parts = query.split(";");
+    let parts = query.split(';');
     let mut dep_requests: HashSet<DepRequest> = HashSet::new();
     for part in parts {
         let (name, version) = parse_package_specifier_no_validation(part)?;

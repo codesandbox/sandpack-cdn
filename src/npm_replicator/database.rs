@@ -83,7 +83,7 @@ impl NpmDatabase {
     }
 
     pub fn write_package(&self, pkg: MinimalPackageData) -> AppResult<usize> {
-        if pkg.versions.len() <= 0 {
+        if pkg.versions.is_empty() {
             println!("Tried to write pkg {}, but has no versions", pkg.name);
             return self.delete_package(&pkg.name);
         }

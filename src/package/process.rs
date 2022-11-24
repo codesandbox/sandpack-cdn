@@ -303,7 +303,7 @@ pub async fn process_npm_package(
     );
 
     let tarball_content =
-        download_package_content(package_name, package_version, &npm_db, &content_fetcher).await?;
+        download_package_content(package_name, package_version, npm_db, content_fetcher).await?;
     let mut pkg_output_path = Path::new(temp_dir)
         .join(nanoid!())
         .join(format!("{}-{}", package_name, package_version));
