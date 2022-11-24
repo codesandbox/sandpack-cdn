@@ -65,6 +65,23 @@ async fn get_tarball(
     Ok(res)
 }
 
+fn get_client() -> ClientWithMiddleware {
+    let retry_policy = ExponentialBackoff::builder().build_with_max_retries(3);
+
+    let client_builder = reqwest::ClientBuilder::new()
+        .timeout(Duration::from_secs(120))
+        .deflate(true)
+        .gzip(true)
+        .brotli(true);
+    let base_client = client_builder
+        .build()
+        .expect("reqwest::ClientBuilder::build()");
+
+    ClientBuilder::new(base_client)
+        .with(RetryTransientMiddleware::new_with_policy(retry_policy))
+        .build()
+}
+
 #[derive(Clone)]
 pub struct PackageContentFetcher {
     cache: Cache<String, Cached<Content>>,
@@ -84,27 +101,10 @@ impl PackageContentFetcher {
         }
     }
 
-    pub fn get_client(&self) -> ClientWithMiddleware {
-        let retry_policy = ExponentialBackoff::builder().build_with_max_retries(3);
-
-        let client_builder = reqwest::ClientBuilder::new()
-            .timeout(Duration::new(120, 0))
-            .deflate(true)
-            .gzip(true)
-            .brotli(true);
-        let base_client = client_builder
-            .build()
-            .expect("reqwest::ClientBuilder::build()");
-
-        ClientBuilder::new(base_client)
-            .with(RetryTransientMiddleware::new_with_policy(retry_policy))
-            .build()
-    }
-
     #[tracing::instrument(name = "pkg_content_get", skip(self))]
     pub async fn get(&self, url: &str) -> Result<Content, ServerError> {
         let key = String::from(url);
-        let client = self.get_client();
+        let client = get_client();
         if let Some(found_value) = self.cache.get(&key) {
             get_tarball(url, client, found_value).await
         } else {

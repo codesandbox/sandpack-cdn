@@ -4,17 +4,17 @@ use crate::npm_replicator::changes::ChangesStream;
 use crate::npm_replicator::types::changes::Event::Change;
 use crate::npm_replicator::types::document::MinimalPackageData;
 
+use std::thread::sleep;
 use std::time::Duration;
-use tokio::time::sleep;
 
 const FINISHED_DEBOUNCE: u64 = 60000;
 
-async fn sync(db: NpmDatabase) -> AppResult<()> {
+fn sync(db: NpmDatabase) -> AppResult<()> {
     let last_seq: i64 = db.get_last_seq()?;
     println!("[NPM-Replication] Last synced sequence {}", last_seq);
     let mut stream = ChangesStream::new(50, last_seq.into());
     loop {
-        match stream.fetch_next().await {
+        match stream.fetch_next() {
             Ok(page) => {
                 let result_count = { page.results.len() };
                 for entry in page.results {
@@ -33,12 +33,12 @@ async fn sync(db: NpmDatabase) -> AppResult<()> {
                 db.update_last_seq(page.last_seq)?;
 
                 if stream.should_wait(result_count) {
-                    sleep(Duration::from_millis(FINISHED_DEBOUNCE)).await;
+                    sleep(Duration::from_millis(FINISHED_DEBOUNCE));
                 }
             }
             Err(err) => {
                 println!("NPM Registry sync error {:?}", err);
-                sleep(Duration::from_millis(FINISHED_DEBOUNCE)).await;
+                sleep(Duration::from_millis(FINISHED_DEBOUNCE));
             }
         }
     }
@@ -46,13 +46,11 @@ async fn sync(db: NpmDatabase) -> AppResult<()> {
 
 pub fn spawn_sync_thread(db: NpmDatabase) {
     println!("[NPM-Replication] Spawning npm sync worker...");
-    tokio::spawn(async move {
-        loop {
-            println!("[NPM-Replication] Starting npm sync worker...");
-            if let Err(err) = sync(db.clone()).await {
-                println!("[NPM-Replication] SYNC WORKER CRASHED {:?}", err);
-                sleep(Duration::from_millis(500)).await;
-            }
+    tokio::task::spawn_blocking(move || loop {
+        println!("[NPM-Replication] Starting npm sync worker...");
+        if let Err(err) = sync(db.clone()) {
+            println!("[NPM-Replication] SYNC WORKER CRASHED {:?}", err);
+            sleep(Duration::from_millis(500));
         }
     });
 }

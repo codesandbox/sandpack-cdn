@@ -2,8 +2,8 @@ use super::{
     error::{ChangeStreamError, ChangeStreamResult},
     types::changes::ChangesPage,
 };
-use reqwest::{Client, Method};
-use std::collections::HashMap;
+use reqwest::{blocking::Client, Method};
+use std::{collections::HashMap, time::Duration};
 
 /// The max timeout value for longpoll/continous HTTP requests
 /// that CouchDB supports (see [1]).
@@ -15,6 +15,7 @@ const COUCH_MAX_TIMEOUT: usize = 60000;
 ///
 /// This is returned from [Database::changes].
 pub struct ChangesStream {
+    client: Client,
     last_seq: serde_json::Value,
     params: HashMap<String, String>,
     pub limit: usize,
@@ -28,37 +29,38 @@ impl ChangesStream {
         params.insert("include_docs".to_string(), "true".to_string());
         params.insert("timeout".to_string(), COUCH_MAX_TIMEOUT.to_string());
         params.insert("limit".to_string(), limit.to_string());
+        let client = Client::builder()
+            .timeout(Duration::from_secs(120))
+            .build()
+            .unwrap();
         Self {
             params,
             last_seq,
             limit,
+            client,
         }
-    }
-
-    pub fn get_client(&self) -> Client {
-        Client::new()
     }
 
     pub fn should_wait(&self, last_result_count: usize) -> bool {
         last_result_count < (self.limit / 2)
     }
 
-    pub async fn fetch_next(&mut self) -> ChangeStreamResult<ChangesPage> {
-        let client = self.get_client();
+    pub fn fetch_next(&mut self) -> ChangeStreamResult<ChangesPage> {
         self.params
             .insert("since".to_string(), self.last_seq.to_string());
-        let request = client
+        let request = self
+            .client
             .request(Method::GET, "https://replicate.npmjs.com/registry/_changes")
             .query(&self.params);
         // println!("{:?}", request);
-        let res = request.send().await?;
+        let res = request.send()?;
         if !res.status().is_success() {
             return Err(ChangeStreamError::new(
                 res.status().into(),
-                Some(res.text().await.unwrap_or_else(|_| String::from(""))),
+                Some(res.text().unwrap_or_else(|_| String::from(""))),
             ));
         }
-        let page: ChangesPage = res.json().await?;
+        let page: ChangesPage = res.json()?;
         self.last_seq = page.last_seq.into();
         Ok(page)
     }
