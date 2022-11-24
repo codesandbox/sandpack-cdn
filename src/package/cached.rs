@@ -25,11 +25,9 @@ async fn get_processed_pkg(
     let package_name = String::from(package_name);
     let package_version = String::from(package_version);
     let temp_dir = String::from(temp_dir);
-    let npm_db_path = npm_db.db_path.clone();
     let res = cached
         .get_cached(|_last_val| {
             Box::pin(async move {
-                let npm_db: Arc<NpmDatabase> = Arc::new(NpmDatabase::new(&npm_db_path)?);
                 let content = process_npm_package(
                     &package_name,
                     &package_version,

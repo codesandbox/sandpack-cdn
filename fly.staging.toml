@@ -40,5 +40,5 @@ tls_skip_verify = true
 source="npm_db"
 destination="/npm_db"
 
-[deploy]
-strategy = "bluegreen"
+# [deploy]
+# strategy = "bluegreen"
