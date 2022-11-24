@@ -59,10 +59,8 @@ pub enum ServerError {
     NotChanged,
     #[error("Invalid query")]
     InvalidQuery,
-    #[error("DB Pool Error")]
-    DBPoolError(#[from] r2d2::Error),
     #[error("SQLite Error")]
-    SQLiteError(#[from] r2d2_sqlite::rusqlite::Error),
+    SQLiteError(#[from] rusqlite::Error),
 }
 
 impl From<ServerError> for std::io::Error {

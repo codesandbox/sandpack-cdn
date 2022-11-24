@@ -2029,27 +2029,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "r2d2"
-version = "0.8.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "51de85fb3fb6524929c8a2eb85e6b6d363de4e8c48f9e2c2eac4944abc181c93"
-dependencies = [
- "log",
- "parking_lot 0.12.0",
- "scheduled-thread-pool",
-]
-
-[[package]]
-name = "r2d2_sqlite"
-version = "0.21.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b4f5d0337e99cd5cacd91ffc326c6cc9d8078def459df560c4f9bf9ba4a51034"
-dependencies = [
- "r2d2",
- "rusqlite",
-]
-
-[[package]]
 name = "rand"
 version = "0.7.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2397,14 +2376,13 @@ dependencies = [
  "opentelemetry",
  "opentelemetry-otlp",
  "parking_lot 0.11.2",
- "r2d2",
- "r2d2_sqlite",
  "regex",
  "reqwest",
  "reqwest-middleware",
  "reqwest-retry",
  "rmp",
  "rmp-serde",
+ "rusqlite",
  "serde",
  "serde_bytes",
  "serde_json",

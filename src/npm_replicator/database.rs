@@ -1,10 +1,7 @@
 use std::sync::Arc;
 
-use r2d2::Pool;
-use r2d2_sqlite::{
-    rusqlite::{named_params, OptionalExtension},
-    SqliteConnectionManager,
-};
+use parking_lot::Mutex;
+use rusqlite::{named_params, Connection, OpenFlags, OptionalExtension};
 
 use crate::app_error::AppResult;
 
@@ -13,23 +10,27 @@ use super::types::document::MinimalPackageData;
 #[derive(Clone, Debug)]
 pub struct NpmDatabase {
     pub db_path: String,
-    pool: Arc<Pool<SqliteConnectionManager>>,
+    db: Arc<Mutex<Connection>>,
 }
 
 impl NpmDatabase {
     pub fn new(db_path: &str) -> AppResult<Self> {
-        let sqlite_connection_manager = SqliteConnectionManager::file(db_path);
-        let sqlite_pool = r2d2::Pool::new(sqlite_connection_manager)
-            .expect("Failed to create r2d2 SQLite connection pool");
-        let pool_arc = Arc::new(sqlite_pool);
+        let connection = Connection::open_with_flags(
+            db_path,
+            OpenFlags::SQLITE_OPEN_READ_WRITE
+                | OpenFlags::SQLITE_OPEN_CREATE
+                | OpenFlags::SQLITE_OPEN_NO_MUTEX
+                | OpenFlags::SQLITE_OPEN_URI,
+        )?;
+
         Ok(Self {
             db_path: String::from(db_path),
-            pool: pool_arc,
+            db: Arc::new(Mutex::new(connection)),
         })
     }
 
     pub fn init(&self) -> AppResult<()> {
-        let connection = self.pool.get()?;
+        let connection = self.db.lock();
 
         connection.execute(
             "CREATE TABLE IF NOT EXISTS package (
@@ -51,7 +52,7 @@ impl NpmDatabase {
     }
 
     pub fn get_last_seq(&self) -> AppResult<i64> {
-        let connection = self.pool.get()?;
+        let connection = self.db.lock();
 
         let mut prepared_statement =
             connection.prepare("SELECT id, seq FROM last_sync WHERE id = (:id)")?;
@@ -68,7 +69,7 @@ impl NpmDatabase {
     }
 
     pub fn update_last_seq(&self, next_seq: i64) -> AppResult<usize> {
-        let connection = self.pool.get()?;
+        let connection = self.db.lock();
         let mut prepared_statement =
             connection.prepare("INSERT OR REPLACE INTO last_sync (id, seq) VALUES (:id, :seq)")?;
         let res = prepared_statement.execute(named_params! { ":id": "_last", ":seq": next_seq })?;
@@ -76,7 +77,7 @@ impl NpmDatabase {
     }
 
     pub fn delete_package(&self, name: &str) -> AppResult<usize> {
-        let connection = self.pool.get()?;
+        let connection = self.db.lock();
         let mut prepared_statement = connection.prepare("DELETE FROM package WHERE id = (:id)")?;
         let res = prepared_statement.execute(named_params! { ":id": name })?;
         Ok(res)
@@ -88,7 +89,7 @@ impl NpmDatabase {
             return self.delete_package(&pkg.name);
         }
 
-        let connection = self.pool.get()?;
+        let connection = self.db.lock();
         let mut prepared_statement = connection
             .prepare("INSERT OR REPLACE INTO package (id, content) VALUES (:id, :content)")?;
         let res = prepared_statement.execute(
@@ -98,7 +99,7 @@ impl NpmDatabase {
     }
 
     pub fn get_package(&self, name: &str) -> AppResult<MinimalPackageData> {
-        let connection = self.pool.get()?;
+        let connection = self.db.lock();
         let mut prepared_statement =
             connection.prepare("SELECT content FROM package where id = (:id)")?;
 
@@ -119,7 +120,7 @@ impl NpmDatabase {
     }
 
     pub fn get_package_count(&self) -> AppResult<i64> {
-        let connection = self.pool.get()?;
+        let connection = self.db.lock();
         let mut prepared_statement = connection.prepare("SELECT COUNT(*) FROM package")?;
 
         let res =
