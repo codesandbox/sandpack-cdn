@@ -89,28 +89,29 @@ impl NpmDatabase {
             return self.delete_package(&pkg.name);
         }
 
-        let connection = self.db.lock();
-        let mut prepared_statement = connection
-            .prepare("INSERT OR REPLACE INTO package (id, content) VALUES (:id, :content)")?;
-        let res = prepared_statement.execute(
-            named_params! { ":id": pkg.name, ":content": serde_json::to_string(&pkg).unwrap() },
-        )?;
+        let content = serde_json::to_string(&pkg)?;
+        let res = {
+            let connection = self.db.lock();
+            let mut prepared_statement = connection
+                .prepare("INSERT OR REPLACE INTO package (id, content) VALUES (:id, :content)")?;
+            prepared_statement.execute(named_params! { ":id": pkg.name, ":content": content })
+        }?;
+
         Ok(res)
     }
 
     pub fn get_package(&self, name: &str) -> AppResult<MinimalPackageData> {
-        let connection = self.db.lock();
-        let mut prepared_statement =
-            connection.prepare("SELECT content FROM package where id = (:id)")?;
+        let content_val: Option<String> = {
+            let connection = self.db.lock();
+            let mut prepared_statement =
+                connection.prepare("SELECT content FROM package where id = (:id)")?;
+            prepared_statement
+                .query_row(named_params! { ":id": name }, |row| row.get(0))
+                .optional()?
+        };
 
-        let res = prepared_statement
-            .query_row(named_params! { ":id": name }, |row| {
-                let content_val: String = row.get(0).unwrap();
-                Ok(serde_json::from_str(&content_val).unwrap())
-            })
-            .optional()?;
-
-        if let Some(found_pkg) = res {
+        if let Some(pkg_content) = content_val {
+            let found_pkg = serde_json::from_str(&pkg_content)?;
             Ok(found_pkg)
         } else {
             Err(crate::app_error::ServerError::PackageNotFound(
@@ -122,7 +123,6 @@ impl NpmDatabase {
     pub fn get_package_count(&self) -> AppResult<i64> {
         let connection = self.db.lock();
         let mut prepared_statement = connection.prepare("SELECT COUNT(*) FROM package")?;
-
         let res =
             prepared_statement.query_row(named_params! {}, |row| Ok(row.get(0).unwrap_or(0)))?;
         Ok(res)
