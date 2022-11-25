@@ -123,10 +123,11 @@ impl DepTreeBuilder {
             }
 
             if self.has_dependency(&request.name, &range) {
-                println!(
-                    "{}@{} is already resolved, skipping",
-                    &request.name, &request.range
-                );
+                // TODO: Make this only run for dev builds, it slows down requests a lot sometimes...
+                // println!(
+                //     "{}@{} is already resolved, skipping",
+                //     &request.name, &request.range
+                // );
                 continue;
             }
 
