@@ -6,6 +6,8 @@ processes = []
 [env]
 PORT = "8080"
 NPM_SQLITE_DB = "/npm_db/registry.db3"
+OTEL_SERVICE_NAME = "sandpack-cdn-staging"
+OTEL_EXPORTER_OTLP_ENDPOINT = "https://api.honeycomb.io:443"
 
 [[services]]
 internal_port = 8080
