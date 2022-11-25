@@ -36,7 +36,7 @@ impl NpmDatabase {
             "CREATE TABLE IF NOT EXISTS package (
                 id    TEXT PRIMARY KEY,
                 content  TEXT NOT NULL
-            )",
+            );",
             (),
         )?;
 
@@ -44,7 +44,7 @@ impl NpmDatabase {
             "CREATE TABLE IF NOT EXISTS last_sync (
                 id    TEXT PRIMARY KEY,
                 seq   INTEGER NOT NULL
-            )",
+            );",
             (),
         )?;
 
@@ -54,10 +54,9 @@ impl NpmDatabase {
     pub fn get_last_seq(&self) -> AppResult<i64> {
         let connection = self.db.lock();
 
-        let mut prepared_statement =
-            connection.prepare("SELECT id, seq FROM last_sync WHERE id = (:id)")?;
+        let mut stmt = connection.prepare("SELECT id, seq FROM last_sync WHERE id = (:id);")?;
 
-        let res = prepared_statement
+        let res = stmt
             .query_row(named_params! { ":id": "_last" }, |row| {
                 Ok(row.get(1).unwrap_or(0))
             })
@@ -70,16 +69,16 @@ impl NpmDatabase {
 
     pub fn update_last_seq(&self, next_seq: i64) -> AppResult<usize> {
         let connection = self.db.lock();
-        let mut prepared_statement =
-            connection.prepare("INSERT OR REPLACE INTO last_sync (id, seq) VALUES (:id, :seq)")?;
-        let res = prepared_statement.execute(named_params! { ":id": "_last", ":seq": next_seq })?;
+        let mut stmt =
+            connection.prepare("INSERT OR REPLACE INTO last_sync (id, seq) VALUES (:id, :seq);")?;
+        let res = stmt.execute(named_params! { ":id": "_last", ":seq": next_seq })?;
         Ok(res)
     }
 
     pub fn delete_package(&self, name: &str) -> AppResult<usize> {
         let connection = self.db.lock();
-        let mut prepared_statement = connection.prepare("DELETE FROM package WHERE id = (:id)")?;
-        let res = prepared_statement.execute(named_params! { ":id": name })?;
+        let mut stmt = connection.prepare("DELETE FROM package WHERE id = (:id);")?;
+        let res = stmt.execute(named_params! { ":id": name })?;
         Ok(res)
     }
 
@@ -92,9 +91,9 @@ impl NpmDatabase {
         let content = serde_json::to_string(&pkg)?;
         let res = {
             let connection = self.db.lock();
-            let mut prepared_statement = connection
-                .prepare("INSERT OR REPLACE INTO package (id, content) VALUES (:id, :content)")?;
-            prepared_statement.execute(named_params! { ":id": pkg.name, ":content": content })
+            let mut stmt = connection
+                .prepare("INSERT OR REPLACE INTO package (id, content) VALUES (:id, :content);")?;
+            stmt.execute(named_params! { ":id": pkg.name, ":content": content })
         }?;
 
         Ok(res)
@@ -103,10 +102,8 @@ impl NpmDatabase {
     pub fn get_package(&self, name: &str) -> AppResult<MinimalPackageData> {
         let content_val: Option<String> = {
             let connection = self.db.lock();
-            let mut prepared_statement =
-                connection.prepare("SELECT content FROM package where id = (:id)")?;
-            prepared_statement
-                .query_row(named_params! { ":id": name }, |row| row.get(0))
+            let mut stmt = connection.prepare("SELECT content FROM package where id = (:id);")?;
+            stmt.query_row(named_params! { ":id": name }, |row| row.get(0))
                 .optional()?
         };
 
@@ -122,9 +119,8 @@ impl NpmDatabase {
 
     pub fn get_package_count(&self) -> AppResult<i64> {
         let connection = self.db.lock();
-        let mut prepared_statement = connection.prepare("SELECT COUNT(*) FROM package")?;
-        let res =
-            prepared_statement.query_row(named_params! {}, |row| Ok(row.get(0).unwrap_or(0)))?;
+        let mut stmt = connection.prepare("SELECT COUNT(*) FROM package;")?;
+        let res = stmt.query_row(named_params! {}, |row| Ok(row.get(0).unwrap_or(0)))?;
         Ok(res)
     }
 }

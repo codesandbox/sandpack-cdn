@@ -39,7 +39,7 @@ pub struct MinimalPackageVersionData {
     pub dependencies: HashMap<String, String>,
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, Default)]
 pub struct MinimalPackageData {
     pub name: String,
     pub dist_tags: HashMap<String, String>,
