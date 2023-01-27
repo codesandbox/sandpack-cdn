@@ -113,6 +113,10 @@ impl DepTreeBuilder {
                 match data.dist_tags.get(tag) {
                     Some(found_version) => {
                         range = Range::parse(found_version)?;
+                        self.resolutions.insert(
+                            format!("{}@{}", request.name, tag),
+                            Version::parse(found_version)?,
+                        );
                     }
                     None => {
                         return Err(ServerError::InvalidPackageSpecifier);
