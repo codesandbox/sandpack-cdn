@@ -34,6 +34,13 @@ async fn get_reply(
     let result: AppResult<ResolutionsMap> = tokio::task::spawn_blocking(move || {
         let mut tree_builder = DepTreeBuilder::new(npm_db.clone());
         tree_builder.resolve_tree(dep_requests)?;
+        for (alias_key, alias_value) in tree_builder.aliases {
+            if let Some(resolved_version) = tree_builder.resolutions.get(&alias_value) {
+                tree_builder
+                    .resolutions
+                    .insert(alias_key, resolved_version.clone());
+            }
+        }
         Ok(tree_builder.resolutions)
     })
     .await?;

@@ -52,9 +52,11 @@ impl DepRequest {
 }
 
 pub type ResolutionsMap = BTreeMap<String, Version>;
+pub type AliasesMap = BTreeMap<String, String>;
 
 pub struct DepTreeBuilder {
     pub resolutions: ResolutionsMap,
+    pub aliases: AliasesMap,
     packages: HashMap<String, HashSet<Version>>,
     npm_db: NpmDatabase,
 }
@@ -63,6 +65,7 @@ impl DepTreeBuilder {
     pub fn new(npm_db: NpmDatabase) -> DepTreeBuilder {
         DepTreeBuilder {
             resolutions: BTreeMap::new(),
+            aliases: BTreeMap::new(),
             packages: HashMap::new(),
             npm_db,
         }
@@ -113,9 +116,10 @@ impl DepTreeBuilder {
                 match data.dist_tags.get(tag) {
                     Some(found_version) => {
                         range = Range::parse(found_version)?;
-                        self.resolutions.insert(
+                        let version = Version::parse(found_version)?;
+                        self.aliases.insert(
                             format!("{}@{}", request.name, tag),
-                            Version::parse(found_version)?,
+                            format!("{}@{}", request.name, version.major),
                         );
                     }
                     None => {
