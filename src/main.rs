@@ -12,13 +12,7 @@ mod npm_replicator;
 mod package;
 mod router;
 mod setup_tracing;
-mod transform;
 mod utils;
-
-#[derive(Clone)]
-pub struct AppConfig {
-    temp_dir: String,
-}
 
 #[tokio::main]
 async fn main() -> Result<(), std::io::Error> {
@@ -34,15 +28,6 @@ async fn main() -> Result<(), std::io::Error> {
     let npm_db_path = env::var("NPM_SQLITE_DB").expect("NPM_SQLITE_DB env variable should be set");
 
     setup_tracing::setup_tracing();
-
-    let temp_dir_path = env::current_dir()?.join("temp_files");
-    let temp_dir = temp_dir_path.as_os_str().to_str().unwrap();
-    let app_data = AppConfig {
-        temp_dir: String::from(temp_dir),
-    };
-
-    // create data directory
-    tokio::fs::create_dir_all(String::from(temp_dir)).await?;
 
     // Setup npm registry replicator
     let npm_db = NpmDatabase::new(&npm_db_path).unwrap();
@@ -62,7 +47,7 @@ async fn main() -> Result<(), std::io::Error> {
     );
     let cors_headers_filter = warp::reply::with::headers(headers);
 
-    let filter = router::routes::routes(npm_db, app_data)
+    let filter = router::routes::routes(npm_db)
         .with(warp::trace::request())
         .with(cors_headers_filter)
         .with(warp::compression::gzip());
