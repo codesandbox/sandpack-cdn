@@ -45,7 +45,7 @@ async fn route_handler(npm_db: NpmDatabase) -> Result<impl Reply, Rejection> {
 pub fn npm_sync_status_route(
     npm_db: NpmDatabase,
 ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
-    let cloned_db = NpmDatabase::new(&npm_db.db_path).unwrap();
+    let cloned_db = npm_db.clone();
     warp::path!("v2" / "npm_sync_status")
         .and(warp::get())
         .and(with_data(cloned_db))

@@ -1,7 +1,9 @@
 use std::sync::Arc;
 
+use lru::LruCache;
 use parking_lot::Mutex;
 use rusqlite::{named_params, Connection, OpenFlags, OptionalExtension};
+use std::num::NonZeroUsize;
 
 use crate::app_error::AppResult;
 
@@ -11,6 +13,7 @@ use super::types::document::MinimalPackageData;
 pub struct NpmDatabase {
     pub db_path: String,
     db: Arc<Mutex<Connection>>,
+    cache: Arc<Mutex<LruCache<String, MinimalPackageData>>>,
 }
 
 impl NpmDatabase {
@@ -22,10 +25,12 @@ impl NpmDatabase {
                 | OpenFlags::SQLITE_OPEN_NO_MUTEX
                 | OpenFlags::SQLITE_OPEN_URI,
         )?;
+        let cache = LruCache::new(NonZeroUsize::new(500).unwrap());
 
         Ok(Self {
             db_path: String::from(db_path),
             db: Arc::new(Mutex::new(connection)),
+            cache: Arc::new(Mutex::new(cache)),
         })
     }
 
@@ -79,6 +84,8 @@ impl NpmDatabase {
         let connection = self.db.lock();
         let mut stmt = connection.prepare("DELETE FROM package WHERE id = (:id);")?;
         let res = stmt.execute(named_params! { ":id": name })?;
+        let mut cache = self.cache.lock();
+        cache.pop(name);
         Ok(res)
     }
 
@@ -88,6 +95,7 @@ impl NpmDatabase {
             return self.delete_package(&pkg.name);
         }
 
+        let pkg_name = pkg.name.clone();
         let content = serde_json::to_string(&pkg)?;
         let res = {
             let connection = self.db.lock();
@@ -96,10 +104,21 @@ impl NpmDatabase {
             stmt.execute(named_params! { ":id": pkg.name, ":content": content })
         }?;
 
+        let mut cache = self.cache.lock();
+        cache.pop(&pkg_name);
+
         Ok(res)
     }
 
     pub fn get_package(&self, name: &str) -> AppResult<MinimalPackageData> {
+        {
+            let mut cache = self.cache.lock();
+            let cached_value = cache.get(name);
+            if let Some(pkg_data) = cached_value {
+                return Ok(pkg_data.clone());
+            }
+        };
+
         let content_val: Option<String> = {
             let connection = self.db.lock();
             let mut stmt = connection.prepare("SELECT content FROM package where id = (:id);")?;
@@ -108,7 +127,9 @@ impl NpmDatabase {
         };
 
         if let Some(pkg_content) = content_val {
-            let found_pkg = serde_json::from_str(&pkg_content)?;
+            let found_pkg: MinimalPackageData = serde_json::from_str(&pkg_content)?;
+            let mut cache = self.cache.lock();
+            cache.put(name.to_string(), found_pkg.clone());
             Ok(found_pkg)
         } else {
             Err(crate::app_error::ServerError::PackageNotFound(
@@ -118,9 +139,10 @@ impl NpmDatabase {
     }
 
     pub fn get_package_count(&self) -> AppResult<i64> {
-        let connection = self.db.lock();
-        let mut stmt = connection.prepare("SELECT COUNT(*) FROM package;")?;
-        let res = stmt.query_row(named_params! {}, |row| Ok(row.get(0).unwrap_or(0)))?;
-        Ok(res)
+        // let connection = self.db.lock();
+        // let mut stmt = connection.prepare("SELECT COUNT(*) FROM package;")?;
+        // let res = stmt.query_row(named_params! {}, |row| Ok(row.get(0).unwrap_or(0)))?;
+        // Ok(res)
+        Ok(0)
     }
 }
