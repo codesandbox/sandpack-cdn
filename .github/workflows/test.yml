@@ -34,6 +34,6 @@ jobs:
   #         profile: minimal
   #         override: true
   #     - name: Cargo build release
-  #       run: RUST_MIN_STACK=16777216 cargo build --release
+  #       run: cargo build --release
   #     - uses: bahmutov/npm-install@v1.1.0
   #     - run: yarn ci:run_tests

@@ -17,7 +17,7 @@ Some good packages to test the CDN:
 
 ## Running the project
 
-Run the following command: `RUST_MIN_STACK=16777216 cargo run`
+Run the following command: `cargo run`
 
 ## Environment variables
 
