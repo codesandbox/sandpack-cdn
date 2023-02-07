@@ -4,3 +4,4 @@ temp_files
 .env
 *.db3
 *.sqlite
+Dockerfile
