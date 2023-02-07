@@ -27,16 +27,16 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 EXPOSE 8080
-WORKDIR /app
-
 ENV APP_USER=appuser
 
 RUN groupadd $APP_USER \
-    && useradd -g $APP_USER $APP_USER \
-    && mkdir -p /app
+    && useradd --create-home -g $APP_USER $APP_USER
+
+WORKDIR /home/appuser
 
 COPY --chown=$APP_USER:$APP_USER --from=builder /app/sandpack-cdn/target/release/  ./
 
 USER $APP_USER
+RUN mkdir /home/$APP_USER/npm_db
 
-CMD ["/app/sandpack-cdn"]
+CMD ["/home/appuser/sandpack-cdn"]
