@@ -2,31 +2,41 @@ FROM rust:latest AS builder
 
 # We need the nightly for some packages...
 CMD rustup default nightly
-
 WORKDIR /app
+
+# Installing all dependencies...
+RUN USER=root cargo new --bin sandpack-cdn
+WORKDIR /app/sandpack-cdn
+
+COPY Cargo.toml Cargo.lock ./
+RUN cargo build --release
+RUN rm src/*.rs
+RUN rm ./target/release/deps/sandpack_cdn*
 
 # Copy the source
 COPY . .
 
-# Useful for testing the docker file without installing all dependencies...
-# RUN cargo init --bin --name sandpack-cdn
-
 # Build (install) the binaries
 RUN cargo build --release
 
-# Runtime image
-FROM rust:latest
 
-# Run as "app" user
-RUN useradd -ms /bin/bash app
+FROM debian:bullseye-slim
 
-USER app
-WORKDIR /app
+RUN apt-get update \
+    && apt-get install -y ca-certificates tzdata \
+    && rm -rf /var/lib/apt/lists/*
 
-# Get compiled binaries from builder's cargo install directory
-COPY --from=builder /app/target/release/ /app/
+EXPOSE 8080
+ENV APP_USER=appuser
 
-RUN ls -la
+RUN groupadd $APP_USER \
+    && useradd --create-home -g $APP_USER $APP_USER
 
-# No CMD or ENTRYPOINT, see fly.toml with `cmd` override.
-CMD /app/sandpack-cdn
+WORKDIR /home/appuser
+
+COPY --chown=$APP_USER:$APP_USER --from=builder /app/sandpack-cdn/target/release/  ./
+
+USER $APP_USER
+RUN mkdir /home/$APP_USER/npm_db
+
+CMD ["/home/appuser/sandpack-cdn"]
