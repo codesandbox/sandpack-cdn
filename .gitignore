@@ -6,3 +6,5 @@ temp_files
 node_modules
 *.sqlite
 *.db3
+# Ignore generated credentials from google-github-actions/auth
+gha-creds-*.json
