@@ -23,7 +23,7 @@ RUN cargo build --release
 FROM debian:bullseye-slim
 
 RUN apt-get update \
-    && apt-get install -y ca-certificates tzdata \
+    && apt-get install -y ca-certificates tzdata dumb-init \
     && rm -rf /var/lib/apt/lists/*
 
 EXPOSE 8080
@@ -39,4 +39,4 @@ COPY --chown=$APP_USER:$APP_USER --from=builder /app/sandpack-cdn/target/release
 USER $APP_USER
 RUN mkdir /home/$APP_USER/npm_db
 
-CMD ["/home/appuser/sandpack-cdn"]
+CMD ["dumb-init", "/home/appuser/sandpack-cdn"]
