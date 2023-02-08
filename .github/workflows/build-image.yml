@@ -1,4 +1,4 @@
-name: ci
+name: build-image
 
 on:
   push:
@@ -12,7 +12,7 @@ env:
 jobs:
 
   docker:
-    runs-on: [self-hosted, default-runner]
+    runs-on: ubuntu-latest
 
     permissions:
       contents: 'read'
