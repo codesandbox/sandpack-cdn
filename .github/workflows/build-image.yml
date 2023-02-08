@@ -3,7 +3,7 @@ name: build-image
 on:
   push:
     branches:
-      - 'ci'
+      - 'next'
 
 env:
   workload_identity_provider: projects/140364730894/locations/global/workloadIdentityPools/codesandbox-microservices-pool/providers/github-actions-provider
