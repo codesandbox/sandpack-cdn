@@ -23,6 +23,7 @@ fn parse_query(query: String) -> Result<HashSet<DepRequest>, ServerError> {
     Ok(dep_requests)
 }
 
+#[tracing::instrument(name = "create_deps_reply", skip(npm_db))]
 async fn get_reply(
     path: String,
     npm_db: NpmDatabase,

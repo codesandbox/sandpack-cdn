@@ -39,7 +39,7 @@ impl fmt::Display for DepRange {
     }
 }
 
-#[derive(Eq, Hash, PartialEq)]
+#[derive(Eq, Hash, PartialEq, Debug)]
 pub struct DepRequest {
     name: String,
     range: DepRange,
@@ -71,6 +71,7 @@ impl DepTreeBuilder {
         }
     }
 
+    #[tracing::instrument(name = "add_dependency", skip(self))]
     fn add_dependency(&mut self, name: &str, version: &Version) {
         let mut key = String::from(name);
         key.push('@');
@@ -93,6 +94,7 @@ impl DepTreeBuilder {
         }
     }
 
+    #[tracing::instrument(name = "has_dependency", skip(self))]
     fn has_dependency(&mut self, name: &str, range: &Range) -> bool {
         if let Some(versions) = self.packages.get(&String::from(name)) {
             for version in versions {
@@ -104,6 +106,7 @@ impl DepTreeBuilder {
         false
     }
 
+    #[tracing::instrument(name = "process_deps", skip(self))]
     fn process(&mut self, deps: HashSet<DepRequest>) -> Result<HashSet<DepRequest>, ServerError> {
         let mut transient_deps: HashSet<DepRequest> = HashSet::new();
 
@@ -171,6 +174,7 @@ impl DepTreeBuilder {
         Ok(transient_deps)
     }
 
+    #[tracing::instrument(name = "resolve_dep_tree", skip(self))]
     pub fn resolve_tree(&mut self, deps: HashSet<DepRequest>) -> Result<(), ServerError> {
         let mut deps = deps;
         let mut count = 0;
