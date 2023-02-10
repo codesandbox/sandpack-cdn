@@ -4,14 +4,14 @@ use serde::{self, Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
+use tokio::task;
 use tracing::{error, info, span, Level};
 use transform::transformer::transform_file;
 
 use crate::app_error::ServerError;
-use crate::npm::package_content::{download_package_content, PackageContentFetcher};
+use crate::npm::package_content::{download_package_content, FileMap, PackageContentFetcher};
 use crate::npm_replicator::database::NpmDatabase;
 use crate::transform;
-use crate::utils::tar;
 
 use super::package_json::PackageJSON;
 use super::{package_json, resolver};
@@ -289,6 +289,19 @@ fn transform_package(
     Ok((module_spec, dependencies))
 }
 
+#[tracing::instrument(name = "store_file_map", skip(files))]
+pub fn store_file_map(files: FileMap, out_path: &Path) -> Result<(), ServerError> {
+    for (filename, content) in files.iter() {
+        let mut cloned_filename = filename.to_string();
+        cloned_filename.remove(0);
+        let full_path = out_path.clone().join(&cloned_filename);
+        let prefix = full_path.parent().unwrap();
+        fs::create_dir_all(prefix).unwrap();
+        fs::write(&full_path, content)?;
+    }
+    Ok(())
+}
+
 #[tracing::instrument(name = "process_npm_package", skip(temp_dir, npm_db))]
 pub async fn process_npm_package(
     package_name: &str,
@@ -302,16 +315,14 @@ pub async fn process_npm_package(
         package_name, package_version
     );
 
-    let tarball_content =
+    let files =
         download_package_content(package_name, package_version, npm_db, content_fetcher).await?;
-    let mut pkg_output_path = Path::new(temp_dir)
+    let pkg_output_path = Path::new(temp_dir)
         .join(nanoid!())
         .join(format!("{}-{}", package_name, package_version));
-    tar::store_tarball(tarball_content.as_ref().clone(), pkg_output_path.as_path())?;
 
-    // TODO: Go to first folder, folder is not always named `package`
-    // for @types, it's the name of the package, like `acorn`, `react`, ...
-    pkg_output_path = pkg_output_path.join("package");
+    let cloned_pkg_output_path = pkg_output_path.clone();
+    task::spawn_blocking(move || store_file_map(files, cloned_pkg_output_path.as_path())).await??;
 
     // Transform module in new thread
     let package_name_string = String::from(package_name);
@@ -327,7 +338,7 @@ pub async fn process_npm_package(
     let transform_result = task.await?;
 
     // Cleanup package directory
-    tokio::fs::remove_dir_all(pkg_output_path.as_path()).await?;
+    tokio::fs::remove_dir_all(pkg_output_path.as_path().parent().unwrap()).await?;
 
     transform_result
 }

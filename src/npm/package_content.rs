@@ -1,31 +1,51 @@
-use std::{fmt, io::Cursor, sync::Arc, time::Duration};
+use std::io::{Cursor, Read};
+use std::{fmt, sync::Arc, time::Duration};
 
 use crate::{app_error::ServerError, cached::Cached, npm_replicator::database::NpmDatabase};
-use flate2::{bufread::GzEncoder, Compression};
+use ::tar::{Archive, EntryType};
+use flate2::read::GzDecoder;
 use moka::future::Cache;
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
 use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
-use warp::hyper::body::Bytes;
+use std::collections::HashMap;
 
-pub type Content = Arc<Cursor<Bytes>>;
+pub type ByteVec = Vec<u8>;
+pub type FileMap = Arc<HashMap<String, ByteVec>>;
 
-#[derive(PartialEq, Eq)]
-pub enum TarballType {
-    Tar,
-    TarGzip,
+#[tracing::instrument(name = "accumulate_files", skip(archive))]
+fn accumulate_files<R: Read>(
+    mut archive: Archive<R>,
+) -> Result<HashMap<String, ByteVec>, ServerError> {
+    let mut collected: HashMap<String, ByteVec> = HashMap::new();
+    for file in archive.entries()? {
+        // Make sure there wasn't an I/O error
+        let mut file = file?;
+
+        if !EntryType::is_file(&file.header().entry_type()) {
+            continue;
+        }
+
+        // Read file content
+        let mut buf: Vec<u8> = Vec::new();
+        file.read_to_end(&mut buf)?;
+
+        // Read file path
+        let header_path = file.header().path()?;
+        let filepath_str = header_path.to_str().unwrap_or("package/unknown");
+        let first_slash_position = filepath_str.chars().position(|c| c == '/').unwrap_or(0);
+        let filepath = String::from(&filepath_str[first_slash_position..]);
+
+        // Insert into collection
+        collected.insert(filepath, buf);
+    }
+    Ok(collected)
 }
 
-#[tracing::instrument(name = "download_tarball")]
+#[tracing::instrument(name = "download_tarball", skip(client))]
 async fn download_tarball(
     client: &ClientWithMiddleware,
     url: &str,
-) -> Result<Content, ServerError> {
-    let tarball_type: TarballType = if url.ends_with(".tar") {
-        TarballType::Tar
-    } else {
-        TarballType::TarGzip
-    };
-
+) -> Result<FileMap, ServerError> {
     let response = client.get(url).send().await?;
     let response_status = response.status();
     if !response_status.is_success() {
@@ -36,22 +56,23 @@ async fn download_tarball(
     }
 
     let content = Cursor::new(response.bytes().await?);
-    let content = match tarball_type {
-        TarballType::Tar => {
-            let gzipped = GzEncoder::new(content, Compression::fast());
-            gzipped.into_inner()
-        }
-        TarballType::TarGzip => content,
+    let files = if url.ends_with(".tar") {
+        let archive = Archive::new(content);
+        accumulate_files(archive)
+    } else {
+        let tar = GzDecoder::new(content);
+        let archive = Archive::new(tar);
+        accumulate_files(archive)
     };
-    Ok(Arc::new(content))
+    Ok(Arc::new(files?))
 }
 
 #[tracing::instrument(name = "get_tarball", skip(client, cached))]
 async fn get_tarball(
     url: &str,
     client: ClientWithMiddleware,
-    cached: Cached<Content>,
-) -> Result<Content, ServerError> {
+    cached: Cached<FileMap>,
+) -> Result<FileMap, ServerError> {
     let url_string = String::from(url);
     let res = cached
         .get_cached(|_last_val| {
@@ -84,7 +105,7 @@ fn get_client() -> ClientWithMiddleware {
 
 #[derive(Clone)]
 pub struct PackageContentFetcher {
-    cache: Cache<String, Cached<Content>>,
+    cache: Cache<String, Cached<FileMap>>,
     refresh_interval: Duration,
 }
 
@@ -102,13 +123,13 @@ impl PackageContentFetcher {
     }
 
     #[tracing::instrument(name = "pkg_content_get", skip(self))]
-    pub async fn get(&self, url: &str) -> Result<Content, ServerError> {
+    pub async fn get(&self, url: &str) -> Result<FileMap, ServerError> {
         let key = String::from(url);
         let client = get_client();
         if let Some(found_value) = self.cache.get(&key) {
             get_tarball(url, client, found_value).await
         } else {
-            let cached: Cached<Content> = Cached::new(self.refresh_interval);
+            let cached: Cached<FileMap> = Cached::new(self.refresh_interval);
             self.cache.insert(key, cached.clone()).await;
             get_tarball(url, client, cached).await
         }
@@ -127,7 +148,7 @@ pub async fn download_package_content(
     version: &str,
     npm_db: &NpmDatabase,
     content_fetcher: &PackageContentFetcher,
-) -> Result<Content, ServerError> {
+) -> Result<FileMap, ServerError> {
     let manifest = npm_db.get_package(package_name)?;
     if let Some(version_data) = manifest.versions.get(version) {
         let content = content_fetcher.get(version_data.tarball.as_str()).await?;
