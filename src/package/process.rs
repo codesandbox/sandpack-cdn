@@ -290,11 +290,11 @@ fn transform_package(
 }
 
 #[tracing::instrument(name = "store_file_map", skip(files))]
-pub fn store_file_map(files: FileMap, out_path: &Path) -> Result<(), ServerError> {
+pub fn store_file_map(files: FileMap, out_path: PathBuf) -> Result<(), ServerError> {
     for (filename, content) in files.iter() {
         let mut cloned_filename = filename.to_string();
         cloned_filename.remove(0);
-        let full_path = out_path.clone().join(&cloned_filename);
+        let full_path = out_path.join(&cloned_filename);
         let prefix = full_path.parent().unwrap();
         fs::create_dir_all(prefix).unwrap();
         fs::write(&full_path, content)?;
@@ -322,7 +322,7 @@ pub async fn process_npm_package(
         .join(format!("{}-{}", package_name, package_version));
 
     let cloned_pkg_output_path = pkg_output_path.clone();
-    task::spawn_blocking(move || store_file_map(files, cloned_pkg_output_path.as_path())).await??;
+    task::spawn_blocking(move || store_file_map(files, cloned_pkg_output_path)).await??;
 
     // Transform module in new thread
     let package_name_string = String::from(package_name);
