@@ -27,8 +27,8 @@ pub fn routes(
 
     package_data_route(pkg_processor.clone())
         .or(dep_tree_route(npm_db.clone(), pkg_processor))
-        .or(mod_route(npm_db.clone(), pkg_content_fetcher))
-        .or(deps_route(npm_db.clone()))
+        .or(mod_route())
+        .or(deps_route())
         .or(npm_sync_status_route(npm_db))
         .or(health_route())
         .or(not_found_route())

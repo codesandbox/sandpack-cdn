@@ -137,12 +137,4 @@ impl NpmDatabase {
             ))
         }
     }
-
-    pub fn get_package_count(&self) -> AppResult<i64> {
-        // let connection = self.db.lock();
-        // let mut stmt = connection.prepare("SELECT COUNT(*) FROM package;")?;
-        // let res = stmt.query_row(named_params! {}, |row| Ok(row.get(0).unwrap_or(0)))?;
-        // Ok(res)
-        Ok(0)
-    }
 }
