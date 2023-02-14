@@ -25,17 +25,6 @@ impl DepRange {
             }
         }
     }
-
-    pub fn to_string(self) -> String {
-        match self {
-            DepRange::Range(range) => {
-                return range.to_string();
-            }
-            DepRange::Tag(tag) => {
-                return tag.clone();
-            }
-        }
-    }
 }
 
 impl fmt::Display for DepRange {
@@ -122,7 +111,7 @@ impl DepTreeBuilder {
         false
     }
 
-    #[tracing::instrument(name = "resolve_dependency", skip_all, fields(name = request.name.as_str(), range = (&request.range).to_string().as_str()))]
+    #[tracing::instrument(name = "resolve_dependency", skip_all, fields(name = request.name.as_str(), range = request.range.to_string().as_str()))]
     fn resolve_dependency(
         &mut self,
         request: DepRequest,
@@ -175,13 +164,13 @@ impl DepTreeBuilder {
                     ));
                 }
             }
-            return Ok(transient_deps);
+            Ok(transient_deps)
         } else {
             error!("Package version not found");
-            return Err(ServerError::PackageVersionNotFound(
+            Err(ServerError::PackageVersionNotFound(
                 request.name,
                 request.range.to_string(),
-            ));
+            ))
         }
     }
 
@@ -192,7 +181,7 @@ impl DepTreeBuilder {
         let mut transient_deps: HashSet<DepRequest> = HashSet::new();
         for request in deps {
             if let DepRange::Range(original_range) = &request.range {
-                if self.has_dependency(&request.name, &original_range) {
+                if self.has_dependency(&request.name, original_range) {
                     continue;
                 }
             }
