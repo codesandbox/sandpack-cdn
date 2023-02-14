@@ -61,8 +61,7 @@ fn init_opentelemetry() -> Option<sdktrace::Tracer> {
 pub fn setup_tracing() {
     // NOTE: the underlying subscriber MUST be the Registry subscriber
     let subscriber = Registry::default() // provide underlying span data store
-        .with(LevelFilter::INFO) // filter out low-level debug tracing (eg tokio executor)
-        .with(tracing_subscriber::fmt::Layer::default());
+        .with(LevelFilter::INFO); // filter out low-level debug tracing (eg tokio executor)
 
     // Install a new OpenTelemetry trace pipeline
     let tracer_res = init_opentelemetry();
