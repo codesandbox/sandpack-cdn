@@ -21,10 +21,10 @@ async fn sync(db: NpmDatabase) -> AppResult<()> {
                     if let Change(evt) = entry {
                         if evt.deleted {
                             db.delete_package(&evt.id)?;
-                            println!("[NPM-Replication] Deleted package {}", evt.id);
+                            // println!("[NPM-Replication] Deleted package {}", evt.id);
                         } else if let Some(doc) = evt.doc {
                             db.write_package(MinimalPackageData::from_doc(doc))?;
-                            println!("[NPM-Replication] Wrote package {} to db", evt.id);
+                            // println!("[NPM-Replication] Wrote package {} to db", evt.id);
                         }
                     }
                 }

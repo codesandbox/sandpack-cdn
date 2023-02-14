@@ -4,7 +4,7 @@ use std::{
 };
 
 use node_semver::{Range, Version};
-use tracing::{info, error};
+use tracing::{error, info};
 
 use crate::{app_error::ServerError, npm_replicator::database::NpmDatabase};
 
@@ -22,6 +22,17 @@ impl DepRange {
             match Range::parse(&value) {
                 Ok(value) => DepRange::Range(value),
                 Err(_err) => DepRange::Tag(value),
+            }
+        }
+    }
+
+    pub fn to_string(self) -> String {
+        match self {
+            DepRange::Range(range) => {
+                return range.to_string();
+            }
+            DepRange::Tag(tag) => {
+                return tag.clone();
             }
         }
     }
@@ -103,7 +114,7 @@ impl DepTreeBuilder {
                     //     "{}@{} is already resolved, skipping",
                     //     &request.name, &request.range
                     // );
-                    
+
                     return true;
                 }
             }
@@ -111,7 +122,7 @@ impl DepTreeBuilder {
         false
     }
 
-    #[tracing::instrument(name = "resolve_dependency", skip(self))]
+    #[tracing::instrument(name = "resolve_dependency", skip_all, fields(name = request.name.as_str(), range = (&request.range).to_string().as_str()))]
     fn resolve_dependency(
         &mut self,
         request: DepRequest,
@@ -174,7 +185,10 @@ impl DepTreeBuilder {
         }
     }
 
-    fn resolve_dependencies(&mut self, deps: HashSet<DepRequest>) -> Result<HashSet<DepRequest>, ServerError> {
+    fn resolve_dependencies(
+        &mut self,
+        deps: HashSet<DepRequest>,
+    ) -> Result<HashSet<DepRequest>, ServerError> {
         let mut transient_deps: HashSet<DepRequest> = HashSet::new();
         for request in deps {
             if let DepRange::Range(original_range) = &request.range {
@@ -188,7 +202,7 @@ impl DepTreeBuilder {
         Ok(transient_deps)
     }
 
-    #[tracing::instrument(name = "resolve_dep_tree", skip(self))]
+    #[tracing::instrument(name = "resolve_dep_tree", skip_all)]
     pub fn resolve_tree(&mut self, deps: HashSet<DepRequest>) -> Result<(), ServerError> {
         let mut deps = deps;
         let mut count = 0;
@@ -197,7 +211,7 @@ impl DepTreeBuilder {
             count += 1;
         }
 
-        println!("Finished resolving in {} ticks", count);
+        info!("Finished resolving in {} ticks", count);
 
         Ok(())
     }

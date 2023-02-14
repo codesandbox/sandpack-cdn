@@ -93,7 +93,7 @@ impl NpmDatabase {
         Ok(res)
     }
 
-    #[tracing::instrument(name = "npm_db_write_package", skip(self))]
+    #[tracing::instrument(name = "npm_db_write_package", skip(self, pkg), fields(name = pkg.name.as_str()))]
     pub fn write_package(&self, pkg: MinimalPackageData) -> AppResult<usize> {
         if pkg.versions.is_empty() {
             println!("Tried to write pkg {}, but has no versions", pkg.name);
