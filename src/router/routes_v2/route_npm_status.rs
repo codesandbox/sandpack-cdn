@@ -10,19 +10,14 @@ use super::super::routes::with_data;
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
 struct NpmSyncStatus {
-    doc_count: i64,
     last_seq: i64,
 }
 
 async fn get_reply(npm_db: NpmDatabase) -> Result<CustomReply, ServerError> {
     let status: AppResult<NpmSyncStatus> = tokio::task::spawn_blocking(move || {
         let last_seq = npm_db.get_last_seq()?;
-        let doc_count = npm_db.get_package_count()?;
 
-        Ok(NpmSyncStatus {
-            last_seq,
-            doc_count,
-        })
+        Ok(NpmSyncStatus { last_seq })
     })
     .await?;
 

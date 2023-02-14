@@ -4,6 +4,7 @@ use lru::LruCache;
 use parking_lot::Mutex;
 use rusqlite::{named_params, Connection, OpenFlags, OptionalExtension};
 use std::num::NonZeroUsize;
+use tracing::info;
 
 use crate::app_error::AppResult;
 
@@ -56,6 +57,7 @@ impl NpmDatabase {
         Ok(())
     }
 
+    #[tracing::instrument(name = "npm_db_get_last_seq", skip(self))]
     pub fn get_last_seq(&self) -> AppResult<i64> {
         let connection = self.db.lock();
 
@@ -72,6 +74,7 @@ impl NpmDatabase {
         Ok(res)
     }
 
+    #[tracing::instrument(name = "npm_db_update_last_seq", skip(self))]
     pub fn update_last_seq(&self, next_seq: i64) -> AppResult<usize> {
         let connection = self.db.lock();
         let mut stmt =
@@ -80,6 +83,7 @@ impl NpmDatabase {
         Ok(res)
     }
 
+    #[tracing::instrument(name = "npm_db_delete_package", skip(self))]
     pub fn delete_package(&self, name: &str) -> AppResult<usize> {
         let connection = self.db.lock();
         let mut stmt = connection.prepare("DELETE FROM package WHERE id = (:id);")?;
@@ -89,6 +93,7 @@ impl NpmDatabase {
         Ok(res)
     }
 
+    #[tracing::instrument(name = "npm_db_write_package", skip(self))]
     pub fn write_package(&self, pkg: MinimalPackageData) -> AppResult<usize> {
         if pkg.versions.is_empty() {
             println!("Tried to write pkg {}, but has no versions", pkg.name);
@@ -110,11 +115,13 @@ impl NpmDatabase {
         Ok(res)
     }
 
+    #[tracing::instrument(name = "npm_db_get_package", skip(self))]
     pub fn get_package(&self, name: &str) -> AppResult<MinimalPackageData> {
         {
             let mut cache = self.cache.lock();
             let cached_value = cache.get(name);
             if let Some(pkg_data) = cached_value {
+                info!("NPM Cache hit");
                 return Ok(pkg_data.clone());
             }
         };
@@ -136,13 +143,5 @@ impl NpmDatabase {
                 name.to_string(),
             ))
         }
-    }
-
-    pub fn get_package_count(&self) -> AppResult<i64> {
-        // let connection = self.db.lock();
-        // let mut stmt = connection.prepare("SELECT COUNT(*) FROM package;")?;
-        // let res = stmt.query_row(named_params! {}, |row| Ok(row.get(0).unwrap_or(0)))?;
-        // Ok(res)
-        Ok(0)
     }
 }

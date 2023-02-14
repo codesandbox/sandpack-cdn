@@ -4,6 +4,7 @@ use std::{
 };
 
 use node_semver::{Range, Version};
+use tracing::{info, error};
 
 use crate::{app_error::ServerError, npm_replicator::database::NpmDatabase};
 
@@ -39,7 +40,7 @@ impl fmt::Display for DepRange {
     }
 }
 
-#[derive(Eq, Hash, PartialEq)]
+#[derive(Eq, Hash, PartialEq, Debug)]
 pub struct DepRequest {
     name: String,
     range: DepRange,
@@ -97,6 +98,12 @@ impl DepTreeBuilder {
         if let Some(versions) = self.packages.get(&String::from(name)) {
             for version in versions {
                 if range.satisfies(version) {
+                    // TODO: Make this only run for dev builds, it slows down requests a lot sometimes...
+                    // println!(
+                    //     "{}@{} is already resolved, skipping",
+                    //     &request.name, &request.range
+                    // );
+                    
                     return true;
                 }
             }
@@ -104,78 +111,89 @@ impl DepTreeBuilder {
         false
     }
 
-    fn process(&mut self, deps: HashSet<DepRequest>) -> Result<HashSet<DepRequest>, ServerError> {
-        let mut transient_deps: HashSet<DepRequest> = HashSet::new();
-
-        // Prefetch in background, this ensures the requests below are a bit faster, relying on the data_fetcher cache
-        // Without overcomplicating the mostly synchronous logic in this function
-        for request in deps {
-            let data = self.npm_db.get_package(&request.name)?;
-            let mut range = Range::any();
-            if let DepRange::Tag(tag) = &request.range {
-                match data.dist_tags.get(tag) {
-                    Some(found_version) => {
-                        range = Range::parse(found_version)?;
-                        let version = Version::parse(found_version)?;
-                        self.aliases.insert(
-                            format!("{}@{}", request.name, tag),
-                            format!("{}@{}", request.name, version.major),
-                        );
-                    }
-                    None => {
-                        return Err(ServerError::InvalidPackageSpecifier);
-                    }
+    #[tracing::instrument(name = "resolve_dependency", skip(self))]
+    fn resolve_dependency(
+        &mut self,
+        request: DepRequest,
+        mut transient_deps: HashSet<DepRequest>,
+    ) -> Result<HashSet<DepRequest>, ServerError> {
+        let data = self.npm_db.get_package(&request.name)?;
+        let mut range = Range::any();
+        if let DepRange::Tag(tag) = &request.range {
+            match data.dist_tags.get(tag) {
+                Some(found_version) => {
+                    range = Range::parse(found_version)?;
+                    let version = Version::parse(found_version)?;
+                    self.aliases.insert(
+                        format!("{}@{}", &request.name, tag),
+                        format!("{}@{}", &request.name, &version.major),
+                    );
                 }
-            } else if let DepRange::Range(original_range) = &request.range {
-                range = original_range.clone();
-            }
-
-            if self.has_dependency(&request.name, &range) {
-                // TODO: Make this only run for dev builds, it slows down requests a lot sometimes...
-                // println!(
-                //     "{}@{} is already resolved, skipping",
-                //     &request.name, &request.range
-                // );
-                continue;
-            }
-
-            let mut highest_version: Option<Version> = None;
-            for (version, _data) in data.versions.iter().rev() {
-                let parsed_version = Version::parse(version)?;
-                if range.satisfies(&parsed_version) {
-                    highest_version = Some(parsed_version);
-                    break;
+                None => {
+                    error!("Invalid package specifier");
+                    return Err(ServerError::InvalidPackageSpecifier);
                 }
             }
+        } else if let DepRange::Range(original_range) = &request.range {
+            range = original_range.clone();
+        }
 
-            if let Some(resolved_version) = highest_version {
-                self.add_dependency(&request.name, &resolved_version);
+        if self.has_dependency(&request.name, &range) {
+            info!("Dependency already exists, skipping");
+            return Ok(transient_deps);
+        }
 
-                let data = data.versions.get(&resolved_version.to_string());
-                if let Some(data) = data {
-                    for (name, range) in data.dependencies.iter() {
-                        transient_deps.insert(DepRequest::new(
-                            name.clone(),
-                            DepRange::parse(range.clone()),
-                        ));
-                    }
-                }
-            } else {
-                return Err(ServerError::PackageVersionNotFound(
-                    request.name,
-                    request.range.to_string(),
-                ));
+        let mut highest_version: Option<Version> = None;
+        for (version, _data) in data.versions.iter().rev() {
+            let parsed_version = Version::parse(version)?;
+            if range.satisfies(&parsed_version) {
+                highest_version = Some(parsed_version);
+                break;
             }
         }
 
+        if let Some(resolved_version) = highest_version {
+            self.add_dependency(&request.name, &resolved_version);
+
+            let data = data.versions.get(&resolved_version.to_string());
+            if let Some(data) = data {
+                for (name, range) in data.dependencies.iter() {
+                    transient_deps.insert(DepRequest::new(
+                        name.clone(),
+                        DepRange::parse(range.clone()),
+                    ));
+                }
+            }
+            return Ok(transient_deps);
+        } else {
+            error!("Package version not found");
+            return Err(ServerError::PackageVersionNotFound(
+                request.name,
+                request.range.to_string(),
+            ));
+        }
+    }
+
+    fn resolve_dependencies(&mut self, deps: HashSet<DepRequest>) -> Result<HashSet<DepRequest>, ServerError> {
+        let mut transient_deps: HashSet<DepRequest> = HashSet::new();
+        for request in deps {
+            if let DepRange::Range(original_range) = &request.range {
+                if self.has_dependency(&request.name, &original_range) {
+                    continue;
+                }
+            }
+
+            transient_deps = self.resolve_dependency(request, transient_deps)?;
+        }
         Ok(transient_deps)
     }
 
+    #[tracing::instrument(name = "resolve_dep_tree", skip(self))]
     pub fn resolve_tree(&mut self, deps: HashSet<DepRequest>) -> Result<(), ServerError> {
         let mut deps = deps;
         let mut count = 0;
         while !deps.is_empty() && count < 200 {
-            deps = self.process(deps)?;
+            deps = self.resolve_dependencies(deps)?;
             count += 1;
         }
 
