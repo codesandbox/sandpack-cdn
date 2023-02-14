@@ -103,19 +103,20 @@ impl NpmDatabase {
         let pkg_name = pkg.name.clone();
         let content = serde_json::to_string(&pkg)?;
         let res = {
-            let span = span!(Level::TRACE, "sqlite_write_pkg");
-            let _enter = span.enter();
+            let span = span!(Level::TRACE, "sqlite_write_pkg").entered();
             let connection = self.db.lock();
             let mut stmt = connection
                 .prepare("INSERT OR REPLACE INTO package (id, content) VALUES (:id, :content);")?;
-            stmt.execute(named_params! { ":id": pkg.name, ":content": content })
+            let res = stmt.execute(named_params! { ":id": pkg.name, ":content": content });
+            span.exit();
+            res
         }?;
 
         {
-            let span = span!(Level::TRACE, "delete_cached_pkg");
-            let _enter = span.enter();
+            let span = span!(Level::TRACE, "delete_cached_pkg").entered();
             let mut cache = self.cache.lock();
             cache.pop(&pkg_name);
+            span.exit();
         }
 
         Ok(res)
@@ -133,26 +134,29 @@ impl NpmDatabase {
         };
 
         let content_val: Option<String> = {
-            let span = span!(Level::TRACE, "sqlite_get_pkg");
-            let _enter = span.enter();
+            let span = span!(Level::TRACE, "sqlite_get_pkg").entered();
             let connection = self.db.lock();
             let mut stmt = connection.prepare("SELECT content FROM package where id = (:id);")?;
-            stmt.query_row(named_params! { ":id": name }, |row| row.get(0))
-                .optional()?
+            let res = stmt
+                .query_row(named_params! { ":id": name }, |row| row.get(0))
+                .optional()?;
+            span.exit();
+            res
         };
 
         if let Some(pkg_content) = content_val {
             let found_pkg: MinimalPackageData = {
-                let span = span!(Level::TRACE, "parse_pkg");
-                let _enter = span.enter();
-                serde_json::from_str(&pkg_content)?
+                let span = span!(Level::TRACE, "parse_pkg").entered();
+                let res = serde_json::from_str(&pkg_content)?;
+                span.exit();
+                res
             };
 
             {
-                let span = span!(Level::TRACE, "write_cached_pkg");
-                let _enter = span.enter();
+                let span = span!(Level::TRACE, "write_cached_pkg").entered();
                 let mut cache = self.cache.lock();
                 cache.put(name.to_string(), found_pkg.clone());
+                span.exit();
             }
 
             Ok(found_pkg)
