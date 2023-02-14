@@ -84,12 +84,12 @@ impl NpmDatabase {
     }
 
     #[tracing::instrument(name = "npm_db_delete_package", skip(self))]
-    pub fn delete_package(&self, name: &str) -> AppResult<usize> {
+    pub fn delete_package(&self, pkg_name: &str) -> AppResult<usize> {
         let connection = self.db.lock();
         let mut stmt = connection.prepare("DELETE FROM package WHERE id = (:id);")?;
-        let res = stmt.execute(named_params! { ":id": name })?;
+        let res = stmt.execute(named_params! { ":id": pkg_name })?;
         let mut cache = self.cache.lock();
-        cache.pop(name);
+        cache.pop(pkg_name);
         Ok(res)
     }
 
