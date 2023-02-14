@@ -103,7 +103,7 @@ impl NpmDatabase {
         let pkg_name = pkg.name.clone();
         let content = serde_json::to_string(&pkg)?;
         let res = {
-            let span = span!(Level::TRACE, "sqlite_write_pkg").entered();
+            let span = span!(Level::INFO, "sqlite_write_pkg").entered();
             let connection = self.db.lock();
             let mut stmt = connection
                 .prepare("INSERT OR REPLACE INTO package (id, content) VALUES (:id, :content);")?;
@@ -113,7 +113,7 @@ impl NpmDatabase {
         }?;
 
         {
-            let span = span!(Level::TRACE, "delete_cached_pkg").entered();
+            let span = span!(Level::INFO, "delete_cached_pkg").entered();
             let mut cache = self.cache.lock();
             cache.pop(&pkg_name);
             span.exit();
@@ -123,10 +123,10 @@ impl NpmDatabase {
     }
 
     #[tracing::instrument(name = "npm_db_get_package", skip(self))]
-    pub fn get_package(&self, name: &str) -> AppResult<MinimalPackageData> {
+    pub fn get_package(&self, pkg_name: &str) -> AppResult<MinimalPackageData> {
         {
             let mut cache = self.cache.lock();
-            let cached_value = cache.get(name);
+            let cached_value = cache.get(pkg_name);
             if let Some(pkg_data) = cached_value {
                 info!("NPM Cache hit");
                 return Ok(pkg_data.clone());
@@ -134,11 +134,11 @@ impl NpmDatabase {
         };
 
         let content_val: Option<String> = {
-            let span = span!(Level::TRACE, "sqlite_get_pkg").entered();
+            let span = span!(Level::INFO, "sqlite_get_pkg").entered();
             let connection = self.db.lock();
             let mut stmt = connection.prepare("SELECT content FROM package where id = (:id);")?;
             let res = stmt
-                .query_row(named_params! { ":id": name }, |row| row.get(0))
+                .query_row(named_params! { ":id": pkg_name }, |row| row.get(0))
                 .optional()?;
             span.exit();
             res
@@ -146,23 +146,23 @@ impl NpmDatabase {
 
         if let Some(pkg_content) = content_val {
             let found_pkg: MinimalPackageData = {
-                let span = span!(Level::TRACE, "parse_pkg").entered();
+                let span = span!(Level::INFO, "parse_pkg").entered();
                 let res = serde_json::from_str(&pkg_content)?;
                 span.exit();
                 res
             };
 
             {
-                let span = span!(Level::TRACE, "write_cached_pkg").entered();
+                let span = span!(Level::INFO, "write_cached_pkg").entered();
                 let mut cache = self.cache.lock();
-                cache.put(name.to_string(), found_pkg.clone());
+                cache.put(pkg_name.to_string(), found_pkg.clone());
                 span.exit();
             }
 
             Ok(found_pkg)
         } else {
             Err(crate::app_error::ServerError::PackageNotFound(
-                name.to_string(),
+                pkg_name.to_string(),
             ))
         }
     }
