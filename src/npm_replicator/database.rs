@@ -4,7 +4,7 @@ use lru::LruCache;
 use parking_lot::Mutex;
 use rusqlite::{named_params, Connection, OpenFlags, OptionalExtension};
 use std::num::NonZeroUsize;
-use tracing::info;
+use tracing::{info, span, Level};
 
 use crate::app_error::AppResult;
 
@@ -103,14 +103,20 @@ impl NpmDatabase {
         let pkg_name = pkg.name.clone();
         let content = serde_json::to_string(&pkg)?;
         let res = {
+            let span = span!(Level::TRACE, "sqlite_write_pkg");
+            let _enter = span.enter();
             let connection = self.db.lock();
             let mut stmt = connection
                 .prepare("INSERT OR REPLACE INTO package (id, content) VALUES (:id, :content);")?;
             stmt.execute(named_params! { ":id": pkg.name, ":content": content })
         }?;
 
-        let mut cache = self.cache.lock();
-        cache.pop(&pkg_name);
+        {
+            let span = span!(Level::TRACE, "delete_cached_pkg");
+            let _enter = span.enter();
+            let mut cache = self.cache.lock();
+            cache.pop(&pkg_name);
+        }
 
         Ok(res)
     }
@@ -127,6 +133,8 @@ impl NpmDatabase {
         };
 
         let content_val: Option<String> = {
+            let span = span!(Level::TRACE, "sqlite_get_pkg");
+            let _enter = span.enter();
             let connection = self.db.lock();
             let mut stmt = connection.prepare("SELECT content FROM package where id = (:id);")?;
             stmt.query_row(named_params! { ":id": name }, |row| row.get(0))
@@ -134,9 +142,19 @@ impl NpmDatabase {
         };
 
         if let Some(pkg_content) = content_val {
-            let found_pkg: MinimalPackageData = serde_json::from_str(&pkg_content)?;
-            let mut cache = self.cache.lock();
-            cache.put(name.to_string(), found_pkg.clone());
+            let found_pkg: MinimalPackageData = {
+                let span = span!(Level::TRACE, "parse_pkg");
+                let _enter = span.enter();
+                serde_json::from_str(&pkg_content)?
+            };
+
+            {
+                let span = span!(Level::TRACE, "write_cached_pkg");
+                let _enter = span.enter();
+                let mut cache = self.cache.lock();
+                cache.put(name.to_string(), found_pkg.clone());
+            }
+
             Ok(found_pkg)
         } else {
             Err(crate::app_error::ServerError::PackageNotFound(
