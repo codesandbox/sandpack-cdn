@@ -41,7 +41,7 @@ impl NpmRocksDB {
         }
     }
 
-    #[tracing::instrument(name = "npm_db_update_last_seq", skip(self))]
+    // #[tracing::instrument(name = "npm_db_update_last_seq", skip(self))]
     pub fn update_last_seq(&self, next_seq: i64) -> AppResult<usize> {
         self.db
             .lock()
@@ -56,7 +56,7 @@ impl NpmRocksDB {
         Ok(1)
     }
 
-    #[tracing::instrument(name = "npm_db_write_package", skip(self, pkg), fields(pkg_name = pkg.name.as_str()))]
+    // #[tracing::instrument(name = "npm_db_write_package", skip(self, pkg), fields(pkg_name = pkg.name.as_str()))]
     pub fn write_package(&self, pkg: MinimalPackageData) -> AppResult<usize> {
         if pkg.versions.is_empty() {
             println!("Tried to write pkg {}, but has no versions", pkg.name);
@@ -65,14 +65,14 @@ impl NpmRocksDB {
 
         let pkg_name = pkg.name.clone();
         let content = serialize_msgpack(&pkg)?;
-        let span = span!(Level::INFO, "fs_write_pkg").entered();
+        // let span = span!(Level::INFO, "fs_write_pkg").entered();
         self.db.lock().put(pkg_name.as_bytes(), content).unwrap();
-        span.exit();
+        // span.exit();
 
-        let span = span!(Level::INFO, "delete_cached_pkg").entered();
+        // let span = span!(Level::INFO, "delete_cached_pkg").entered();
         let mut cache = self.cache.lock();
         cache.pop(&pkg_name);
-        span.exit();
+        // span.exit();
 
         Ok(1)
     }
