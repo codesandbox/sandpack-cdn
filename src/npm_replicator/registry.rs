@@ -10,13 +10,13 @@ use crate::app_error::AppResult;
 use super::types::document::MinimalPackageData;
 
 #[derive(Clone, Debug)]
-pub struct FSNpmDatabase {
+pub struct NpmRocksDB {
     pub db_path: PathBuf,
     db: Arc<Mutex<DB>>,
     cache: Arc<Mutex<LruCache<String, MinimalPackageData>>>,
 }
 
-impl FSNpmDatabase {
+impl NpmRocksDB {
     pub fn new(db_path: &str) -> Self {
         let db = DB::open_default(db_path).unwrap();
         let cache = LruCache::new(NonZeroUsize::new(500).unwrap());

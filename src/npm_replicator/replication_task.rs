@@ -1,4 +1,4 @@
-use super::fs_db::FSNpmDatabase;
+use super::registry::NpmRocksDB;
 use crate::app_error::AppResult;
 use crate::npm_replicator::changes::ChangesStream;
 use crate::npm_replicator::types::changes::Event::Change;
@@ -9,7 +9,7 @@ use tokio::time::sleep;
 
 const FINISHED_DEBOUNCE: u64 = 60000;
 
-async fn sync(db: FSNpmDatabase) -> AppResult<()> {
+async fn sync(db: NpmRocksDB) -> AppResult<()> {
     let last_seq: i64 = db.get_last_seq()?;
     println!("[NPM-Replication] Last synced sequence {}", last_seq);
     let mut stream = ChangesStream::new(50, last_seq.into());
@@ -44,7 +44,7 @@ async fn sync(db: FSNpmDatabase) -> AppResult<()> {
     }
 }
 
-pub fn spawn_sync_thread(db: FSNpmDatabase) {
+pub fn spawn_sync_thread(db: NpmRocksDB) {
     println!("[NPM-Replication] Spawning npm sync worker...");
     tokio::task::spawn(async move {
         println!("[NPM-Replication] Starting npm sync worker...");

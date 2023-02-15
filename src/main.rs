@@ -1,4 +1,4 @@
-use crate::npm_replicator::{database::NpmDatabase, fs_db::FSNpmDatabase, replication_task};
+use crate::npm_replicator::{sqlite::NpmDatabase, registry::NpmRocksDB, replication_task};
 use dotenv::dotenv;
 use std::env;
 use std::net::SocketAddr;
@@ -31,7 +31,7 @@ async fn main() -> Result<(), std::io::Error> {
     setup_tracing::setup_tracing();
 
     // Setup npm db
-    let npm_fs_db = FSNpmDatabase::new(&npm_registry_path);
+    let npm_fs_db = NpmRocksDB::new(&npm_registry_path);
     replication_task::spawn_sync_thread(npm_fs_db.clone());
 
     // cors headers

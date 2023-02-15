@@ -1,7 +1,7 @@
 use warp::{Filter, Rejection, Reply};
 
 use crate::npm::package_content::PackageContentFetcher;
-use crate::npm_replicator::fs_db::FSNpmDatabase;
+use crate::npm_replicator::registry::NpmRocksDB;
 
 use super::error_reply::ErrorReply;
 use super::health::health_route;
@@ -10,7 +10,7 @@ use super::routes_v2::route_mod::mod_route;
 use super::routes_v2::route_npm_status::npm_sync_status_route;
 
 pub fn routes(
-    npm_db: FSNpmDatabase,
+    npm_db: NpmRocksDB,
 ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
     // 15 minutes refresh interval and 1 day ttl
     let pkg_content_fetcher = PackageContentFetcher::new();

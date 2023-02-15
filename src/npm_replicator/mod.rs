@@ -1,6 +1,6 @@
 pub mod changes;
 pub mod types;
-pub mod database;
+pub mod sqlite;
 pub mod replication_task;
 pub mod error;
-pub mod fs_db;
+pub mod registry;
