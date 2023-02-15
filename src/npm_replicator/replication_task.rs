@@ -12,9 +12,9 @@ use tokio::time::sleep;
 const FINISHED_DEBOUNCE: u64 = 60000;
 
 async fn sync(db: NpmRocksDB) -> AppResult<()> {
-    let last_seq: i64 = db.get_last_seq()?;
+    let mut last_seq: i64 = db.get_last_seq()?;
     println!("[NPM-Replication] Last synced sequence {}", last_seq);
-    if last_seq == 0 {
+    if last_seq < 15000000 {
         // Setup SQLite DB
         let npm_db_path =
             env::var("NPM_SQLITE_DB").expect("NPM_SQLITE_DB env variable should be set");
@@ -28,7 +28,7 @@ async fn sync(db: NpmRocksDB) -> AppResult<()> {
             println!("[SQLite => RocksDB] Synced {}", package_name);
         }
 
-        let last_seq = npm_db.get_last_seq()?;
+        last_seq = npm_db.get_last_seq()?;
         db.update_last_seq(last_seq)?;
         println!("[SQLite => RocksDB] Completed syncing {}", last_seq);
     } else {
