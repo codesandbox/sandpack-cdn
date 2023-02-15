@@ -6,7 +6,7 @@ use std::{
 use node_semver::{Range, Version};
 use tracing::{error, info};
 
-use crate::{app_error::ServerError, npm_replicator::database::NpmDatabase};
+use crate::{app_error::ServerError, npm_replicator::registry::NpmRocksDB};
 
 #[derive(Eq, Hash, PartialEq, Debug)]
 pub enum DepRange {
@@ -59,11 +59,11 @@ pub struct DepTreeBuilder {
     pub resolutions: ResolutionsMap,
     pub aliases: AliasesMap,
     packages: HashMap<String, HashSet<Version>>,
-    npm_db: NpmDatabase,
+    npm_db: NpmRocksDB,
 }
 
 impl DepTreeBuilder {
-    pub fn new(npm_db: NpmDatabase) -> DepTreeBuilder {
+    pub fn new(npm_db: NpmRocksDB) -> DepTreeBuilder {
         DepTreeBuilder {
             resolutions: BTreeMap::new(),
             aliases: BTreeMap::new(),

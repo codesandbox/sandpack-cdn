@@ -1,4 +1,4 @@
-use crate::npm_replicator::{database::NpmDatabase, replication_task};
+use crate::npm_replicator::{registry::NpmRocksDB, replication_task, sqlite::NpmDatabase};
 use dotenv::dotenv;
 use std::env;
 use std::net::SocketAddr;
@@ -17,6 +17,7 @@ mod utils;
 #[tokio::main]
 async fn main() -> Result<(), std::io::Error> {
     dotenv().ok();
+    setup_tracing::setup_tracing();
 
     let port = match env::var("PORT") {
         Ok(var) => var,
@@ -25,14 +26,30 @@ async fn main() -> Result<(), std::io::Error> {
     .parse::<u16>()
     .unwrap();
 
-    let npm_db_path = env::var("NPM_SQLITE_DB").expect("NPM_SQLITE_DB env variable should be set");
+    // Setup npm db
+    let npm_registry_path =
+        env::var("NPM_ROCKS_DB").expect("NPM_ROCKS_DB env variable should be set");
+    let npm_fs_db = NpmRocksDB::new(&npm_registry_path);
 
-    setup_tracing::setup_tracing();
+    let last_seq = npm_fs_db.get_last_seq()?;
+    if last_seq == 0 {
+        // Setup SQLite DB
+        let npm_db_path =
+            env::var("NPM_SQLITE_DB").expect("NPM_SQLITE_DB env variable should be set");
+        let npm_db = NpmDatabase::new(&npm_db_path).unwrap();
+        npm_db.init().unwrap();
 
-    // Setup npm registry replicator
-    let npm_db = NpmDatabase::new(&npm_db_path).unwrap();
-    npm_db.init().unwrap();
-    replication_task::spawn_sync_thread(npm_db.clone());
+        let packages = npm_db.list_packages()?;
+        for package_name in packages {
+            let pkg = npm_db.get_package(&package_name)?;
+            npm_fs_db.write_package(pkg)?;
+        }
+
+        let last_seq = npm_db.get_last_seq()?;
+        npm_fs_db.update_last_seq(last_seq)?;
+    }
+
+    replication_task::spawn_sync_thread(npm_fs_db.clone());
 
     // cors headers
     let mut headers = HeaderMap::new();
@@ -47,7 +64,7 @@ async fn main() -> Result<(), std::io::Error> {
     );
     let cors_headers_filter = warp::reply::with::headers(headers);
 
-    let filter = router::routes::routes(npm_db)
+    let filter = router::routes::routes(npm_fs_db)
         .with(warp::trace::request())
         .with(cors_headers_filter)
         .with(warp::compression::gzip());

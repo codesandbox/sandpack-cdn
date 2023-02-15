@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DefaultOnError};
-use std::collections::{BTreeMap, HashMap};
+use std::collections::BTreeMap;
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
 pub struct DocumentPackageDist {
@@ -12,10 +12,10 @@ pub struct DocumentPackageDist {
 pub struct DocumentPackageVersion {
     #[serde(default)]
     #[serde_as(deserialize_as = "DefaultOnError")]
-    pub dependencies: Option<HashMap<String, String>>,
+    pub dependencies: Option<BTreeMap<String, String>>,
     #[serde(default, rename = "optionalDependencies")]
     #[serde_as(deserialize_as = "DefaultOnError")]
-    pub optional_dependencies: Option<HashMap<String, String>>,
+    pub optional_dependencies: Option<BTreeMap<String, String>>,
     pub dist: DocumentPackageDist,
 }
 
@@ -28,7 +28,7 @@ pub struct RegistryDocument {
     pub deleted: bool,
 
     #[serde(rename = "dist-tags")]
-    pub dist_tags: Option<HashMap<String, String>>,
+    pub dist_tags: Option<BTreeMap<String, String>>,
 
     pub versions: Option<BTreeMap<String, DocumentPackageVersion>>,
 }
@@ -36,13 +36,13 @@ pub struct RegistryDocument {
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
 pub struct MinimalPackageVersionData {
     pub tarball: String,
-    pub dependencies: HashMap<String, String>,
+    pub dependencies: BTreeMap<String, String>,
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, Default)]
 pub struct MinimalPackageData {
     pub name: String,
-    pub dist_tags: HashMap<String, String>,
+    pub dist_tags: BTreeMap<String, String>,
     pub versions: BTreeMap<String, MinimalPackageVersionData>,
 }
 

@@ -1,7 +1,7 @@
 use std::io::{Cursor, Read};
 use std::{fmt, sync::Arc, time::Duration};
 
-use crate::{app_error::ServerError, cached::Cached, npm_replicator::database::NpmDatabase};
+use crate::{app_error::ServerError, cached::Cached, npm_replicator::registry::NpmRocksDB};
 use ::tar::{Archive, EntryType};
 use flate2::read::GzDecoder;
 use moka::future::Cache;
@@ -146,7 +146,7 @@ impl fmt::Debug for PackageContentFetcher {
 pub async fn download_package_content(
     package_name: &str,
     version: &str,
-    npm_db: &NpmDatabase,
+    npm_db: &NpmRocksDB,
     content_fetcher: &PackageContentFetcher,
 ) -> Result<FileMap, ServerError> {
     let manifest = npm_db.get_package(package_name)?;

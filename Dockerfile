@@ -4,10 +4,11 @@ FROM rust:latest AS builder
 CMD rustup default nightly
 WORKDIR /app
 
+RUN apt-get update && apt-get install -y protobuf-compiler libclang-dev
+
 # Installing all dependencies...
 RUN USER=root cargo new --bin sandpack-cdn
 WORKDIR /app/sandpack-cdn
-
 COPY Cargo.toml Cargo.lock ./
 RUN cargo build --release
 RUN rm src/*.rs

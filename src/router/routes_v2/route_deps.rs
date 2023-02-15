@@ -4,7 +4,7 @@ use warp::{Filter, Rejection, Reply};
 
 use crate::app_error::{AppResult, ServerError};
 use crate::npm::dep_tree_builder::{DepRange, DepRequest, DepTreeBuilder, ResolutionsMap};
-use crate::npm_replicator::database::NpmDatabase;
+use crate::npm_replicator::registry::NpmRocksDB;
 use crate::package::process::parse_package_specifier_no_validation;
 use crate::router::utils::decode_base64;
 
@@ -25,7 +25,7 @@ fn parse_query(query: String) -> Result<HashSet<DepRequest>, ServerError> {
 
 async fn get_reply(
     path: String,
-    npm_db: NpmDatabase,
+    npm_db: NpmRocksDB,
     is_json: bool,
 ) -> Result<CustomReply, ServerError> {
     let decoded_query = decode_base64(&path)?;
@@ -63,7 +63,7 @@ async fn get_reply(
 
 async fn deps_route_handler(
     path: String,
-    npm_db: NpmDatabase,
+    npm_db: NpmRocksDB,
     is_json: bool,
 ) -> Result<impl Reply, Rejection> {
     match get_reply(path, npm_db, is_json).await {
@@ -73,7 +73,7 @@ async fn deps_route_handler(
 }
 
 fn json_route(
-    npm_db: NpmDatabase,
+    npm_db: NpmRocksDB,
 ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
     warp::path!("v2" / "json" / "deps" / String)
         .and(warp::get())
@@ -83,7 +83,7 @@ fn json_route(
 }
 
 fn msgpack_route(
-    npm_db: NpmDatabase,
+    npm_db: NpmRocksDB,
 ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
     warp::path!("v2" / "deps" / String)
         .and(warp::get())
@@ -93,7 +93,7 @@ fn msgpack_route(
 }
 
 pub fn deps_route(
-    npm_db: NpmDatabase,
+    npm_db: NpmRocksDB,
 ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
     json_route(npm_db.clone()).or(msgpack_route(npm_db))
 }
