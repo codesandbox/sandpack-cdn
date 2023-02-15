@@ -44,6 +44,9 @@ async fn main() -> Result<(), std::io::Error> {
             let pkg = npm_db.get_package(&package_name)?;
             npm_fs_db.write_package(pkg)?;
         }
+
+        let last_seq = npm_db.get_last_seq()?;
+        npm_fs_db.update_last_seq(last_seq)?;
     }
 
     replication_task::spawn_sync_thread(npm_fs_db.clone());
