@@ -3,3 +3,4 @@ pub mod types;
 pub mod database;
 pub mod replication_task;
 pub mod error;
+pub mod fs_db;

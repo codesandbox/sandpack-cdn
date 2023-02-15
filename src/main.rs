@@ -1,4 +1,4 @@
-use crate::npm_replicator::{database::NpmDatabase, replication_task};
+use crate::npm_replicator::{database::NpmDatabase, fs_db::FSNpmDatabase, replication_task};
 use dotenv::dotenv;
 use std::env;
 use std::net::SocketAddr;
@@ -26,13 +26,13 @@ async fn main() -> Result<(), std::io::Error> {
     .unwrap();
 
     let npm_db_path = env::var("NPM_SQLITE_DB").expect("NPM_SQLITE_DB env variable should be set");
+    let npm_registry_path = env::var("NPM_ROCKS_DB").expect("NPM_ROCKS_DB env variable should be set");
 
     setup_tracing::setup_tracing();
 
-    // Setup npm registry replicator
-    let npm_db = NpmDatabase::new(&npm_db_path).unwrap();
-    npm_db.init().unwrap();
-    replication_task::spawn_sync_thread(npm_db.clone());
+    // Setup npm db
+    let npm_fs_db = FSNpmDatabase::new(&npm_registry_path);
+    replication_task::spawn_sync_thread(npm_fs_db.clone());
 
     // cors headers
     let mut headers = HeaderMap::new();
@@ -47,7 +47,7 @@ async fn main() -> Result<(), std::io::Error> {
     );
     let cors_headers_filter = warp::reply::with::headers(headers);
 
-    let filter = router::routes::routes(npm_db)
+    let filter = router::routes::routes(npm_fs_db)
         .with(warp::trace::request())
         .with(cors_headers_filter)
         .with(warp::compression::gzip());

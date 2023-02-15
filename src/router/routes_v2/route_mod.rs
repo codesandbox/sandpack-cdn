@@ -5,7 +5,7 @@ use warp::{Filter, Rejection, Reply};
 
 use crate::app_error::ServerError;
 use crate::npm::package_content::{download_package_content, FileMap, PackageContentFetcher};
-use crate::npm_replicator::database::NpmDatabase;
+use crate::npm_replicator::fs_db::FSNpmDatabase;
 use crate::package::process::parse_package_specifier;
 use crate::router::utils::decode_base64;
 
@@ -40,7 +40,7 @@ async fn create_reply(files: FileMap) -> Result<CustomReply, ServerError> {
 
 pub async fn get_mod_reply(
     path: String,
-    npm_db: NpmDatabase,
+    npm_db: FSNpmDatabase,
     pkg_content_fetcher: PackageContentFetcher,
 ) -> Result<CustomReply, ServerError> {
     let decoded_specifier = decode_base64(&path)?;
@@ -54,7 +54,7 @@ pub async fn get_mod_reply(
 
 pub async fn mod_route_handler(
     path: String,
-    npm_db: NpmDatabase,
+    npm_db: FSNpmDatabase,
     pkg_content_fetcher: PackageContentFetcher,
 ) -> Result<impl Reply, Rejection> {
     match get_mod_reply(path, npm_db, pkg_content_fetcher).await {
@@ -64,7 +64,7 @@ pub async fn mod_route_handler(
 }
 
 pub fn mod_route(
-    npm_db: NpmDatabase,
+    npm_db: FSNpmDatabase,
     pkg_content_fetcher: PackageContentFetcher,
 ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
     warp::path!("v2" / "mod" / String)

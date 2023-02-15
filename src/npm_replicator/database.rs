@@ -166,4 +166,22 @@ impl NpmDatabase {
             ))
         }
     }
+
+    #[tracing::instrument(name = "npm_db_get_package", skip(self))]
+    pub fn list_packages(&self) -> AppResult<Vec<String>> {
+        let connection = self.db.lock();
+        let mut stmt = connection.prepare("SELECT id FROM package;")?;
+        let name_iter = stmt
+            .query_map(named_params! {}, |row| {
+                let name: String = row.get(0)?;
+                Ok(name)
+            })
+            .optional()?
+            .unwrap();
+        let mut result_vec: Vec<String> = Vec::new();
+        for line in name_iter {
+            result_vec.push(line.unwrap());
+        }
+        Ok(result_vec)
+    }
 }
