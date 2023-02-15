@@ -64,11 +64,11 @@ impl NpmRocksDB {
         }
 
         let pkg_name = pkg.name.clone();
-        let content = serde_json::to_string(&pkg)?;
+        let content = pkg.to_buffer()?;
         let span = span!(Level::INFO, "fs_write_pkg").entered();
         self.db
             .lock()
-            .put(pkg_name.as_bytes(), content.as_bytes())
+            .put(pkg_name.as_bytes(), content)
             .unwrap();
         span.exit();
 
@@ -101,7 +101,7 @@ impl NpmRocksDB {
         if let Some(pkg_content) = content_val {
             let found_pkg: MinimalPackageData = {
                 let span = span!(Level::INFO, "parse_pkg").entered();
-                let res = serde_json::from_slice(&pkg_content)?;
+                let res = MinimalPackageData::from_buffer(&pkg_content)?;
                 span.exit();
                 res
             };

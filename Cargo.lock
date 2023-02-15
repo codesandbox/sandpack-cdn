@@ -310,6 +310,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "capnp"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "35400c6acb55f1a91e6843beca189aba6bccd3c11fae5a7c0288fe5a1c3da822"
+
+[[package]]
+name = "capnpc"
+version = "0.16.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7269a21f93230c105682fa08c86d43a94d72edc8f6984ff86d84d27880631820"
+dependencies = [
+ "capnp",
+]
+
+[[package]]
 name = "cargo-platform"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2109,6 +2124,8 @@ name = "sandpack-cdn"
 version = "0.0.0"
 dependencies = [
  "base64-simd",
+ "capnp",
+ "capnpc",
  "chrono",
  "dotenv",
  "flate2",

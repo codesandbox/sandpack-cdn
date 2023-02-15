@@ -3,10 +3,14 @@ name = "sandpack-cdn"
 version = "0.0.0"
 edition = "2021"
 publish = false
+build = "build.rs"
 
 [profile.release-with-debug]
 inherits = "release"
 debug = true
+
+[build-dependencies]
+capnpc = "0.16"
 
 [dependencies]
 thiserror = "1.0.30"
@@ -44,3 +48,4 @@ tracing-tree = "0.2.1"
 rusqlite = { version = "0.28.0", features = ["bundled"] }
 lru = "0.9.0"
 rocksdb = "0.20.1"
+capnp = "0.16.0"

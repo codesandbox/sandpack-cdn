@@ -1,4 +1,4 @@
-use crate::npm_replicator::{sqlite::NpmDatabase, registry::NpmRocksDB, replication_task};
+use crate::npm_replicator::{registry::NpmRocksDB, replication_task, sqlite::NpmDatabase};
 use dotenv::dotenv;
 use std::env;
 use std::net::SocketAddr;
@@ -7,6 +7,7 @@ use warp::Filter;
 
 mod app_error;
 mod cached;
+mod minimal_pkg_capnp;
 mod npm;
 mod npm_replicator;
 mod package;
@@ -17,6 +18,7 @@ mod utils;
 #[tokio::main]
 async fn main() -> Result<(), std::io::Error> {
     dotenv().ok();
+    setup_tracing::setup_tracing();
 
     let port = match env::var("PORT") {
         Ok(var) => var,
@@ -25,13 +27,22 @@ async fn main() -> Result<(), std::io::Error> {
     .parse::<u16>()
     .unwrap();
 
+    // Setup SQLite DB
     let npm_db_path = env::var("NPM_SQLITE_DB").expect("NPM_SQLITE_DB env variable should be set");
-    let npm_registry_path = env::var("NPM_ROCKS_DB").expect("NPM_ROCKS_DB env variable should be set");
-
-    setup_tracing::setup_tracing();
+    let npm_db = NpmDatabase::new(&npm_db_path).unwrap();
+    npm_db.init().unwrap();
 
     // Setup npm db
+    let npm_registry_path =
+        env::var("NPM_ROCKS_DB").expect("NPM_ROCKS_DB env variable should be set");
     let npm_fs_db = NpmRocksDB::new(&npm_registry_path);
+
+    let packages = npm_db.list_packages()?;
+    for package_name in packages {
+        let pkg = npm_db.get_package(&package_name)?;
+        npm_fs_db.write_package(pkg)?;
+    }
+
     replication_task::spawn_sync_thread(npm_fs_db.clone());
 
     // cors headers
