@@ -61,8 +61,8 @@ pub enum ServerError {
     InvalidQuery,
     #[error("SQLite Error")]
     SQLiteError(#[from] rusqlite::Error),
-    #[error("CapNProto Error")]
-    CapNProtoError(#[from] capnp::Error),
+    #[error("MessagePack Decode Error")]
+    MessagePackDecodeError(#[from] rmp_serde::decode::Error),
 }
 
 impl From<ServerError> for std::io::Error {

@@ -5,7 +5,7 @@ use parking_lot::Mutex;
 use rocksdb::DB;
 use tracing::{info, span, Level};
 
-use crate::app_error::AppResult;
+use crate::{app_error::AppResult, utils::msgpack::serialize_msgpack};
 
 use super::types::document::MinimalPackageData;
 
@@ -64,12 +64,9 @@ impl NpmRocksDB {
         }
 
         let pkg_name = pkg.name.clone();
-        let content = pkg.to_buffer()?;
+        let content = serialize_msgpack(&pkg)?;
         let span = span!(Level::INFO, "fs_write_pkg").entered();
-        self.db
-            .lock()
-            .put(pkg_name.as_bytes(), content)
-            .unwrap();
+        self.db.lock().put(pkg_name.as_bytes(), content).unwrap();
         span.exit();
 
         let span = span!(Level::INFO, "delete_cached_pkg").entered();
@@ -101,7 +98,7 @@ impl NpmRocksDB {
         if let Some(pkg_content) = content_val {
             let found_pkg: MinimalPackageData = {
                 let span = span!(Level::INFO, "parse_pkg").entered();
-                let res = MinimalPackageData::from_buffer(&pkg_content)?;
+                let res = rmp_serde::from_slice(&pkg_content)?;
                 span.exit();
                 res
             };
