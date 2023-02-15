@@ -65,14 +65,15 @@ impl NpmRocksDB {
 
         let pkg_name = pkg.name.clone();
         let content = serialize_msgpack(&pkg)?;
-        // let span = span!(Level::INFO, "fs_write_pkg").entered();
-        self.db.lock().put(pkg_name.as_bytes(), content).unwrap();
-        // span.exit();
+        
+        {
+            self.db.lock().put(pkg_name.as_bytes(), content).unwrap();
+        }
 
-        // let span = span!(Level::INFO, "delete_cached_pkg").entered();
-        let mut cache = self.cache.lock();
-        cache.pop(&pkg_name);
-        // span.exit();
+        {
+            let mut cache = self.cache.lock();
+            cache.pop(&pkg_name);
+        }
 
         Ok(1)
     }
