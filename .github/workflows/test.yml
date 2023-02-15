@@ -8,6 +8,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - run: apt update && apt upgrade -y
+      - run: apt install -y protobuf-compiler libprotobuf-dev
       - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
