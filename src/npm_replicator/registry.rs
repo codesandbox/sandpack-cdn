@@ -13,7 +13,7 @@ use super::types::document::MinimalPackageData;
 pub struct NpmRocksDB {
     pub db_path: PathBuf,
     db: Arc<Mutex<DB>>,
-    cache: Arc<Mutex<LruCache<String, MinimalPackageData>>>,
+    cache: Arc<Mutex<LruCache<String, Arc<MinimalPackageData>>>>,
 }
 
 impl NpmRocksDB {
@@ -65,7 +65,7 @@ impl NpmRocksDB {
 
         let pkg_name = pkg.name.clone();
         let content = serialize_msgpack(&pkg)?;
-        
+
         {
             self.db.lock().put(pkg_name.as_bytes(), content).unwrap();
         }
@@ -79,7 +79,7 @@ impl NpmRocksDB {
     }
 
     #[tracing::instrument(name = "npm_db_get_package", skip(self))]
-    pub fn get_package(&self, pkg_name: &str) -> AppResult<MinimalPackageData> {
+    pub fn get_package(&self, pkg_name: &str) -> AppResult<Arc<MinimalPackageData>> {
         {
             let mut cache = self.cache.lock();
             let cached_value = cache.get(pkg_name);
@@ -97,21 +97,17 @@ impl NpmRocksDB {
         };
 
         if let Some(pkg_content) = content_val {
-            let found_pkg: MinimalPackageData = {
-                let span = span!(Level::INFO, "parse_pkg").entered();
-                let res = rmp_serde::from_slice(&pkg_content)?;
-                span.exit();
-                res
-            };
+            let span = span!(Level::INFO, "parse_pkg").entered();
+            let found_pkg: MinimalPackageData = rmp_serde::from_slice(&pkg_content)?;
+            span.exit();
 
-            {
-                let span = span!(Level::INFO, "write_cached_pkg").entered();
-                let mut cache = self.cache.lock();
-                cache.put(pkg_name.to_string(), found_pkg.clone());
-                span.exit();
-            }
+            let span = span!(Level::INFO, "write_cached_pkg").entered();
+            let mut cache = self.cache.lock();
+            let wrapped_pkg = Arc::new(found_pkg);
+            cache.put(pkg_name.to_string(), wrapped_pkg.clone());
+            span.exit();
 
-            Ok(found_pkg)
+            Ok(wrapped_pkg)
         } else {
             Err(crate::app_error::ServerError::PackageNotFound(
                 pkg_name.to_string(),
