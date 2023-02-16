@@ -41,6 +41,5 @@ dotenv = "0.15.0"
 moka = { version = "0.10.0", features = ["future"] }
 rmp = "0.8.11"
 rmp-serde = "1.1.1"
-rusqlite = { version = "0.28.0", features = ["bundled"] }
 lru = "0.9.0"
 rocksdb = "0.20.1"

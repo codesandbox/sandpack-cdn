@@ -59,8 +59,6 @@ pub enum ServerError {
     NotChanged,
     #[error("Invalid query")]
     InvalidQuery,
-    #[error("SQLite Error")]
-    SQLiteError(#[from] rusqlite::Error),
     #[error("MessagePack Decode Error")]
     MessagePackDecodeError(#[from] rmp_serde::decode::Error),
 }

@@ -41,7 +41,7 @@ impl NpmRocksDB {
         }
     }
 
-    // #[tracing::instrument(name = "npm_db_update_last_seq", skip(self))]
+    #[tracing::instrument(name = "npm_db_update_last_seq", skip(self))]
     pub fn update_last_seq(&self, next_seq: i64) -> AppResult<usize> {
         self.db
             .lock()
@@ -50,7 +50,7 @@ impl NpmRocksDB {
         Ok(1)
     }
 
-    #[tracing::instrument(name = "npm_db_delete_package", skip(self))]
+    // #[tracing::instrument(name = "npm_db_delete_package", skip(self))]
     pub fn delete_package(&self, pkg_name: &str) -> AppResult<usize> {
         self.db.lock().delete(pkg_name.as_bytes()).unwrap();
         Ok(1)
@@ -90,7 +90,7 @@ impl NpmRocksDB {
         };
 
         let content_val: Option<Vec<u8>> = {
-            let span = span!(Level::INFO, "sqlite_get_pkg").entered();
+            let span = span!(Level::INFO, "db_get_pkg").entered();
             let result = self.db.lock().get(pkg_name.as_bytes()).unwrap();
             span.exit();
             result
