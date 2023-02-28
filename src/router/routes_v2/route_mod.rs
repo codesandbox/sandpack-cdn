@@ -59,7 +59,7 @@ pub async fn mod_route_handler(
 ) -> Result<impl Reply, Rejection> {
     match get_mod_reply(path, npm_db, pkg_content_fetcher).await {
         Ok(reply) => Ok(reply),
-        Err(err) => Ok(ErrorReply::from(err).as_reply(3600).unwrap()),
+        Err(err) => Ok(ErrorReply::from(err).as_reply(300).unwrap()),
     }
 }
 

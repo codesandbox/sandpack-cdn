@@ -34,7 +34,7 @@ where
 pub async fn not_found_handler() -> Result<impl Reply, Rejection> {
     Ok(
         ErrorReply::new(404, "Not found".to_string(), "Not found".to_string())
-            .as_reply(1800)
+            .as_reply(300)
             .unwrap(),
     )
 }

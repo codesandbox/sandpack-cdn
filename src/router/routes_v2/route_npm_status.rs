@@ -33,7 +33,7 @@ async fn get_reply(npm_db: NpmRocksDB) -> Result<CustomReply, ServerError> {
 async fn route_handler(npm_db: NpmRocksDB) -> Result<impl Reply, Rejection> {
     match get_reply(npm_db).await {
         Ok(reply) => Ok(reply),
-        Err(err) => Ok(ErrorReply::from(err).as_reply(3600).unwrap()),
+        Err(err) => Ok(ErrorReply::from(err).as_reply(300).unwrap()),
     }
 }
 

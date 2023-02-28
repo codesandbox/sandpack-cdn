@@ -68,7 +68,7 @@ async fn deps_route_handler(
 ) -> Result<impl Reply, Rejection> {
     match get_reply(path, npm_db, is_json).await {
         Ok(reply) => Ok(reply),
-        Err(err) => Ok(ErrorReply::from(err).as_reply(3600).unwrap()),
+        Err(err) => Ok(ErrorReply::from(err).as_reply(300).unwrap()),
     }
 }
 
