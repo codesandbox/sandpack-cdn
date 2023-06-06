@@ -2,8 +2,6 @@ use opentelemetry::sdk::trace as sdktrace;
 use opentelemetry_otlp::WithExportConfig;
 use std::collections::HashMap;
 use std::env;
-use std::str::FromStr;
-use tonic::metadata::{MetadataKey, MetadataMap};
 use tracing_subscriber::filter::LevelFilter;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::Registry;
@@ -15,7 +13,7 @@ const HEADER_PREFIX: &str = "OTEL_METADATA_";
 // OTEL_METADATA_AUTHORIZATION = otel collector basic auth
 // OTEL_EXPORTER_OTLP_ENDPOINT = http://otel-collector.csbops.io
 fn init_opentelemetry() -> Option<sdktrace::Tracer> {
-    let mut headers = HashMap::new();
+    let mut headers: HashMap<String, String> = HashMap::new();
     for (key, value) in env::vars()
         .filter(|(name, _)| name.starts_with(HEADER_PREFIX))
         .map(|(name, value)| {
