@@ -1,4 +1,6 @@
-use opentelemetry::sdk::trace as sdktrace;
+use opentelemetry::sdk::{Resource, trace as sdktrace};
+use opentelemetry::{KeyValue};
+use opentelemetry_semantic_conventions;
 use opentelemetry_otlp::WithExportConfig;
 use std::collections::HashMap;
 use std::env;
@@ -39,7 +41,7 @@ fn init_opentelemetry() -> Option<sdktrace::Tracer> {
         env::set_var("OTEL_SERVICE_NAME", "sandpack-cdn");
     }
 
-    let mut headers = HashMap::new();
+    let headers = HashMap::new();
 
     // First, create a OTLP exporter builder.
     let exporter = opentelemetry_otlp::new_exporter()
@@ -50,6 +52,16 @@ fn init_opentelemetry() -> Option<sdktrace::Tracer> {
     match opentelemetry_otlp::new_pipeline()
         .tracing()
         .with_exporter(exporter)
+        .with_trace_config(sdktrace::config().with_resource(Resource::new(vec![
+            KeyValue::new(
+                opentelemetry_semantic_conventions::resource::SERVICE_NAME,
+                env::var("OTEL_SERVICE_NAME").unwrap(),
+            ),
+            KeyValue::new(
+                opentelemetry_semantic_conventions::resource::DEPLOYMENT_ENVIRONMENT,
+                env::var("ENVIRONMENT").expect("Please provide the env var ENVIRONMENT"),
+            ),
+        ])))
         .install_batch(opentelemetry::runtime::Tokio)
     {
         Ok(v) => Some(v),
