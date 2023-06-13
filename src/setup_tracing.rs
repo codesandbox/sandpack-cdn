@@ -1,7 +1,7 @@
-use opentelemetry::sdk::{Resource, trace as sdktrace};
-use opentelemetry::{KeyValue};
-use opentelemetry_semantic_conventions;
+use opentelemetry::sdk::{trace as sdktrace, Resource};
+use opentelemetry::KeyValue;
 use opentelemetry_otlp::WithExportConfig;
+use opentelemetry_semantic_conventions;
 use std::collections::HashMap;
 use std::env;
 use tracing_subscriber::filter::LevelFilter;
@@ -41,12 +41,11 @@ fn init_opentelemetry() -> Option<sdktrace::Tracer> {
         env::set_var("OTEL_SERVICE_NAME", "sandpack-cdn");
     }
 
-    let headers = HashMap::new();
-
     // First, create a OTLP exporter builder.
     let exporter = opentelemetry_otlp::new_exporter()
         .http()
         .with_headers(headers)
+        .with_endpoint(env::var("OTEL_EXPORTER_OTLP_ENDPOINT").unwrap())
         .with_env();
 
     match opentelemetry_otlp::new_pipeline()
