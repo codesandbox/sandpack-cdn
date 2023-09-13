@@ -8,6 +8,18 @@ Run the following command: `cargo run`
 
 ## Environment variables
 
+### Port
+
+Define a custom port to start the server on
+
+Example: `PORT=1234` - Defaults to 8080
+
+### Database
+
+To run this locally you need to define the location of the rocksdb database, which is where the sandpack cdn stores all the data it needs.
+
+Example: `NPM_ROCKS_DB=/persisted/npm_rocks_db`
+
 ### Tracing
 
 - OpenTelemetry exporter endpoint: `OTEL_EXPORTER_OTLP_ENDPOINT`
