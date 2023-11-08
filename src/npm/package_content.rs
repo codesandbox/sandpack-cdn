@@ -126,7 +126,7 @@ impl PackageContentFetcher {
     pub async fn get(&self, url: &str) -> Result<FileMap, ServerError> {
         let key = String::from(url);
         let client = get_client();
-        if let Some(found_value) = self.cache.get(&key) {
+        if let Some(found_value) = self.cache.get(&key).await {
             get_tarball(url, client, found_value).await
         } else {
             let cached: Cached<FileMap> = Cached::new(self.refresh_interval);
