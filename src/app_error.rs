@@ -30,6 +30,8 @@ pub enum ServerError {
     SWCParseError { message: String },
     #[error("Could not download tarball package")]
     TarballDownloadError { status_code: u16, url: String },
+    #[error("Could not download package metadata")]
+    PackageMetadataDownloadError { status_code: u16, url: String },
     #[error("Could not download npm package manifest")]
     NpmManifestDownloadError {
         status_code: u16,
