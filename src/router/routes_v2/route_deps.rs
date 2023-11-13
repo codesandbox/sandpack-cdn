@@ -75,10 +75,7 @@ async fn get_reply(
                         return Err(ServerError::PackageNotFound(new_pkg_name));
                     }
                     last_failed_pkg_name = Some(new_pkg_name.clone());
-                    let fetch_res = cloned_npm_db.fetch_missing_pkg(&new_pkg_name).await;
-                    if !fetch_res.is_ok() {
-                        return Err(ServerError::PackageNotFound(new_pkg_name));
-                    }
+                    cloned_npm_db.fetch_missing_pkg(&new_pkg_name).await?;
                 }
             }
         }

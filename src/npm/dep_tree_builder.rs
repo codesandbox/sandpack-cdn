@@ -6,9 +6,7 @@ use std::{
 use node_semver::{Range, Version};
 use tracing::{error, info};
 
-use crate::{
-    app_error::ServerError, npm_replicator::registry::NpmRocksDB,
-};
+use crate::{app_error::ServerError, npm_replicator::registry::NpmRocksDB};
 
 #[derive(Clone, Eq, Hash, PartialEq, Debug)]
 pub enum DepRange {
@@ -132,8 +130,13 @@ impl DepTreeBuilder {
                     );
                 }
                 None => {
-                    error!("Invalid package specifier");
-                    return Err(ServerError::InvalidPackageSpecifier);
+                    // If it contains a colon, it's a special specifier and we should just ignore those
+                    if tag.contains(':') {
+                        return Ok(transient_deps);
+                    } else {
+                        error!("Invalid package specifier");
+                        return Err(ServerError::InvalidPackageSpecifier);
+                    }
                 }
             }
         } else if let DepRange::Range(original_range) = &request.range {
