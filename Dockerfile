@@ -1,10 +1,10 @@
-FROM rust:latest AS builder
+FROM rust:bookworm AS builder
 
 # We need the nightly for some packages...
 CMD rustup default nightly
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y protobuf-compiler libclang-dev
+RUN apt-get update && apt-get install -y protobuf-compiler libclang-dev libssl-dev
 
 # Installing all dependencies...
 RUN USER=root cargo new --bin sandpack-cdn
@@ -21,7 +21,7 @@ COPY . .
 RUN cargo build --release
 
 
-FROM debian:bullseye-slim
+FROM debian:bookworm-slim
 
 RUN apt-get update \
     && apt-get install -y ca-certificates tzdata dumb-init \
