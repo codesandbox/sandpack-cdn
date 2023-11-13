@@ -36,10 +36,6 @@ pub struct PackageVersion {
     pub dist: PackageDist,
     #[serde(default)]
     pub dependencies: BTreeMap<String, String>,
-    #[serde(rename = "devDependencies", default)]
-    pub dev_dependencies: BTreeMap<String, String>,
-    #[serde(rename = "peerDependencies", default)]
-    pub peer_dependencies: BTreeMap<String, String>,
 }
 
 #[serde_as]
@@ -55,9 +51,7 @@ pub struct PackageMetadata {
 }
 
 #[tracing::instrument(name = "download_pkg_metadata")]
-pub async fn download_pkg_metadata(
-    pkg_name: &str,
-) -> Result<PackageMetadata, ServerError> {
+pub async fn download_pkg_metadata(pkg_name: &str) -> Result<PackageMetadata, ServerError> {
     let url: String = format!("https://registry.npmjs.org/{}", pkg_name);
     let client = get_client();
     let response = client

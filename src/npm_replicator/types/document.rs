@@ -82,15 +82,11 @@ impl MinimalPackageData {
             last_updated: Some(secs_since_epoch()),
         };
         for (key, value) in raw.versions {
-            let mut dependencies = value.dependencies;
-            for (name, version) in value.dev_dependencies {
-                dependencies.insert(name, version);
-            }
             data.versions.insert(
                 key,
                 MinimalPackageVersionData {
                     tarball: value.dist.tarball,
-                    dependencies,
+                    dependencies: value.dependencies,
                 },
             );
         }
