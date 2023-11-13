@@ -34,6 +34,12 @@ pub struct PackageDist {
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
 pub struct PackageVersion {
     pub dist: PackageDist,
+    #[serde(default)]
+    pub dependencies: BTreeMap<String, String>,
+    #[serde(rename = "devDependencies", default)]
+    pub dev_dependencies: BTreeMap<String, String>,
+    #[serde(rename = "peerDependencies", default)]
+    pub peer_dependencies: BTreeMap<String, String>,
 }
 
 #[serde_as]
@@ -41,26 +47,28 @@ pub struct PackageVersion {
 pub struct PackageMetadata {
     pub name: String,
 
-    #[serde(rename = "dist-tags")]
-    pub dist_tags: Option<BTreeMap<String, String>>,
+    #[serde(rename = "dist-tags", default)]
+    pub dist_tags: BTreeMap<String, String>,
 
-    pub versions: Option<BTreeMap<String, PackageVersion>>,
-}
-
-#[derive(PartialEq, Eq, Debug, Clone)]
-pub struct NormalizedPackageMetadata {
-    pub name: String,
-    pub dist_tags: Option<BTreeMap<String, String>>,
-    pub versions: Option<BTreeMap<String, String>>,
+    #[serde(default)]
+    pub versions: BTreeMap<String, PackageVersion>,
 }
 
 #[tracing::instrument(name = "download_pkg_metadata")]
 pub async fn download_pkg_metadata(
     pkg_name: &str,
-) -> Result<NormalizedPackageMetadata, ServerError> {
+) -> Result<PackageMetadata, ServerError> {
     let url: String = format!("https://registry.npmjs.org/{}", pkg_name);
     let client = get_client();
-    let response = client.get(&url).send().await?;
+    let response = client
+        .get(&url)
+        // Return a minimal version of the package metadata
+        .header(
+            "Accept",
+            "application/vnd.npm.install-v1+json; q=1.0, application/json; q=0.8, */*",
+        )
+        .send()
+        .await?;
     let response_status = response.status();
     if !response_status.is_success() {
         return Err(ServerError::PackageMetadataDownloadError {
@@ -72,16 +80,5 @@ pub async fn download_pkg_metadata(
     let txt = response.text().await?;
     let metadata: PackageMetadata = serde_json::from_str(&txt)?;
 
-    let mut versions = BTreeMap::new();
-    if let Some(raw_versions) = metadata.versions {
-        for (version, version_data) in raw_versions {
-            versions.insert(version, version_data.dist.tarball);
-        }
-    }
-
-    Ok(NormalizedPackageMetadata {
-        name: metadata.name,
-        dist_tags: metadata.dist_tags,
-        versions: Some(versions),
-    })
+    Ok(metadata)
 }

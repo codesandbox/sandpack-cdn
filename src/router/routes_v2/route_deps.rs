@@ -31,23 +31,68 @@ async fn get_reply(
     let decoded_query = decode_base64(&path)?;
     let dep_requests = parse_query(decoded_query)?;
 
-    let result: AppResult<ResolutionsMap> = tokio::task::spawn_blocking(move || {
-        let mut tree_builder = DepTreeBuilder::new(npm_db.clone());
-        tree_builder.resolve_tree(dep_requests)?;
-        for (alias_key, alias_value) in tree_builder.aliases {
-            if let Some(resolved_version) = tree_builder.resolutions.get(&alias_value) {
-                tree_builder
-                    .resolutions
-                    .insert(alias_key, resolved_version.clone());
+    let mut res_map: Option<ResolutionsMap> = None;
+    let mut last_failed_pkg_name: Option<String> = None;
+    for _idx in 0..100 {
+        let cloned_dep_requests = dep_requests.clone();
+        let cloned_npm_db = npm_db.clone();
+        let result: AppResult<ResolutionsMap> = tokio::task::spawn_blocking(move || {
+            let mut tree_builder = DepTreeBuilder::new(cloned_npm_db);
+            tree_builder.resolve_tree(cloned_dep_requests)?;
+            for (alias_key, alias_value) in tree_builder.aliases {
+                if let Some(resolved_version) = tree_builder.resolutions.get(&alias_value) {
+                    tree_builder
+                        .resolutions
+                        .insert(alias_key, resolved_version.clone());
+                }
+            }
+            Ok(tree_builder.resolutions)
+        })
+        .await?;
+
+        match result {
+            Ok(data) => {
+                res_map = Some(data);
+            }
+
+            Err(err) => {
+                let mut cloned_npm_db = npm_db.clone();
+                let new_pkg_name;
+                match err {
+                    ServerError::PackageVersionNotFound(pkg_name, _) => {
+                        new_pkg_name = pkg_name;
+                    }
+                    ServerError::PackageNotFound(pkg_name) => {
+                        new_pkg_name = pkg_name;
+                    }
+                    err => {
+                        return Err(err);
+                    }
+                }
+
+                if new_pkg_name.len() > 0 {
+                    if Some(new_pkg_name.clone()) == last_failed_pkg_name {
+                        return Err(ServerError::PackageNotFound(new_pkg_name));
+                    }
+                    last_failed_pkg_name = Some(new_pkg_name.clone());
+                    let fetch_res = cloned_npm_db.fetch_missing_pkg(&new_pkg_name).await;
+                    if !fetch_res.is_ok() {
+                        return Err(ServerError::PackageNotFound(new_pkg_name));
+                    }
+                }
             }
         }
-        Ok(tree_builder.resolutions)
-    })
-    .await?;
+    }
+
+    if res_map == None {
+        return Err(ServerError::PackageNotFound(
+            last_failed_pkg_name.unwrap_or("unknown".to_string()),
+        ));
+    }
 
     let mut reply = match is_json {
-        true => CustomReply::json(&result?)?,
-        false => CustomReply::msgpack(&result?)?,
+        true => CustomReply::json(&res_map)?,
+        false => CustomReply::msgpack(&res_map)?,
     };
     let cache_ttl = 3600;
     reply.add_header(

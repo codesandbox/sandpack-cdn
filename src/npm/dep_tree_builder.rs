@@ -6,9 +6,11 @@ use std::{
 use node_semver::{Range, Version};
 use tracing::{error, info};
 
-use crate::{app_error::ServerError, npm_replicator::registry::NpmRocksDB};
+use crate::{
+    app_error::ServerError, npm_replicator::registry::NpmRocksDB,
+};
 
-#[derive(Eq, Hash, PartialEq, Debug)]
+#[derive(Clone, Eq, Hash, PartialEq, Debug)]
 pub enum DepRange {
     Range(Range),
     Tag(String),
@@ -40,7 +42,7 @@ impl fmt::Display for DepRange {
     }
 }
 
-#[derive(Eq, Hash, PartialEq, Debug)]
+#[derive(Clone, Eq, Hash, PartialEq, Debug)]
 pub struct DepRequest {
     name: String,
     range: DepRange,

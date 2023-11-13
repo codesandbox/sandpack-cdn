@@ -61,6 +61,8 @@ pub enum ServerError {
     NotChanged,
     #[error("Invalid query")]
     InvalidQuery,
+    #[error("Unexpected error")]
+    UnexpectedError { message: String },
     #[error("MessagePack Decode Error")]
     MessagePackDecodeError(#[from] rmp_serde::decode::Error),
 }

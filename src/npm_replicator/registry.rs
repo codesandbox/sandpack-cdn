@@ -5,7 +5,11 @@ use parking_lot::Mutex;
 use rocksdb::DB;
 use tracing::{info, span, Level};
 
-use crate::{app_error::AppResult, utils::msgpack::serialize_msgpack};
+use crate::{
+    app_error::{AppResult, ServerError},
+    npm::package_data::download_pkg_metadata,
+    utils::{msgpack::serialize_msgpack, time::secs_since_epoch},
+};
 
 use super::types::document::MinimalPackageData;
 
@@ -113,5 +117,39 @@ impl NpmRocksDB {
                 pkg_name.to_string(),
             ))
         }
+    }
+
+    pub async fn fetch_missing_pkg(&mut self, pkg_name: &str) -> Result<(), ServerError> {
+        let mut should_fetch = false;
+        match self.get_package(pkg_name) {
+            Ok(pkg) => {
+                if pkg.last_updated.is_none() {
+                    should_fetch = true;
+                } else {
+                    let last_updated = pkg.last_updated.unwrap();
+                    let now = secs_since_epoch();
+                    let diff = now - last_updated;
+                    if diff > 60 {
+                        should_fetch = true;
+                    }
+                }
+            }
+            Err(err) => match err {
+                ServerError::PackageNotFound(_) => {
+                    should_fetch = true;
+                }
+                _ => {
+                    return Err(err);
+                }
+            },
+        }
+
+        if should_fetch {
+            let metadata = download_pkg_metadata(pkg_name).await?;
+            let pkg = MinimalPackageData::from_registry_meta(metadata);
+            self.write_package(pkg)?;
+        }
+
+        Ok(())
     }
 }
