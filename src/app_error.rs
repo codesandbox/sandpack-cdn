@@ -30,6 +30,8 @@ pub enum ServerError {
     SWCParseError { message: String },
     #[error("Could not download tarball package")]
     TarballDownloadError { status_code: u16, url: String },
+    #[error("Could not download package metadata")]
+    PackageMetadataDownloadError { status_code: u16, url: String },
     #[error("Could not download npm package manifest")]
     NpmManifestDownloadError {
         status_code: u16,
@@ -59,6 +61,8 @@ pub enum ServerError {
     NotChanged,
     #[error("Invalid query")]
     InvalidQuery,
+    #[error("Unexpected error")]
+    UnexpectedError { message: String },
     #[error("MessagePack Decode Error")]
     MessagePackDecodeError(#[from] rmp_serde::decode::Error),
 }

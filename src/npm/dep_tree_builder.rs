@@ -6,9 +6,12 @@ use std::{
 use node_semver::{Range, Version};
 use tracing::{error, info};
 
-use crate::{app_error::ServerError, npm_replicator::registry::NpmRocksDB};
+use crate::{
+    app_error::ServerError, npm_replicator::registry::NpmRocksDB,
+    package::process::parse_package_specifier_no_validation,
+};
 
-#[derive(Eq, Hash, PartialEq, Debug)]
+#[derive(Clone, Eq, Hash, PartialEq, Debug)]
 pub enum DepRange {
     Range(Range),
     Tag(String),
@@ -40,15 +43,31 @@ impl fmt::Display for DepRange {
     }
 }
 
-#[derive(Eq, Hash, PartialEq, Debug)]
+#[derive(Clone, Eq, Hash, PartialEq, Debug)]
 pub struct DepRequest {
     name: String,
     range: DepRange,
 }
 
 impl DepRequest {
-    pub fn new(name: String, range: DepRange) -> DepRequest {
+    fn new(name: String, range: DepRange) -> DepRequest {
         DepRequest { name, range }
+    }
+
+    pub fn from_name_version(name: String, version: String) -> Result<DepRequest, ServerError> {
+        let parsed_range = DepRange::parse(version);
+        if let DepRange::Tag(tag) = parsed_range.clone() {
+            if tag.contains(':') {
+                // Example: npm:@babel/core@7.12.9
+                if tag.starts_with("npm:") {
+                    let (actual_name, actual_version) =
+                        parse_package_specifier_no_validation(&tag[4..])?;
+                    let parsed_range = DepRange::parse(actual_version);
+                    return Ok(DepRequest::new(actual_name.to_string(), parsed_range));
+                }
+            }
+        }
+        Ok(DepRequest::new(name, parsed_range))
     }
 }
 
@@ -130,8 +149,13 @@ impl DepTreeBuilder {
                     );
                 }
                 None => {
-                    error!("Invalid package specifier");
-                    return Err(ServerError::InvalidPackageSpecifier);
+                    // If it contains a colon, it's a special specifier and we should just ignore those
+                    if tag.contains(':') {
+                        return Ok(transient_deps);
+                    } else {
+                        error!("Invalid package specifier");
+                        return Err(ServerError::InvalidPackageSpecifier);
+                    }
                 }
             }
         } else if let DepRange::Range(original_range) = &request.range {
@@ -158,10 +182,8 @@ impl DepTreeBuilder {
             let data = data.versions.get(&resolved_version.to_string());
             if let Some(data) = data {
                 for (name, range) in data.dependencies.iter() {
-                    transient_deps.insert(DepRequest::new(
-                        name.clone(),
-                        DepRange::parse(range.clone()),
-                    ));
+                    transient_deps
+                        .insert(DepRequest::from_name_version(name.clone(), range.clone())?);
                 }
             }
             Ok(transient_deps)
