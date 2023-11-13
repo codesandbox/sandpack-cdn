@@ -2,6 +2,8 @@ use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DefaultOnError};
 use std::collections::BTreeMap;
 
+use crate::utils::time::secs_since_epoch;
+
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
 pub struct DocumentPackageDist {
     pub tarball: String,
@@ -44,6 +46,8 @@ pub struct MinimalPackageData {
     pub name: String,
     pub dist_tags: BTreeMap<String, String>,
     pub versions: BTreeMap<String, MinimalPackageVersionData>,
+    // Seconds since the epoch
+    pub last_updated: Option<u64>,
 }
 
 impl MinimalPackageData {
@@ -52,6 +56,7 @@ impl MinimalPackageData {
             name: raw.id,
             dist_tags: raw.dist_tags.unwrap_or_default(),
             versions: BTreeMap::new(),
+            last_updated: Some(secs_since_epoch()),
         };
         for (key, value) in raw.versions.unwrap_or_default() {
             let mut dependencies = value.dependencies.unwrap_or_default();
