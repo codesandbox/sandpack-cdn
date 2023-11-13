@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use warp::{Filter, Rejection, Reply};
 
 use crate::app_error::{AppResult, ServerError};
-use crate::npm::dep_tree_builder::{DepRange, DepRequest, DepTreeBuilder, ResolutionsMap};
+use crate::npm::dep_tree_builder::{DepRequest, DepTreeBuilder, ResolutionsMap};
 use crate::npm_replicator::registry::NpmRocksDB;
 use crate::package::process::parse_package_specifier_no_validation;
 use crate::router::utils::decode_base64;
@@ -17,8 +17,7 @@ fn parse_query(query: String) -> Result<HashSet<DepRequest>, ServerError> {
     let mut dep_requests: HashSet<DepRequest> = HashSet::new();
     for part in parts {
         let (name, version) = parse_package_specifier_no_validation(part)?;
-        let parsed_range = DepRange::parse(version);
-        dep_requests.insert(DepRequest::new(name, parsed_range));
+        dep_requests.insert(DepRequest::from_name_version(name, version)?);
     }
     Ok(dep_requests)
 }
