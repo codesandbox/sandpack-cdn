@@ -130,7 +130,7 @@ impl DepTreeBuilder {
         false
     }
 
-    #[tracing::instrument(name = "resolve_dependency", skip_all, fields(pkg_name = request.name.as_str(), range = request.range.to_string().as_str()))]
+    #[tracing::instrument(name = "resolve_dependency", level = "debug", skip_all, fields(pkg_name = request.name.as_str(), range = request.range.to_string().as_str()))]
     fn resolve_dependency(
         &mut self,
         request: DepRequest,

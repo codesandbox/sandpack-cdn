@@ -3,7 +3,6 @@ use std::{num::NonZeroUsize, path::PathBuf, sync::Arc};
 use lru::LruCache;
 use parking_lot::Mutex;
 use rocksdb::DB;
-use tracing::{info, span, Level};
 
 use crate::{
     app_error::{AppResult, ServerError},
@@ -32,7 +31,7 @@ impl NpmRocksDB {
         }
     }
 
-    #[tracing::instrument(name = "npm_db_get_last_seq", skip(self))]
+    #[tracing::instrument(name = "npm_db_get_last_seq", level = "debug", skip(self))]
     pub fn get_last_seq(&self) -> AppResult<i64> {
         if let Some(result) = self.db.lock().get(b"#CDN_LAST_SYNC").unwrap() {
             Ok(i64::from_le_bytes(
@@ -45,7 +44,7 @@ impl NpmRocksDB {
         }
     }
 
-    #[tracing::instrument(name = "npm_db_update_last_seq", skip(self))]
+    #[tracing::instrument(name = "npm_db_update_last_seq", level = "debug", skip(self))]
     pub fn update_last_seq(&self, next_seq: i64) -> AppResult<usize> {
         self.db
             .lock()
@@ -54,13 +53,13 @@ impl NpmRocksDB {
         Ok(1)
     }
 
-    // #[tracing::instrument(name = "npm_db_delete_package", skip(self))]
+    #[tracing::instrument(name = "npm_db_delete_package", level = "debug", skip(self))]
     pub fn delete_package(&self, pkg_name: &str) -> AppResult<usize> {
         self.db.lock().delete(pkg_name.as_bytes()).unwrap();
         Ok(1)
     }
 
-    // #[tracing::instrument(name = "npm_db_write_package", skip(self, pkg), fields(pkg_name = pkg.name.as_str()))]
+    #[tracing::instrument(name = "npm_db_write_package", level = "debug", skip(self, pkg), fields(pkg_name = pkg.name.as_str()))]
     pub fn write_package(&self, pkg: MinimalPackageData) -> AppResult<usize> {
         if pkg.versions.is_empty() {
             println!("Tried to write pkg {}, but has no versions", pkg.name);
@@ -82,30 +81,30 @@ impl NpmRocksDB {
         Ok(1)
     }
 
-    #[tracing::instrument(name = "npm_db_get_package", skip(self))]
+    #[tracing::instrument(name = "npm_db_get_package", level = "debug", skip(self))]
     pub fn get_package(&self, pkg_name: &str) -> AppResult<Arc<MinimalPackageData>> {
         {
             let mut cache = self.cache.lock();
             let cached_value = cache.get(pkg_name);
             if let Some(pkg_data) = cached_value {
-                info!("NPM Cache hit");
+                tracing::debug!("NPM Cache hit");
                 return Ok(pkg_data.clone());
             }
         };
 
         let content_val: Option<Vec<u8>> = {
-            let span = span!(Level::INFO, "db_get_pkg").entered();
+            let span = tracing::span!(tracing::Level::DEBUG, "db_get_pkg").entered();
             let result = self.db.lock().get(pkg_name.as_bytes()).unwrap();
             span.exit();
             result
         };
 
         if let Some(pkg_content) = content_val {
-            let span = span!(Level::INFO, "parse_pkg").entered();
+            let span = tracing::span!(tracing::Level::DEBUG, "parse_pkg").entered();
             let found_pkg: MinimalPackageData = rmp_serde::from_slice(&pkg_content)?;
             span.exit();
 
-            let span = span!(Level::INFO, "write_cached_pkg").entered();
+            let span = tracing::span!(tracing::Level::DEBUG, "write_cached_pkg").entered();
             let mut cache = self.cache.lock();
             let wrapped_pkg = Arc::new(found_pkg);
             cache.put(pkg_name.to_string(), wrapped_pkg.clone());

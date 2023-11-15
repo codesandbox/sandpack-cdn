@@ -52,6 +52,7 @@ async fn get_reply(
         match result {
             Ok(data) => {
                 res_map = Some(data);
+                break;
             }
 
             Err(err) => {
