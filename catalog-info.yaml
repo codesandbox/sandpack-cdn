@@ -5,8 +5,7 @@ metadata:
   description: Sandpack CDN microservice
   annotations:
     github.com/project-slug: codesandbox/sandpack-cdn
-    backstage.io/kubernetes-namespace-production: sandpack-cdn-production
-    backstage.io/kubernetes-namespace-staging: sandpack-cdn-staging
+    backstage.io/kubernetes-namespace: sandpack-cdn-production
     backstage.io/kubernetes-label-selector: app=sandpack-cdn,component=sandpack-cdn
     codesandbox/deploy-image: europe-docker.pkg.dev/codesandbox-microservices/codesandbox/sandpack-cdn
     codesandbox/deploy-gitops-repo: codesandbox/codesandbox-gitops
