@@ -1,0 +1,22 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: sandpack-cdn
+  description: Sandpack CDN microservice
+  annotations:
+    github.com/project-slug: codesandbox/sandpack-cdn
+    backstage.io/kubernetes-namespace-production: sandpack-cdn-production
+    backstage.io/kubernetes-namespace-staging: sandpack-cdn-staging
+    backstage.io/kubernetes-label-selector: app=sandpack-cdn,component=sandpack-cdn
+    codesandbox/deploy-image: europe-docker.pkg.dev/codesandbox-microservices/codesandbox/sandpack-cdn
+    codesandbox/deploy-gitops-repo: codesandbox/codesandbox-gitops
+    codesandbox/deploy-gitops-yaml-key: "images.[0].newTag"
+    codesandbox/deploy-image-tag-regex-production: ".*"
+    codesandbox/deploy-gitops-file-production: codesandbox-apps/sandpack-cdn/production/kustomization.yaml
+    codesandbox/deploy-image-tag-regex-staging: ".*"
+    codesandbox/deploy-gitops-file-staging: codesandbox-apps/sandpack-cdn/staging/kustomization.yaml
+    codesandbox/deploy-gitops-version-type: tag
+spec:
+  type: service
+  lifecycle: production
+  owner: infra
