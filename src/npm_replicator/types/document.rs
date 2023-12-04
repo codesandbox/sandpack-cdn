@@ -51,29 +51,6 @@ pub struct MinimalPackageData {
 }
 
 impl MinimalPackageData {
-    pub fn from_doc(raw: RegistryDocument) -> MinimalPackageData {
-        let mut data = MinimalPackageData {
-            name: raw.id,
-            dist_tags: raw.dist_tags.unwrap_or_default(),
-            versions: BTreeMap::new(),
-            last_updated: Some(secs_since_epoch()),
-        };
-        for (key, value) in raw.versions.unwrap_or_default() {
-            let mut dependencies = value.dependencies.unwrap_or_default();
-            for (name, _version) in value.optional_dependencies.unwrap_or_default() {
-                dependencies.remove(&name);
-            }
-            data.versions.insert(
-                key,
-                MinimalPackageVersionData {
-                    tarball: value.dist.tarball,
-                    dependencies,
-                },
-            );
-        }
-        data
-    }
-
     pub fn from_registry_meta(raw: PackageMetadata) -> MinimalPackageData {
         let mut data = MinimalPackageData {
             name: raw.name,

@@ -1,5 +1,6 @@
 use super::registry::NpmRocksDB;
 use crate::app_error::AppResult;
+use crate::npm::package_data::download_pkg_metadata;
 use crate::npm_replicator::changes::ChangesStream;
 use crate::npm_replicator::types::changes::Event::Change;
 use crate::npm_replicator::types::document::MinimalPackageData;
@@ -23,8 +24,20 @@ async fn sync(db: NpmRocksDB) -> AppResult<()> {
                             db.delete_package(&evt.id)?;
                             println!("[NPM-Replication] Deleted package {}", evt.id);
                         } else if let Some(doc) = evt.doc {
-                            db.write_package(MinimalPackageData::from_doc(doc))?;
-                            println!("[NPM-Replication] Wrote package {} to db", evt.id);
+                            println!("[NPM-Replication] Fetching package {} from npm", evt.id);
+                            let metadata_result = download_pkg_metadata(&doc.id).await;
+                            match metadata_result {
+                                Ok(metadata) => {
+                                    let pkg: MinimalPackageData =
+                                        MinimalPackageData::from_registry_meta(metadata);
+                                    db.write_package(pkg)?;
+                                    println!("[NPM-Replication] Wrote package {} to db", evt.id);
+                                }
+                                Err(_err) => {
+                                    db.delete_package(&evt.id)?;
+                                    println!("[NPM-Replication] Package {} does not seem to exist, removing it", evt.id);
+                                }
+                            }
                         }
                     }
                 }
