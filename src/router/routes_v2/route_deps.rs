@@ -17,7 +17,13 @@ fn parse_query(query: String) -> Result<HashSet<DepRequest>, ServerError> {
     let mut dep_requests: HashSet<DepRequest> = HashSet::new();
     for part in parts {
         let (name, version) = parse_package_specifier_no_validation(part)?;
-        dep_requests.insert(DepRequest::from_name_version(name, version)?);
+        let versions = version.split(',');
+        for version in versions {
+            dep_requests.insert(DepRequest::from_name_version(
+                name.clone(),
+                version.to_string(),
+            )?);
+        }
     }
     Ok(dep_requests)
 }
