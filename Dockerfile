@@ -1,11 +1,12 @@
-FROM rust:bookworm AS builder
+FROM rust:1-alpine AS builder
 
 # We need the nightly for some packages...
 CMD rustup default nightly
 RUN rustup target add x86_64-unknown-linux-musl
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y protobuf-compiler libclang-dev libssl-dev
+RUN apk update \
+    && apk add protobuf-dev clang-dev openssl-dev
 
 # Installing all dependencies...
 RUN USER=root cargo new --bin sandpack-cdn
