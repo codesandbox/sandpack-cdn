@@ -2,6 +2,7 @@ FROM rust:bookworm AS builder
 
 # We need the nightly for some packages...
 CMD rustup default nightly
+RUN rustup target add x86_64-unknown-linux-musl
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y protobuf-compiler libclang-dev libssl-dev
@@ -10,7 +11,7 @@ RUN apt-get update && apt-get install -y protobuf-compiler libclang-dev libssl-d
 RUN USER=root cargo new --bin sandpack-cdn
 WORKDIR /app/sandpack-cdn
 COPY Cargo.toml Cargo.lock ./
-RUN cargo build --release
+RUN cargo build --target x86_64-unknown-linux-musl --release
 RUN rm src/*.rs
 RUN rm ./target/release/deps/sandpack_cdn*
 
@@ -18,20 +19,20 @@ RUN rm ./target/release/deps/sandpack_cdn*
 COPY . .
 
 # Build (install) the binaries
-RUN cargo build --release
+RUN cargo build --target x86_64-unknown-linux-musl --release
 
 
-FROM debian:bookworm-slim
+FROM alpine
 
-RUN apt-get update \
-    && apt-get install -y ca-certificates tzdata dumb-init \
-    && rm -rf /var/lib/apt/lists/*
+RUN apk update \
+    && apk add ca-certificates tzdata dumb-init \
+    && rm -rf /var/cache/apk/*
 
 EXPOSE 8080
 ENV APP_USER=appuser
 
-RUN groupadd $APP_USER \
-    && useradd --create-home -g $APP_USER $APP_USER
+RUN addgroup -S $APP_USER \
+    && adduser -S $APP_USER -G $APP_USER
 
 WORKDIR /home/appuser
 
