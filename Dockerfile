@@ -21,7 +21,7 @@ COPY . .
 RUN cargo build --release
 
 
-FROM debian:bookworm-20240211-slim
+FROM ubuntu:23:10
 
 RUN apt-get update \
     && apt-get install -y ca-certificates tzdata dumb-init \
