@@ -30,7 +30,9 @@ RUN apt-get update \
 EXPOSE 8080
 ENV APP_USER=appuser
 
-RUN groupadd $APP_USER \
+RUN userdel ubuntu \
+    && rm -rf /home/ubuntu \
+    && groupadd $APP_USER \
     && useradd --create-home -g $APP_USER $APP_USER
 
 WORKDIR /home/appuser
