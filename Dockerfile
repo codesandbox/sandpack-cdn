@@ -37,7 +37,7 @@ RUN userdel ubuntu \
 
 WORKDIR /home/appuser
 
-COPY --chown=$APP_USER:$APP_USER --from=builder /app/sandpack-cdn/target/release/  ./
+COPY --chown=$APP_USER:$APP_USER --from=builder /app/sandpack-cdn/target/release/sandpack-cdn ./
 
 USER $APP_USER
 RUN mkdir /home/$APP_USER/npm_db
