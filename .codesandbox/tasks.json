@@ -4,6 +4,10 @@
     {
       "name": "Install Dependencies",
       "command": "yarn install"
+    },
+    {
+      "name": "Install proto",
+      "command": "apt update -y && apt install -y protobuf-compiler clang"
     }
   ],
 
@@ -11,13 +15,11 @@
   "tasks": {
     "ci:run_tests": {
       "name": "ci:run_tests",
-      "command": "yarn ci:run_tests",
-      "runAtStart": false
+      "command": "yarn ci:run_tests"
     },
     "test": {
       "name": "test",
-      "command": "yarn test",
-      "runAtStart": false
+      "command": "yarn test"
     },
     "cargo run": {
       "name": "cargo run",
