@@ -61,6 +61,8 @@ pub enum ServerError {
     InvalidQuery,
     #[error("SQLite Error")]
     SQLiteError(#[from] rusqlite::Error),
+    #[error("Bad request: {0}")]
+    BadRequest(String),
 }
 
 impl From<ServerError> for std::io::Error {

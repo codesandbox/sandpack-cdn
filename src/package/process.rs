@@ -1,8 +1,10 @@
+use lazy_static::lazy_static;
 use nanoid::nanoid;
 use node_semver::Version;
 use serde::{self, Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::fs;
+use std::panic::{self, AssertUnwindSafe};
 use std::path::{Path, PathBuf};
 use tokio::task;
 use tracing::{error, info, span, Level};
@@ -15,6 +17,24 @@ use crate::transform;
 
 use super::package_json::PackageJSON;
 use super::{package_json, resolver};
+
+lazy_static! {
+    static ref FORCED_USED_MODULES: HashMap<&'static str, Vec<&'static str>> = {
+        let mut map = HashMap::new();
+        map.insert("react-dom", vec!["scheduler"]);
+        map
+    };
+}
+
+fn apply_forced_used_modules(package_name: &str, used_modules: &mut HashSet<String>) {
+    info!("checking {package_name}");
+    if let Some(extra_modules) = FORCED_USED_MODULES.get(package_name) {
+        info!("adding for {package_name}");
+        for module in extra_modules {
+            used_modules.insert((*module).to_string());
+        }
+    }
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
@@ -114,6 +134,10 @@ fn deps_to_files_and_modules(deps: &[String]) -> (HashSet<String>, HashSet<Strin
     }
 
     (file_specifiers, used_modules)
+}
+
+fn should_skip_transform(file_path: &str) -> bool {
+    matches!(file_path, "compiler-runtime.js")
 }
 
 fn transform_files(
@@ -256,6 +280,8 @@ fn transform_package(
         transform_files_span.exit();
     }
 
+    apply_forced_used_modules(package_name, &mut used_modules);
+
     // add remaining files as ignored files
     for (key, value) in &file_paths {
         if !module_files.contains_key(key) {
@@ -346,10 +372,6 @@ pub async fn process_npm_package(
 pub fn parse_package_specifier_no_validation(
     package_specifier: &str,
 ) -> Result<(String, String), ServerError> {
-    if package_specifier.contains(char::is_whitespace) {
-        return Err(ServerError::InvalidPackageSpecifier);
-    }
-
     let mut parts: Vec<&str> = package_specifier.split('@').collect();
     let package_version_opt = parts.pop();
     if let Some(package_version) = package_version_opt {
@@ -358,7 +380,10 @@ pub fn parse_package_specifier_no_validation(
         }
 
         let package_name = parts.join("@");
-        Ok((package_name, String::from(package_version)))
+        Ok((
+            String::from(package_name.trim()),
+            String::from(package_version.trim()),
+        ))
     } else {
         Err(ServerError::InvalidPackageSpecifier)
     }
@@ -368,4 +393,40 @@ pub fn parse_package_specifier(package_specifier: &str) -> Result<(String, Strin
     let (name, version) = parse_package_specifier_no_validation(package_specifier)?;
     Version::parse(&version)?;
     Ok((name, version))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn simple_version() {
+        let (pkg_name, pkg_version) = parse_package_specifier("foo@1.2.3").unwrap();
+        assert_eq!(pkg_name, "foo");
+        assert_eq!(pkg_version, "1.2.3");
+    }
+
+    #[test]
+    fn simple_version_range_scoped() {
+        let (pkg_name, pkg_version) =
+            parse_package_specifier_no_validation("@types/react-dom@^1.2.3").unwrap();
+        assert_eq!(pkg_name, "@types/react-dom");
+        assert_eq!(pkg_version, "^1.2.3");
+    }
+
+    #[test]
+    fn version_range_whitespace() {
+        let (pkg_name, pkg_version) =
+            parse_package_specifier_no_validation("@types/dom @ 1 - 2 ").unwrap();
+        assert_eq!(pkg_name, "@types/dom");
+        assert_eq!(pkg_version, "1 - 2");
+    }
+
+    #[test]
+    fn larger_than_range() {
+        let (pkg_name, pkg_version) =
+            parse_package_specifier_no_validation("@code-sandbox_/test@ >=4 ").unwrap();
+        assert_eq!(pkg_name, "@code-sandbox_/test");
+        assert_eq!(pkg_version, ">=4");
+    }
 }

@@ -139,6 +139,8 @@ async fn resolve_dep(
             Dependency::new(req.name, resolved_version, req.depth),
             transient_deps,
         )));
+    } else {
+        tracing::warn!("could not resolve version for {req:?}");
     }
     Ok(None)
 }

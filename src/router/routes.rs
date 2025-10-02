@@ -10,6 +10,7 @@ use super::health::health_route;
 use super::routes_v1::route_dep_tree::dep_tree_route;
 use super::routes_v1::route_package_data::package_data_route;
 use super::routes_v2::route_deps::deps_route;
+use super::routes_v2::route_force_sync::force_sync_route;
 use super::routes_v2::route_mod::mod_route;
 use super::routes_v2::route_npm_status::npm_sync_status_route;
 
@@ -29,7 +30,8 @@ pub fn routes(
         .or(dep_tree_route(npm_db.clone(), pkg_processor))
         .or(mod_route())
         .or(deps_route())
-        .or(npm_sync_status_route(npm_db))
+        .or(npm_sync_status_route(npm_db.clone()))
+        .or(force_sync_route(npm_db))
         .or(health_route())
         .or(not_found_route())
 }

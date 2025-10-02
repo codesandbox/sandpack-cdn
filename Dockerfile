@@ -1,4 +1,4 @@
-FROM rust:latest AS builder
+FROM rust:1.69 AS builder
 
 # We need the nightly for some packages...
 CMD rustup default nightly
@@ -15,7 +15,7 @@ COPY . .
 RUN RUST_MIN_STACK=16777216 cargo build --release
 
 # Runtime image
-FROM rust:latest
+FROM rust:1.69
 
 # Run as "app" user
 RUN useradd -ms /bin/bash app

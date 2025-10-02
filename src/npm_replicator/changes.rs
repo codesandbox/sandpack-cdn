@@ -12,7 +12,6 @@ pub struct ChangesStream {
     client: Client,
     last_seq: serde_json::Value,
     params: HashMap<String, String>,
-    pub limit: usize,
 }
 
 impl ChangesStream {
@@ -27,13 +26,12 @@ impl ChangesStream {
         Self {
             params,
             last_seq,
-            limit,
             client,
         }
     }
 
     pub fn should_wait(&self, last_result_count: usize) -> bool {
-        last_result_count < (self.limit / 2)
+        last_result_count == 0
     }
 
     pub async fn fetch_next(&mut self) -> ChangeStreamResult<ChangesPage> {
