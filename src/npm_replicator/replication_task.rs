@@ -4,11 +4,13 @@ use crate::npm_replicator::changes::ChangesStream;
 use crate::npm_replicator::types::changes::Event::Change;
 use crate::npm_replicator::types::document::{MinimalPackageData, RegistryDocument};
 
+use futures::{stream, StreamExt};
 use reqwest::Client;
 use std::time::Duration;
 use tokio::time::sleep;
 
 const FINISHED_DEBOUNCE: u64 = 60000;
+const PACKUMENT_FETCH_CONCURRENCY: usize = 8;
 
 async fn fetch_packument(
     client: &Client,
@@ -35,23 +37,40 @@ async fn sync(db: NpmDatabase) -> AppResult<()> {
         match stream.fetch_next().await {
             Ok(page) => {
                 let result_count = { page.results.len() };
+                let mut pending_ids: Vec<String> = Vec::new();
                 for entry in page.results {
                     if let Change(evt) = entry {
                         if evt.deleted {
                             db.delete_package(&evt.id)?;
                             println!("[NPM-Replication] Deleted package {}", evt.id);
                         } else {
-                            match fetch_packument(&package_client, &evt.id).await {
-                                Ok(pkg) => {
-                                    db.write_package(pkg)?;
-                                    println!("[NPM-Replication] Wrote package {} to db", evt.id);
-                                }
-                                Err(err) => {
-                                    println!(
-                                        "[NPM-Replication] Failed to fetch package {}: {:?}",
-                                        evt.id, err
-                                    );
-                                }
+                            pending_ids.push(evt.id);
+                        }
+                    }
+                }
+
+                if !pending_ids.is_empty() {
+                    let fetch_stream = stream::iter(pending_ids.into_iter()).map(|package_id| {
+                        let client = package_client.clone();
+                        async move {
+                            let result = fetch_packument(&client, &package_id).await;
+                            (package_id, result)
+                        }
+                    });
+
+                    let mut fetch_stream =
+                        fetch_stream.buffer_unordered(PACKUMENT_FETCH_CONCURRENCY);
+                    while let Some((package_id, result)) = fetch_stream.next().await {
+                        match result {
+                            Ok(pkg) => {
+                                db.write_package(pkg)?;
+                                println!("[NPM-Replication] Wrote package {} to db", package_id);
+                            }
+                            Err(err) => {
+                                println!(
+                                    "[NPM-Replication] Failed to fetch package {}: {:?}",
+                                    package_id, err
+                                );
                             }
                         }
                     }
