@@ -2,17 +2,35 @@ use super::database::NpmDatabase;
 use crate::app_error::AppResult;
 use crate::npm_replicator::changes::ChangesStream;
 use crate::npm_replicator::types::changes::Event::Change;
-use crate::npm_replicator::types::document::MinimalPackageData;
+use crate::npm_replicator::types::document::{MinimalPackageData, RegistryDocument};
 
+use reqwest::Client;
 use std::time::Duration;
 use tokio::time::sleep;
 
 const FINISHED_DEBOUNCE: u64 = 60000;
 
+async fn fetch_packument(
+    client: &Client,
+    package_id: &str,
+) -> Result<MinimalPackageData, reqwest::Error> {
+    let url = format!("https://registry.npmjs.org/{}", package_id);
+    let response = client
+        .get(url)
+        .header("accept", "application/json")
+        .send()
+        .await?
+        .error_for_status()?;
+
+    let document: RegistryDocument = response.json().await?;
+    Ok(MinimalPackageData::from_doc(document))
+}
+
 async fn sync(db: NpmDatabase) -> AppResult<()> {
     let last_seq: i64 = db.get_last_seq()?;
     println!("[NPM-Replication] Last synced sequence {}", last_seq);
     let mut stream = ChangesStream::new(50, last_seq.into());
+    let package_client = Client::builder().timeout(Duration::from_secs(60)).build()?;
     loop {
         match stream.fetch_next().await {
             Ok(page) => {
@@ -22,9 +40,19 @@ async fn sync(db: NpmDatabase) -> AppResult<()> {
                         if evt.deleted {
                             db.delete_package(&evt.id)?;
                             println!("[NPM-Replication] Deleted package {}", evt.id);
-                        } else if let Some(doc) = evt.doc {
-                            db.write_package(MinimalPackageData::from_doc(doc))?;
-                            println!("[NPM-Replication] Wrote package {} to db", evt.id);
+                        } else {
+                            match fetch_packument(&package_client, &evt.id).await {
+                                Ok(pkg) => {
+                                    db.write_package(pkg)?;
+                                    println!("[NPM-Replication] Wrote package {} to db", evt.id);
+                                }
+                                Err(err) => {
+                                    println!(
+                                        "[NPM-Replication] Failed to fetch package {}: {:?}",
+                                        evt.id, err
+                                    );
+                                }
+                            }
                         }
                     }
                 }

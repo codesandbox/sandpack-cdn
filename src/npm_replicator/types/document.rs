@@ -21,8 +21,11 @@ pub struct DocumentPackageVersion {
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
 pub struct RegistryDocument {
-    #[serde(rename = "_id")]
-    pub id: String,
+    #[serde(default, rename = "_id")]
+    pub couch_id: Option<String>,
+
+    #[serde(default)]
+    pub name: Option<String>,
 
     #[serde(default, rename = "_deleted")]
     pub deleted: bool,
@@ -48,12 +51,22 @@ pub struct MinimalPackageData {
 
 impl MinimalPackageData {
     pub fn from_doc(raw: RegistryDocument) -> MinimalPackageData {
+        let RegistryDocument {
+            couch_id,
+            name,
+            dist_tags,
+            versions,
+            ..
+        } = raw;
+
+        let pkg_name = name.or(couch_id).unwrap_or_default();
+
         let mut data = MinimalPackageData {
-            name: raw.id,
-            dist_tags: raw.dist_tags.unwrap_or_default(),
+            name: pkg_name,
+            dist_tags: dist_tags.unwrap_or_default(),
             versions: BTreeMap::new(),
         };
-        for (key, value) in raw.versions.unwrap_or_default() {
+        for (key, value) in versions.unwrap_or_default() {
             let mut dependencies = value.dependencies.unwrap_or_default();
             for (name, _version) in value.optional_dependencies.unwrap_or_default() {
                 dependencies.remove(&name);

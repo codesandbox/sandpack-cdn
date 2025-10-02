@@ -5,12 +5,6 @@ use super::{
 use reqwest::{Client, Method};
 use std::{collections::HashMap, time::Duration};
 
-/// The max timeout value for longpoll/continous HTTP requests
-/// that CouchDB supports (see [1]).
-///
-/// [1]: https://docs.couchdb.org/en/stable/api/database/changes.html
-const COUCH_MAX_TIMEOUT: usize = 60000;
-
 /// The stream for the `_changes` endpoint.
 ///
 /// This is returned from [Database::changes].
@@ -25,9 +19,6 @@ impl ChangesStream {
     /// Create a new changes stream.
     pub fn new(limit: usize, last_seq: serde_json::Value) -> Self {
         let mut params = HashMap::new();
-        params.insert("feed".to_string(), "longpoll".to_string());
-        params.insert("include_docs".to_string(), "true".to_string());
-        params.insert("timeout".to_string(), COUCH_MAX_TIMEOUT.to_string());
         params.insert("limit".to_string(), limit.to_string());
         let client = Client::builder()
             .timeout(Duration::from_secs(120))
@@ -51,6 +42,7 @@ impl ChangesStream {
         let request = self
             .client
             .request(Method::GET, "https://replicate.npmjs.com/registry/_changes")
+            .header("npm-replication-opt-in", "true")
             .query(&self.params);
         // println!("{:?}", request);
         let res = request.send().await?;

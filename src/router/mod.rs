@@ -1,7 +1,7 @@
-pub mod routes;
 mod custom_reply;
 mod error_reply;
 mod health;
-mod utils;
+pub mod routes;
 mod routes_v1;
 mod routes_v2;
+mod utils;

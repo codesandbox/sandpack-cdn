@@ -5,3 +5,4 @@ temp_files
 node_modules
 *.sqlite
 *.db3
+mise.toml
