@@ -10,3 +10,4 @@ node_modules
 gha-creds-*.json
 registry
 registry.rocksdb
+mise.toml
