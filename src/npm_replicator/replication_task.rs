@@ -23,9 +23,9 @@ async fn sync(db: NpmRocksDB) -> AppResult<()> {
                         if evt.deleted {
                             db.delete_package(&evt.id)?;
                             println!("[NPM-Replication] Deleted package {}", evt.id);
-                        } else if let Some(doc) = evt.doc {
+                        } else {
                             println!("[NPM-Replication] Fetching package {} from npm", evt.id);
-                            let metadata_result = download_pkg_metadata(&doc.id).await;
+                            let metadata_result = download_pkg_metadata(&evt.id).await;
                             match metadata_result {
                                 Ok(metadata) => {
                                     let pkg: MinimalPackageData =

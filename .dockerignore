@@ -4,6 +4,5 @@ temp_files
 .env
 *.db3
 *.sqlite
-Dockerfile
 # Ignore generated credentials from google-github-actions/auth
 gha-creds-*.json
