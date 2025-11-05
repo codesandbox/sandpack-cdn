@@ -90,8 +90,20 @@ pub fn collect_pkg_entries(pkg_json: PackageJSON) -> Result<Vec<String>, ServerE
         match &exports_field {
             PackageJSONExport::Map(exports_map) => {
                 for (key, value) in exports_map.iter() {
-                    // Skip things with .node or .server as we don't care about node things in the browser
-                    if key.contains(".node") || key.contains(".server") {
+                    // Skip server-only runtime conditions as we only care about browser bundles
+                    if key.contains(".node")
+                        || key.contains(".server")
+                        || key.contains(".bun")
+                        || key.contains(".deno")
+                        || key.contains(".react-server")
+                        || key == "node"
+                        || key == "bun"
+                        || key == "deno"
+                        || key == "react-server"
+                        || key == "workerd"
+                        || key == "edge-light"
+                        || key == "worker"
+                    {
                         continue;
                     }
 
@@ -147,7 +159,7 @@ pub fn collect_pkg_entries(pkg_json: PackageJSON) -> Result<Vec<String>, ServerE
 
 #[cfg(test)]
 mod test {
-    use crate::package::package_json::{parse_pkg_json, PackageJSONExport};
+    use crate::package::package_json::{collect_pkg_entries, parse_pkg_json, PackageJSONExport};
     use crate::utils::test_utils;
 
     #[test]
@@ -179,5 +191,82 @@ mod test {
         //     },
         //     "src/something.js"
         // );
+    }
+
+    #[test]
+    fn filters_server_only_runtime_conditions() {
+        // Simulates a package.json similar to react-dom with various runtime conditions
+        let pkg_json_content = r#"{
+            "name": "test-package",
+            "version": "1.0.0",
+            "exports": {
+                ".": {
+                    "browser": "./browser.js",
+                    "default": "./index.js"
+                },
+                "./server": {
+                    "node": "./server.node.js",
+                    "bun": "./server.bun.js",
+                    "deno": "./server.deno.js",
+                    "react-server": "./server.react-server.js",
+                    "workerd": "./server.edge.js",
+                    "edge-light": "./server.edge.js",
+                    "worker": "./server.worker.js",
+                    "browser": "./server.browser.js",
+                    "default": "./server.browser.js"
+                },
+                "./client": {
+                    "browser": "./client.browser.js",
+                    "default": "./client.js"
+                }
+            }
+        }"#;
+
+        let parsed = parse_pkg_json(pkg_json_content.to_string()).unwrap();
+        let entries = collect_pkg_entries(parsed).unwrap();
+
+        // Should include browser-appropriate files
+        assert!(
+            entries.contains(&"./browser.js".to_string()),
+            "Should include browser export for '.'"
+        );
+        assert!(
+            entries.contains(&"./client.browser.js".to_string()),
+            "Should include browser export for './client'"
+        );
+        assert!(
+            entries.contains(&"./server.browser.js".to_string()),
+            "Should include browser export for './server'"
+        );
+
+        // Should NOT include server-only runtime files
+        assert!(
+            !entries.contains(&"./server.node.js".to_string()),
+            "Should NOT include node export"
+        );
+        assert!(
+            !entries.contains(&"./server.bun.js".to_string()),
+            "Should NOT include bun export"
+        );
+        assert!(
+            !entries.contains(&"./server.deno.js".to_string()),
+            "Should NOT include deno export"
+        );
+        assert!(
+            !entries.contains(&"./server.react-server.js".to_string()),
+            "Should NOT include react-server export"
+        );
+        assert!(
+            !entries.contains(&"./server.edge.js".to_string()),
+            "Should NOT include edge/workerd/worker exports"
+        );
+
+        // Verify total number of entries (browser.js, client.browser.js, server.browser.js)
+        assert_eq!(
+            entries.len(),
+            3,
+            "Should have exactly 3 entries: {:?}",
+            entries
+        );
     }
 }
